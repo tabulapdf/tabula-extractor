@@ -58,33 +58,27 @@ module Tabula
         @extractor = TextExtractor.new
       end
 
-      # TODO refactor: yield each page
       def extract
-        characters = {}
-        @all_pages.each_with_index do |page, i|
-          next if !@pages.empty? and !@pages.index(i+1).nil
-          contents = page.getContents
-          next if contents.nil?
+        Enumerator.new do |y|
+          @all_pages.each_with_index do |page, i|
+            next if !@pages.empty? and !@pages.index(i+1).nil
+            contents = page.getContents
+            next if contents.nil?
 
-          @extractor.clear!
-          @extractor.processStream(page, page.findResources, contents.getStream)
+            @extractor.clear!
+            @extractor.processStream(page, page.findResources, contents.getStream)
 
-          characters[i+1] = @extractor.characters.map { |char| self.char_to_h char }
+            yield i+1, @extractor.characters.map { |char| 
+              TextElement.new(char.getYDirAdj,
+                              char.getXDirAdj,
+                              char.getWidthDirAdj,
+                              char.getHeightDir,
+                              nil,
+                              char.getFontSize,
+                              char.getCharacter)
+            }
+          end
         end
-
-        characters
-      end
-
-      def char_to_h(char)
-        { 
-          :top => char.getYDirAdj,
-          :left => char.getXDirAdj,
-          :width => char.getWidthDirAdj,
-          :height => char.getHeightDir,
-          :fontsize => char.getFontSize,
-          :dir => char.getDir.to_i,
-          :text => char.getCharacter
-        }
       end
     end
   end

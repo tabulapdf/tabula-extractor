@@ -1,4 +1,5 @@
 module Tabula
+
   class ZoneEntity
     attr_accessor :top, :left, :width, :height
 
