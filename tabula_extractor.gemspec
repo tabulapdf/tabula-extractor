@@ -1,10 +1,10 @@
 # encoding: utf-8
 $:.push File.expand_path("../lib", __FILE__)
-#require "memcached/version"
+require 'tabula/version'
 
 Gem::Specification.new do |s|
   s.name        = "tabula-extractor"
-  s.version     = 0.1
+  s.version     = Tabula::VERSION
   s.authors     = ["Manuel Aristarán"]
   s.email       = ["manuel@jazzido.com"]
   s.homepage    = "https://github.com/jazzido/tabula-extractor"
@@ -19,4 +19,5 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_development_dependency 'minitest'
+  s.add_runtime_dependency "trollop", ["~> 2.0"]
 end

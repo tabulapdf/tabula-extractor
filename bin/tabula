@@ -1,1 +1,35 @@
-#!/bin/env jruby
+#!/usr/bin/env jruby
+# encoding: utf-8
+require 'trollop'
+require 'tabula'
+
+FORMATS = ['CSV', 'TSV', 'HTML', 'JSON']
+
+def parse_command_line
+  opts = Trollop::options do
+    version "tabula #{Tabula::VERSION} (c) 2012-2013 Manuel Aristarán"
+    banner <<-EOS
+Tabula helps you extract tables from PDFs
+
+Usage:
+       tabula [options] <pdf_file>
+where [options] are:
+EOS
+
+    opt :page, 'Page number', :default => 1
+    opt :area, 'Portion of the page to analyze (top, left, bottom, right). Example: --area 269.875, 12.75, 790.5, 561. Default is entire page'
+    opt :format, 'Output format', :default => 'CSV'
+    opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
+  end
+  # Trollop::die :volume, "must be non-negative" if opts[:volume] < 0
+  # Trollop::die :file, "must exist" unless File.exist?(opts[:file]) if opts[:file]
+
+end
+
+def main
+  opts = parse_command_line
+end
+
+if __FILE__ == $0
+  main
+end
