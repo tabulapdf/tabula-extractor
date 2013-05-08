@@ -62,33 +62,34 @@ module Tabula
 
       def extract
         Enumerator.new do |y|
-          @all_pages.each_with_index do |page, i|
-            next if !@pages.empty? and !@pages.index(i+1).nil
-            contents = page.getContents
-            next if contents.nil?
+          begin
+            @all_pages.each_with_index do |page, i|
+              next if !@pages.empty? and !@pages.index(i+1).nil
+              contents = page.getContents
+              next if contents.nil?
 
-            @extractor.clear!
-            @extractor.processStream(page, page.findResources, contents.getStream)
+              @extractor.clear!
+              @extractor.processStream(page, page.findResources, contents.getStream)
 
-            y << Tabula::Page.new(page.findCropBox.width,
-                                  page.findCropBox.height,
-                                  page.getRotation.to_i,
-                                  i+1,
-                                  @extractor.characters.map { |char| 
-                                    Tabula::TextElement.new(char.getYDirAdj,
-                                                            char.getXDirAdj,
-                                                            char.getWidthDirAdj,
-                                                            char.getHeightDir,
-                                                            nil,
-                                                            char.getFontSize,
-                                                            char.getCharacter)
-                                  })
+              y << Tabula::Page.new(page.findCropBox.width,
+                                    page.findCropBox.height,
+                                    page.getRotation.to_i,
+                                    i+1,
+                                    @extractor.characters.map { |char|
+                                      Tabula::TextElement.new(char.getYDirAdj,
+                                                              char.getXDirAdj,
+                                                              char.getWidthDirAdj,
+                                                              char.getHeightDir,
+                                                              nil,
+                                                              char.getFontSize,
+                                                              char.getCharacter)
+                                    })
+            end
+          ensure
+            @pdf_file.close
           end
         end
       end
     end
   end
 end
-
-
-
