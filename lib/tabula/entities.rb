@@ -93,9 +93,11 @@ module Tabula
       self.texts = texts
     end
 
-    def get_text_by_area(top, left, bottom, right)
-      area = ZoneEntity.new(top, left, right - left, bottom - top)
-      self.texts.select { |t| t.overlaps? area }
+    # get text, optionally from a provided area in the page [top, left, bottom, right]
+    def get_text(area=nil)
+      area = [0, 0, width, height] if area.nil?
+      ze = ZoneEntity.new(area[0], area[1], area[2] - area[0], area[3] - area[1])
+      self.texts.select { |t| t.overlaps? ze }
     end
 
   end

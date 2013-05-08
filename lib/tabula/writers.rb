@@ -4,10 +4,8 @@ module Tabula
   module Writers
 
     def Writers.CSV(lines, output=$stdout)
-      CSV(output) { |csv|
-        lines.each { |l|
-          csv << l.map { |c| c.text }
-        }
+      lines.each { |l|
+        output.write CSV.generate_line(l.map(&:text), row_sep: "\r\n")
       }
     end
 

@@ -14,6 +14,7 @@ module Tabula
     def initialize(text_elements, options = {})
       self.text_elements = text_elements
       self.options = DEFAULT_OPTIONS.merge(options)
+      @merged = false
       merge_words! if self.options[:merge_words]
     end
 

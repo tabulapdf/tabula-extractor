@@ -64,7 +64,7 @@ module Tabula
         Enumerator.new do |y|
           begin
             @all_pages.each_with_index do |page, i|
-              next if !@pages.empty? and !@pages.index(i+1).nil
+              next if !@pages.empty? && @pages.index(i+1).nil?
               contents = page.getContents
               next if contents.nil?
 

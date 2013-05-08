@@ -1,7 +1,7 @@
 #!/usr/bin/env jruby
 # encoding: utf-8
 require 'trollop'
-require 'tabula'
+require_relative '../lib/tabula'
 
 FORMATS = ['CSV', 'TSV', 'HTML', 'JSON']
 
@@ -16,18 +16,37 @@ Usage:
 where [options] are:
 EOS
 
-    opt :page, 'Page number', :default => 1
-    opt :area, 'Portion of the page to analyze (top, left, bottom, right). Example: --area 269.875, 12.75, 790.5, 561. Default is entire page'
+    opt :page, 'Page number', :default => 1, :type => Integer
+    opt :area, 'Portion of the page to analyze (top, left, bottom, right). Example: --area 269.875, 12.75, 790.5, 561. Default is entire page', :type => String, :default => nil
     opt :format, "Output format (#{FORMATS.join(",")})", :default => 'CSV'
     opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
   end
-  # Trollop::die :volume, "must be non-negative" if opts[:volume] < 0
-  # Trollop::die :file, "must exist" unless File.exist?(opts[:file]) if opts[:file]
+
+  if !opts[:area].nil?
+    unless opts[:area].split(',').size == 4 \
+      && opts[:area].split(',').all? { |x| x.strip =~ /(\d+\.?\d*)/ }
+      Trollop::die :area, "is invalid"
+    end
+  end
+  Trollop::die :format, "is unknown" unless FORMATS.include?(opts[:format])
+  Trollop::die "need one filename" if ARGV.empty?
+
+  pdf_filename = ARGV.shift
+  Trollop::die 'file does not exist' unless File.exists? pdf_filename
+
+  return opts, pdf_filename
 
 end
 
 def main
-  opts = parse_command_line
+
+  opts, filename = parse_command_line
+
+  extractor = Tabula::Extraction::CharacterExtractor.new(filename, [opts[:page]])
+  table = Tabula.make_table(extractor.extract.first.get_text(opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)))
+  out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'w')
+  Tabula::Writers.send(opts[:format].to_sym, table, out)
+  out.close
 end
 
 if __FILE__ == $0
