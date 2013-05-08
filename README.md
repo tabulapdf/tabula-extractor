@@ -1,4 +1,0 @@
-Tabula Extractor
-================
-
-TODO: write
