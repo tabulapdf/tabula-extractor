@@ -4,7 +4,7 @@ $:.push File.expand_path("../lib", __FILE__)
 
 Gem::Specification.new do |s|
   s.name        = "tabula-extractor"
-#  s.version     = Memcached::VERSION
+  s.version     = 0.1
   s.authors     = ["Manuel Aristarán"]
   s.email       = ["manuel@jazzido.com"]
   s.homepage    = "https://github.com/jazzido/tabula-extractor"
