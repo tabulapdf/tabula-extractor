@@ -1,5 +1,7 @@
 require 'observer'
 
+require_relative './entities.rb'
+
 require 'java'
 require File.join(File.dirname(__FILE__), '../../target/pdfbox-app-1.8.0.jar')
 java_import org.apache.pdfbox.pdfparser.PDFParser
@@ -68,15 +70,19 @@ module Tabula
             @extractor.clear!
             @extractor.processStream(page, page.findResources, contents.getStream)
 
-            yield i+1, @extractor.characters.map { |char| 
-              TextElement.new(char.getYDirAdj,
-                              char.getXDirAdj,
-                              char.getWidthDirAdj,
-                              char.getHeightDir,
-                              nil,
-                              char.getFontSize,
-                              char.getCharacter)
-            }
+            y << Tabula::Page.new(page.findCropBox.width,
+                                  page.findCropBox.height,
+                                  page.getRotation.to_i,
+                                  i+1,
+                                  @extractor.characters.map { |char| 
+                                    Tabula::TextElement.new(char.getYDirAdj,
+                                                            char.getXDirAdj,
+                                                            char.getWidthDirAdj,
+                                                            char.getHeightDir,
+                                                            nil,
+                                                            char.getFontSize,
+                                                            char.getCharacter)
+                                  })
           end
         end
       end

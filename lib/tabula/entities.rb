@@ -83,6 +83,17 @@ module Tabula
     end
   end
 
+  class Page < ZoneEntity
+    attr_reader :rotation, :number
+
+    def initialize(width, height, rotation, number, texts)
+      super(0, 0, width, height)
+      @rotation = rotation
+      @number = number
+      self.texts = texts
+    end
+  end
+
   class TextElement < ZoneEntity
     attr_accessor :font, :font_size, :text
 
