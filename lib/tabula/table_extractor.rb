@@ -9,19 +9,16 @@ module Tabula
       :split_multiline_cells => false
     }
 
-
     def initialize(text_elements, options = {})
       self.text_elements = text_elements
       self.options = DEFAULT_OPTIONS.merge(options)
       merge_words! if self.options[:merge_words]
     end
 
-
     def get_rows
       hg = self.get_line_boundaries
       hg.sort_by(&:top).map { |r| {'top' => r.top, 'bottom' => r.bottom, 'text' => r.texts} }
     end
-
 
     # TODO finish writing this method
     # it should be analogous to get_line_boundaries
