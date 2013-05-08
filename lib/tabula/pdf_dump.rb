@@ -1,6 +1,7 @@
 require 'observer'
 
 require 'java'
+require File.join(File.dirname(__FILE__), '../../target/pdfbox-app-1.8.0.jar')
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.util.PDFTextStripper
@@ -11,6 +12,8 @@ module Tabula
     class TextExtractor < org.apache.pdfbox.util.PDFTextStripper
 
       attr_accessor :characters, :fonts
+
+      PRINTABLE_RE = /[[:print:]]/
 
       def initialize
         super
@@ -42,47 +45,47 @@ module Tabula
         self.characters << text  if c =~ PRINTABLE_RE
       end
     end
-  end
 
-  class CharacterExtractor
-    include Observable
 
-    def initialize(pdf_file, pages=[])
-      raise Errno::ENOENT unless File.exists?(pdf_file)
-      @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
-      @all_pages = @pdf_file.getDocumentCatalog.getAllPages
-      @extractor = TextExtractor.new
-    end
+    class CharacterExtractor
+      include Observable
 
-    def extract(pdf_file, pages=[])
-      characters = {}
-      all_pages.each_with_index do |page, i|
-        next if !pages.empty? and !pages.index(i+1).nil
-        contents = page.getContents
-        next if contents.nil?
-
-        extractor.clear!
-        extractor.processStream(page, page.findResources, contents.getStream)
-
-        characters[i+1] = extractor.characters.map(&:char_to_h)
+      def initialize(pdf_filename, pages=[])
+        raise Errno::ENOENT unless File.exists?(pdf_filename)
+        @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
+        @all_pages = @pdf_file.getDocumentCatalog.getAllPages
+        @pages = pages
+        @extractor = TextExtractor.new
       end
 
-      characters
-      
-    end
+      # TODO refactor: yield each page
+      def extract
+        characters = {}
+        @all_pages.each_with_index do |page, i|
+          next if !@pages.empty? and !@pages.index(i+1).nil
+          contents = page.getContents
+          next if contents.nil?
 
-    private
+          @extractor.clear!
+          @extractor.processStream(page, page.findResources, contents.getStream)
 
-    def char_to_h(char)
-      { 
-        :top => char.getYDirAdj,
-        :left => char.getXDirAdj,
-        :width => char.getWidthDirAdj,
-        :height => char.getHeightDir,
-        :fontsize => char.getFontSize,
-        :dir => char.getDir.to_i,
-        :text => char.getCharacter
-      }
+          characters[i+1] = @extractor.characters.map { |char| self.char_to_h char }
+        end
+
+        characters
+      end
+
+      def char_to_h(char)
+        { 
+          :top => char.getYDirAdj,
+          :left => char.getXDirAdj,
+          :width => char.getWidthDirAdj,
+          :height => char.getHeightDir,
+          :fontsize => char.getFontSize,
+          :dir => char.getDir.to_i,
+          :text => char.getCharacter
+        }
+      end
     end
   end
 end
