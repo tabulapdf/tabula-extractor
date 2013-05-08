@@ -1,3 +1,5 @@
+require 'csv'
+
 module Tabula
   class TableExtractor
     attr_accessor :text_elements, :options
@@ -112,5 +114,123 @@ module Tabula
       end
       return self.text_elements.compact!
     end
+  end
+
+  # TODO next four module methods are deprecated
+  def Tabula.group_by_columns(text_elements, merge_words=false)
+    TableExtractor.new(text_elements, :merge_words => merge_words).group_by_columns
+  end
+
+  def Tabula.get_line_boundaries(text_elements)
+    TableExtractor.new(text_elements).get_line_boundaries
+  end
+
+  def Tabula.get_columns(text_elements, merge_words=true)
+    TableExtractor.new(text_elements, :merge_words => merge_words).get_columns
+  end
+
+  def Tabula.get_rows(text_elements, merge_words=true)
+    TableExtractor.new(text_elements, :merge_words => merge_words).get_rows
+  end
+
+  def Tabula.lines_to_csv(lines)
+    CSV.generate { |csv|
+      lines.each { |l|
+        csv << l.map { |c| c.text.strip }
+      }
+    }
+  end
+
+  ONLY_SPACES_RE = Regexp.new('^\s+$')
+
+  # Returns an array of Tabula::Line
+  def Tabula.make_table(text_elements, options={})
+    extractor = TableExtractor.new(text_elements, options)
+
+    # group by lines
+    lines = []
+    line_boundaries = extractor.get_line_boundaries
+
+    # find all the text elements
+    # contained within each detected line (table row) boundary
+    line_boundaries.each { |lb|
+      line = Line.new
+
+      line_members = text_elements.find_all { |te|
+        te.vertically_overlaps?(lb)
+      }
+
+      text_elements -= line_members
+
+      line_members.sort_by(&:left).each { |te|
+        # skip text_elements that only contain spaces
+        next if te.text =~ ONLY_SPACES_RE
+        line << te
+      }
+
+      lines << line if line.text_elements.size > 0
+    }
+
+    lines.sort_by!(&:top)
+
+    columns = Tabula.group_by_columns(lines.map(&:text_elements).flatten.compact.uniq).sort_by(&:left)
+
+    # # insert empty cells if needed
+    lines.each_with_index { |l, line_index|
+      next if l.text_elements.nil?
+      l.text_elements.compact! # TODO WHY do I have to do this?
+      l.text_elements.uniq!  # TODO WHY do I have to do this?
+      l.text_elements.sort_by!(&:left)
+
+      # l.text_elements = Tabula.merge_words(l.text_elements)
+
+      next unless l.text_elements.size < columns.size
+
+      columns.each_with_index do |c, i|
+        if (i > l.text_elements.size - 1) or !l.text_elements(&:left)[i].nil? and !c.text_elements.include?(l.text_elements[i])
+          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, ''))
+        end
+      end
+    }
+
+    # # merge elements that are in the same column
+    columns = Tabula.group_by_columns(lines.map(&:text_elements).flatten.compact.uniq)
+
+    lines.each_with_index do |l, line_index|
+      next if l.text_elements.nil?
+
+      (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|
+        next if l.text_elements[t1].nil? or l.text_elements[t2].nil?
+
+        # if same column...
+        if columns.detect { |c| c.text_elements.include? l.text_elements[t1] } \
+          == columns.detect { |c| c.text_elements.include? l.text_elements[t2] }
+          if l.text_elements[t1].bottom <= l.text_elements[t2].bottom
+            l.text_elements[t1].merge!(l.text_elements[t2])
+            l.text_elements[t2] = nil
+          else
+            l.text_elements[t2].merge!(l.text_elements[t1])
+            l.text_elements[t1] = nil
+          end
+        end
+      end
+
+      l.text_elements.compact!
+    end
+
+    # remove duplicate lines
+    # TODO this shouldn't have happened here, check why we have to do
+    # this (maybe duplication is happening in the column merging phase?)
+    (0..lines.size - 2).each do |i|
+      next if lines[i].nil?
+      # if any of the elements on the next line is duplicated, kill
+      # the next line
+      if (0..lines[i].text_elements.size-1).any? { |j| lines[i].text_elements[j] == lines[i+1].text_elements[j] }
+        lines[i+1] = nil
+      end
+    end
+    lines.compact.map { |line|
+      line.text_elements.sort_by(&:left)
+    }
   end
 end

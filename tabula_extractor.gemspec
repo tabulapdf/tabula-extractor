@@ -11,6 +11,8 @@ Gem::Specification.new do |s|
   s.summary     = %q{extract tables from PDF files}
   s.description = %q{extract tables from PDF files}
 
+  s.platform = 'java'
+
   s.files         = `git ls-files`.split("\n")
   s.test_files    = `git ls-files -- {test,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }

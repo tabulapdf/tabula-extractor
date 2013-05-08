@@ -92,6 +92,12 @@ module Tabula
       @number = number
       self.texts = texts
     end
+
+    def get_text_by_area(top, left, bottom, right)
+      area = ZoneEntity.new(top, left, right - left, bottom - top)
+      self.texts.select { |t| t.overlaps? area }
+    end
+
   end
 
   class TextElement < ZoneEntity
