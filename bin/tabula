@@ -18,7 +18,7 @@ EOS
 
     opt :page, 'Page number', :default => 1
     opt :area, 'Portion of the page to analyze (top, left, bottom, right). Example: --area 269.875, 12.75, 790.5, 561. Default is entire page'
-    opt :format, 'Output format', :default => 'CSV'
+    opt :format, "Output format (#{FORMATS.join(",")})", :default => 'CSV'
     opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
   end
   # Trollop::die :volume, "must be non-negative" if opts[:volume] < 0
