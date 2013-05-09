@@ -47,11 +47,37 @@ module Tabula
       end
     end
 
+    class PagesInfoExtractor
+      def initialize(pdf_filename)
+        raise Errno::ENOENT unless File.exists?(pdf_filename)
+        @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
+        @all_pages = @pdf_file.getDocumentCatalog.getAllPages
+      end
+
+      def pages
+        Enumerator.new do |y|
+          begin
+            @all_pages.each_with_index do |page, i|
+              contents = page.getContents
+              next if contents.nil?
+              y.yield Tabula::Page.new(page.findCropBox.width,
+                                       page.findCropBox.height,
+                                       page.getRotation.to_i,
+                                       i+1,
+                                       [])
+            end
+          ensure
+            @pdf_file.close
+          end
+        end
+      end
+    end
+
 
     class CharacterExtractor
       include Observable
 
-      def initialize(pdf_filename, pages=[])
+      def initialize(pdf_filename, pages=[1])
         raise Errno::ENOENT unless File.exists?(pdf_filename)
         @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
