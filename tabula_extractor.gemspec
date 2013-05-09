@@ -2,6 +2,7 @@
 $:.push File.expand_path("../lib", __FILE__)
 require 'tabula/version'
 
+
 Gem::Specification.new do |s|
   s.name        = "tabula-extractor"
   s.version     = Tabula::VERSION

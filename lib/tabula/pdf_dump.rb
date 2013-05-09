@@ -7,7 +7,6 @@ require File.join(File.dirname(__FILE__), '../../target/pdfbox-app-1.8.0.jar')
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.util.PDFTextStripper
-java_import org.apache.pdfbox.pdfviewer.PageDrawer
 
 module Tabula
   module Extraction
@@ -63,31 +62,30 @@ module Tabula
       def extract
         Enumerator.new do |y|
           begin
-            @all_pages.each_with_index do |page, i|
-              next if !@pages.empty? && @pages.index(i+1).nil?
+            @pages.each do |i|
+              page = @all_pages.get(i-1)
               contents = page.getContents
               next if contents.nil?
-
               @extractor.clear!
               @extractor.processStream(page, page.findResources, contents.getStream)
 
-              y << Tabula::Page.new(page.findCropBox.width,
-                                    page.findCropBox.height,
-                                    page.getRotation.to_i,
-                                    i+1,
-                                    @extractor.characters.map { |char|
-                                      Tabula::TextElement.new(char.getYDirAdj,
-                                                              char.getXDirAdj,
-                                                              char.getWidthDirAdj,
-                                                              char.getHeightDir,
-                                                              nil,
-                                                              char.getFontSize,
-                                                              char.getCharacter)
-                                    })
+              y.yield Tabula::Page.new(page.findCropBox.width,
+                                       page.findCropBox.height,
+                                       page.getRotation.to_i,
+                                       i+1,
+                                       @extractor.characters.map { |char|
+                                         Tabula::TextElement.new(char.getYDirAdj,
+                                                                 char.getXDirAdj,
+                                                                 char.getWidthDirAdj,
+                                                                 char.getHeightDir,
+                                                                 nil,
+                                                                 char.getFontSize,
+                                                                 char.getCharacter)
+                                       })
             end
           ensure
             @pdf_file.close
-          end
+          end # begin
         end
       end
     end

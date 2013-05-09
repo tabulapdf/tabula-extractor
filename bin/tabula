@@ -43,7 +43,7 @@ def main
   opts, filename = parse_command_line
 
   extractor = Tabula::Extraction::CharacterExtractor.new(filename, [opts[:page]])
-  table = Tabula.make_table(extractor.extract.first.get_text(opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)))
+  table = Tabula.make_table(extractor.extract.next.get_text(opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)))
   out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'w')
   Tabula::Writers.send(opts[:format].to_sym, table, out)
   out.close
