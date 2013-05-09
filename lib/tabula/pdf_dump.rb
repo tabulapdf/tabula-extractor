@@ -63,8 +63,7 @@ module Tabula
               y.yield Tabula::Page.new(page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
-                                       i+1,
-                                       [])
+                                       i+1)
             end
           ensure
             @pdf_file.close
