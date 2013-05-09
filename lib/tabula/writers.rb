@@ -1,4 +1,5 @@
 require 'csv'
+require 'json'
 
 module Tabula
   module Writers
@@ -9,17 +10,21 @@ module Tabula
       }
     end
 
-    def Writers.TSV(lines, output=$stdout)
-      raise "not implemented"
+    def Writers.JSON(lines, output=$stdout)
+      output.write lines.to_json
     end
 
-    def Writers.JSON(lines, output=$stdout)
-      raise "not implemented"
+    def Writers.TSV(lines, output=$stdout)
+      tsv_string = lines.each { |l|
+        output.write(l.map(&:text).join("\t") + '\n')
+      }
     end
+
 
     def Writers.HTML(lines, output=$stdout)
       raise "not implemented"
     end
+
 
   end
 end
