@@ -1,7 +1,16 @@
 tabula-extractor
 ================
 
-Extract tables from PDF files
+Extract tables from PDF files. `tabula-extractor` is the table extraction engine that powers [Tabula](http://tabula.nerdpower.org), now available as a library and command line program.
+
+## Installation
+
+At the moment, `tabula-extractor` only works with JRuby. [Install JRuby](http://jruby.org/getting-started) and run
+
+``
+jruby -S gem install tabula-extractor
+``
+
 
 ## Usage
 
@@ -22,3 +31,4 @@ where [options] are:
          --help, -h:   Show this message
 ```
 
+Want to integrate `tabula-extractor` into your own application? We don't have docs yet, but [the tests](test/tests.rb) are a good source of information.
