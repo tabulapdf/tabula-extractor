@@ -86,7 +86,7 @@ module Tabula
   class Page < ZoneEntity
     attr_reader :rotation, :number
 
-    def initialize(width, height, rotation, number, texts)
+    def initialize(width, height, rotation, number, texts=[])
       super(0, 0, width, height)
       @rotation = rotation
       @number = number
@@ -98,6 +98,15 @@ module Tabula
       area = [0, 0, width, height] if area.nil?
       ze = ZoneEntity.new(area[0], area[1], area[3] - area[1], area[2] - area[0])
       self.texts.select { |t| t.overlaps? ze }
+    end
+
+    def to_json(options={})
+      { :width => self.width,
+        :height => self.height,
+        :number => self.number,
+        :rotation => self.rotation,
+        :texts => self.texts
+      }.to_json(options)
     end
 
   end
