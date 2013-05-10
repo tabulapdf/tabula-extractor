@@ -5,6 +5,22 @@ require_relative '../lib/tabula'
 
 FORMATS = ['CSV', 'TSV', 'HTML', 'JSON']
 
+def parse_pages_arg(pages_arg)
+  ranges = pages_arg.split(',').map(&:strip)
+  pages = []
+  ranges.each do |range|
+    s, e = range.split('-')
+    return nil if (s.nil? && e.nil?) || s !~ /\d+/ || (!e.nil? && e !~ /\d+/)
+    if e.nil?
+      pages << s.to_i
+    else
+      return nil if s.to_i > e.to_i
+      pages += (s.to_i..e.to_i).to_a
+    end
+  end
+  pages.sort
+end
+
 def parse_command_line
   opts = Trollop::options do
     version "tabula #{Tabula::VERSION} (c) 2012-2013 Manuel Aristarán"
@@ -16,12 +32,12 @@ Usage:
 where [options] are:
 EOS
 
-    opt :page, 'Page number', :default => 1, :type => Integer
-    opt :area, 'Portion of the page to analyze (top, left, bottom, right). Example: --area 269.875, 12.75, 790.5, 561. Default is entire page', :type => String, :default => nil
+    opt :pages, 'Comma separated list of ranges. Examples: --pages 1-3,5-7 or --pages 3. Default is --pages 1', :default => '1', :type => String
+    opt :area, 'Portion of the page to analyze (top,left,bottom,right). Example: --area 269.875,12.75,790.5,561. Default is entire page', :type => String, :default => nil
     opt :format, "Output format (#{FORMATS.join(",")})", :default => 'CSV'
     opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
   end
-
+  
   if !opts[:area].nil?
     unless opts[:area].split(',').size == 4 \
       && opts[:area].split(',').all? { |x| x.strip =~ /(\d+\.?\d*)/ }
@@ -39,13 +55,17 @@ EOS
 end
 
 def main
-
   opts, filename = parse_command_line
 
-  extractor = Tabula::Extraction::CharacterExtractor.new(filename, [opts[:page]])
-  table = Tabula.make_table(extractor.extract.next.get_text(opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)))
+  area = opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)
   out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'w')
-  Tabula::Writers.send(opts[:format].to_sym, table, out)
+  extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]))
+  extractor.extract.each do |page|
+    text = page.get_text(area)
+    Tabula::Writers.send(opts[:format].to_sym,
+                         Tabula.make_table(text),
+                         out)
+  end
   out.close
 end
 
