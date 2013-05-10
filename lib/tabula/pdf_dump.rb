@@ -44,6 +44,7 @@ module Tabula
         c = text.getCharacter
         # probably not the fastest way of detecting printable chars
         self.characters << text  if c =~ PRINTABLE_RE
+
       end
     end
 
@@ -99,12 +100,12 @@ module Tabula
                                        page.getRotation.to_i,
                                        i+1,
                                        @extractor.characters.map { |char|
-                                         Tabula::TextElement.new(char.getYDirAdj,
-                                                                 char.getXDirAdj,
-                                                                 char.getWidthDirAdj,
-                                                                 char.getHeightDir,
+                                         Tabula::TextElement.new(char.getYDirAdj.round(2),
+                                                                 char.getXDirAdj.round(2),
+                                                                 char.getWidthDirAdj.round(2),
+                                                                 char.getHeightDir.round(2),
                                                                  nil,
-                                                                 char.getFontSize,
+                                                                 char.getFontSize.round(2),
                                                                  char.getCharacter)
                                        })
             end
