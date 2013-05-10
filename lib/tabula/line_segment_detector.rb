@@ -38,7 +38,7 @@ module Tabula
       buffered_image.getRGB(0, 0, width, height, pixels, 0, width)
 
       pixels.each_with_index { |p, i|
-        # this sucks, memcpy() 8 bits at a time.
+        # this sucks, memcpy() 8 bytes at a time.
         # but I couldn't find a better way to write a double[] (java array) into
         # the Memory Pointer
         break if i == raster_size
