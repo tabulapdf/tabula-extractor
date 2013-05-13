@@ -805,7 +805,7 @@ static image_double ll_angle( image_double in, double threshold,
     for(y=0;y<n-1;y++)
       {
         adr = y*p+x;
-        
+
         /*
            Norm 2 computation using 2x2 pixel window:
              A B
@@ -820,7 +820,7 @@ static image_double ll_angle( image_double in, double threshold,
         //        fprintf(stderr, "pixelvalue %d: %f\n", adr, in->data[adr]);
         com1 = in->data[adr+p+1] - in->data[adr];
         com2 = in->data[adr+1]   - in->data[adr+p];
-        
+
         gx = com1+com2; /* gradient x component */
         gy = com1-com2; /* gradient y component */
         norm2 = gx*gx+gy*gy;
@@ -2246,13 +2246,8 @@ double * lsd(int * n_out, double * img, int X, int Y)
   /* LSD parameters */
   double scale = 0.8;       /* Scale the image by Gaussian filter to 'scale'. */
 
-  /* fprintf(stderr, "pixelvalue: %f\n", img[0]);  */
-  /* fprintf(stderr,"pixelvalue: %f\n",img[97717]); */
-  /* fprintf(stderr,"pixelvalue: %f\n",img[97633]); */
-  fprintf(stderr, "lines found: %d\n", *n_out);
-  fprintf(stderr, "pointer: %p\n", img);
   return lsd_scale(n_out,img,X,Y,scale);
-  
-  
+
+
 }
 /*----------------------------------------------------------------------------*/
