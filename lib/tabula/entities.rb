@@ -241,18 +241,57 @@ module Tabula
   end
 
   class Ruling < ZoneEntity
-    attr_accessor :color
+    # 2D line intersection test taken from comp.graphics.algorithms FAQ
+    def intersects?(other)
+      r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
+      / ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
 
-    def initialize(top, left, width, height, color)
-      super(top, left, width, height)
-      self.color = color
+        s = ((self.top-other.top)*(self.right-self.left) - (self.left-other.left)*(self.bottom-self.top)) \
+            / ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
+
+      r >= 0 and r < 1 and s >= 0 and s < 1
     end
 
-    def to_h
-      hash = super
-      hash[:color] = self.color
-      hash
+    def vertical?
+      left == right
     end
+
+    def horizontal?
+      top == bottom
+    end
+
+    def to_json(arg)
+      [left, top, right, bottom].to_json
+    end
+
+    def to_xml
+      "<ruling x1=\"%.2f\" y1=\"%.2f\" x2=\"%.2f\" y2=\"%.2f\" />" \
+      % [left, top, right, bottom]
+    end
+
+    def self.clean_rulings(rulings, max_distance=4)
+      horiz = rulings.select(&:horizontal?)
+      vert = rulings.select(&:vertical?)
+
+      # delete lines shorter than the mean
+      # note: this acts as a signal-noise filter for the hough transform
+      # noise lines are *much* shorter than actual rulings, so this works.
+      # a more robust metric wouldn't hurt, though :)
+      h_mean =  horiz.inject(0) { |accum, i| accum + i.width } / horiz.size
+      horiz.delete_if { |h| h.width < h_mean }
+
+      # - only keep horizontal rulings that intersect with at least one vertical ruling
+      # - only keep vertical rulings that intersect with at least one horizontal ruling
+      # yeah, it's a naive heuristic. but hey, it works.
+
+      vert.delete_if  { |v| !horiz.any? { |h| h.intersects?(v) } } unless horiz.empty?
+      horiz.delete_if { |h| !vert.any?  { |v| v.intersects?(h) } } unless vert.empty?
+
+      return { :horizontal => horiz, :vertical => vert }
+    end
+
+
+
 
   end
 

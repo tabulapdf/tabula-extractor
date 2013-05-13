@@ -1,5 +1,11 @@
-require 'ffi'
 require 'java'
+require 'rbconfig'
+
+require 'ffi'
+
+require_relative './entities'
+
+
 
 java_import javax.imageio.ImageIO
 java_import java.awt.image.BufferedImage
@@ -7,7 +13,17 @@ java_import java.awt.image.BufferedImage
 module Tabula
   module LSD
     extend FFI::Library
-    ffi_lib ['liblsd.dylib'] 
+    ffi_lib File.expand_path('../../ext/' + case RbConfig::CONFIG['host_os']
+                                            when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+                                              'liblsd.dll'
+                                            when /darwin|mac os/
+                                              'liblsd.dylib'
+                                            when /linux/
+                                              'liblsd.so'
+                                            else
+                                              raise "unknown os: #{RbConfig::CONFIG['host_os']}"
+                                            end,
+                             File.dirname(__FILE__))
 
     attach_function :lsd, [ :pointer, :buffer_in, :int, :int ], :pointer
 
@@ -22,10 +38,16 @@ module Tabula
 
       lines_found = lines_found_ptr.get_int
 
+      rv = []
       lines_found.times do |i|
         # TODO generate and return Line objects
-        puts out[7*8*i].read_array_of_type(:double, 7).inspect
+        a = out[7*8*i].read_array_of_type(:double, 7)
+        rv << Tabula::Ruling.new(a[1],
+                                 a[0],
+                                 a[2] - a[0],
+                                 a[3] - a[1])
       end
+      return rv
     end
 
     private
@@ -53,5 +75,3 @@ end
 if __FILE__ == $0
   puts Tabula::LSD.detect_lines ARGV[0]
 end
-
-
