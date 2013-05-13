@@ -1,14 +1,9 @@
-CFLAGS := -fPIC -O3 -g -Wall -Werror 
-CC := gcc
-MAJOR := 1
-MINOR := 0
-NAME := lsd
-VERSION := $(MAJOR).$(MINOR)
+include Makefile.defaults
 
 lib: lib$(NAME).$(VERSION).dylib
 
 lib$(NAME).$(VERSION).dylib: $(NAME).o
-	$(CC) -dynamiclib -lm -o lib$(NAME).dylib $^ 
+	$(CC) -dynamiclib -lm -o lib$(NAME).dylib $^
 
 clean:
 	$(RM) *.o *.so* *.dylib
