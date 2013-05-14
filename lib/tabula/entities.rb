@@ -245,6 +245,8 @@ module Tabula
 
   end
 
+  require_relative './core_ext'
+
   class Ruling < ZoneEntity
     # 2D line intersection test taken from comp.graphics.algorithms FAQ
     def intersects?(other)
@@ -282,24 +284,48 @@ module Tabula
         .group_by(&:top)
         .values.reduce([]) { |memo, rs|
         rs.sort_by(&:left)
+
         memo << if rs.size > 1
                   Tabula::Ruling.new(rs[0].top, rs[0].left, rs[-1].right - rs[0].left, 0)
                 else
                   rs.first
                 end
+
       }
 
       vert = rulings.select(&:vertical?)
         .group_by(&:left)
         .values.reduce([]) { |memo, rs|
+
         rs = rs.sort_by(&:top)
         memo << if rs.size > 1
                   Tabula::Ruling.new(rs[0].top, rs[0].left, 0, rs[-1].bottom - rs[0].top)
-                else
+                else 
                   rs.first
                 end
-      }
+        }
+        .sort_by(&:left)
+      
+      skip = false
+      v = []
+      (vert.size - 1).times { |i|
+           break if i == vert.size - 1
+           if skip
+             skip = false; 
+             next
+           end
+           d = (vert[i+1].left - vert[i].left).abs
+           puts d
+           v << if d < 4 # THRESHOLD DISTANCE between vertical lines
+                  skip = true
+                  Tabula::Ruling.new([vert[i+1].top, vert[i].top].min, vert[i].left + d / 2, 0, [vert[i+1].height.abs, vert[i].height.abs].max)
+                else
+                  vert[i]
+                end
+        }
+      vert = v
 
+      
       # - only keep horizontal rulings that intersect with at least one vertical ruling
       # - only keep vertical rulings that intersect with at least one horizontal ruling
       # yeah, it's a naive heuristic. but hey, it works.
