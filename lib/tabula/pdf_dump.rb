@@ -81,7 +81,7 @@ module Tabula
         raise Errno::ENOENT unless File.exists?(pdf_filename)
         @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
-        @pages = pages
+        @pages = pages == :all ?  (1..@all_pages.size) : pages
         @extractor = TextExtractor.new
       end
 
