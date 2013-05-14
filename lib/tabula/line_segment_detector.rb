@@ -4,10 +4,12 @@ require 'rbconfig'
 require 'ffi'
 
 require_relative './entities'
-
+require_relative './pdf_render'
+require File.join(File.dirname(__FILE__), '../../target/pdfbox-app-1.8.0.jar')
 
 java_import javax.imageio.ImageIO
 java_import java.awt.image.BufferedImage
+java_import org.apache.pdfbox.pdmodel.PDDocument
 
 module Tabula
   module LSD
@@ -27,9 +29,23 @@ module Tabula
     attach_function :lsd, [ :pointer, :buffer_in, :int, :int ], :pointer
     attach_function :free, [:pointer], :void
 
+
+    def LSD.detect_lines_in_pdf_page(pdf_path, page_number, scale_factor=1)
+      pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_path), nil)
+      bi = Tabula::Render.pageToBufferedImage(pdf_file.getDocumentCatalog.getAllPages[page_number - 1])
+      detect_lines(bi,scale_factor)
+    end
+
+    # image can be either a string (path to image) or a Java::JavaAwtImage::BufferedImage
     # image to pixels: http://stackoverflow.com/questions/6524196/java-get-pixel-array-from-image
-    def LSD.detect_lines(image_path, scale_factor=1)
-      bimage = ImageIO.read(java.io.File.new(image_path))
+    def LSD.detect_lines(image, scale_factor=1)
+      bimage = if image.class == Java::JavaAwtImage::BufferedImage 
+                 image
+               elsif image.class == String
+                 ImageIO.read(java.io.File.new(image))
+                 else
+                 raise ArgumentError, 'image must be a string or a BufferedImage'
+               end
       image = LSD.image_to_image_double(bimage)
 
       lines_found_ptr = FFI::MemoryPointer.new(:int, 1)
@@ -91,5 +107,5 @@ module Tabula
 end
 
 if __FILE__ == $0
-  puts Tabula::LSD.detect_lines ARGV[0]
+  puts Tabula::LSD.detect_lines_in_pdf_page ARGV[0], ARGV[1].to_i
 end

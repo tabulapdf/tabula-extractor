@@ -53,6 +53,7 @@ end
 if __FILE__ == $0
   pdf_file = PDDocument.loadNonSeq(java.io.File.new(ARGV[0]), nil)
   bi = Tabula::Render.pageToBufferedImage(pdf_file.getDocumentCatalog.getAllPages[ARGV[1].to_i - 1])
+  puts bi.class
   ImageIO.write(bi, 'png',
                 java.io.File.new('notext.png'))
 end
