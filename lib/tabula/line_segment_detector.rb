@@ -25,6 +25,7 @@ module Tabula
                              File.dirname(__FILE__))
 
     attach_function :lsd, [ :pointer, :buffer_in, :int, :int ], :pointer
+    attach_function :free, [:pointer], :void
 
     # image to pixels: http://stackoverflow.com/questions/6524196/java-get-pixel-array-from-image
     def LSD.detect_lines(image_path, scale_factor=1)
@@ -58,6 +59,11 @@ module Tabula
                                    (p2[1] - p1[1]) * scale_factor)
         end
       end
+
+      free(out)
+      free(lines_found_ptr)
+      image = nil
+
       return rv
     end
 
