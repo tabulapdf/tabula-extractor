@@ -14,7 +14,6 @@ module Tabula
     def initialize(text_elements, options = {})
       self.text_elements = text_elements
       self.options = DEFAULT_OPTIONS.merge(options)
-      @merged = false
       merge_words! if self.options[:merge_words]
     end
 
@@ -230,6 +229,7 @@ module Tabula
         lines[i+1] = nil
       end
     end
+
     lines.compact.map { |line|
       line.text_elements.sort_by(&:left)
     }
