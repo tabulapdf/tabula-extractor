@@ -280,6 +280,9 @@ module Tabula
 
       # merge horizontal and vertical lines
       # TODO this should be iterative
+
+      skip = false
+
       horiz = rulings.select(&:horizontal?)
         .group_by(&:top)
         .values.reduce([]) { |memo, rs|
@@ -292,6 +295,25 @@ module Tabula
                 end
 
       }
+      .sort_by(&:top)
+
+      h = []
+      (horiz.size - 1).times do |i| 
+        break if i == horiz.size - 1
+        if skip
+          skip = false; 
+          next
+        end
+        d = (horiz[i+1].top - horiz[i].top).abs
+
+        h << if d < 4 # THRESHOLD DISTANCE between horizontal lines
+               skip = true
+               Tabula::Ruling.new(horiz[i].top + d / 2, [horiz[i].left, horiz[i+1].left].min, [horiz[i+1].width.abs, horiz[i].width.abs].max, 0)
+             else
+               horiz[i]
+             end
+      end
+      horiz = h
 
       vert = rulings.select(&:vertical?)
         .group_by(&:left)
@@ -300,29 +322,28 @@ module Tabula
         rs = rs.sort_by(&:top)
         memo << if rs.size > 1
                   Tabula::Ruling.new(rs[0].top, rs[0].left, 0, rs[-1].bottom - rs[0].top)
-                else 
+                else rs.first
                   rs.first
                 end
         }
         .sort_by(&:left)
       
-      skip = false
       v = []
-      (vert.size - 1).times { |i|
+      (vert.size - 1).times do |i|
            break if i == vert.size - 1
            if skip
              skip = false; 
              next
            end
            d = (vert[i+1].left - vert[i].left).abs
-           puts d
+
            v << if d < 4 # THRESHOLD DISTANCE between vertical lines
                   skip = true
                   Tabula::Ruling.new([vert[i+1].top, vert[i].top].min, vert[i].left + d / 2, 0, [vert[i+1].height.abs, vert[i].height.abs].max)
                 else
                   vert[i]
                 end
-        }
+      end
       vert = v
 
       
