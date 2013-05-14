@@ -61,7 +61,8 @@ module Tabula
       end
 
       free(out)
-      free(lines_found_ptr)
+      bimage.flush
+      bimage.getGraphics.dispose
       image = nil
 
       return rv
