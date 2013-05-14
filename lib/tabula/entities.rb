@@ -270,22 +270,40 @@ module Tabula
     end
 
     def self.clean_rulings(rulings, max_distance=4)
-      horiz = rulings.select(&:horizontal?)
-      vert = rulings.select(&:vertical?)
 
-      # delete lines shorter than the mean
-      # note: this acts as a signal-noise filter for the hough transform
-      # noise lines are *much* shorter than actual rulings, so this works.
-      # a more robust metric wouldn't hurt, though :)
-      h_mean =  horiz.inject(0) { |accum, i| accum + i.width } / horiz.size
-      horiz.delete_if { |h| h.width < h_mean }
+      # merge horizontal and vertical lines
+      # TODO this should be iterative
+      horiz = rulings.select(&:horizontal?)
+        .group_by(&:top)
+        .values.reduce([]) { |memo, rs|
+        rs.sort_by(&:left)
+        memo << if rs.size > 1
+                  Tabula::Ruling.new(rs[0].top, rs[0].left, rs[-1].right - rs[0].left, 0)
+                else
+                  rs.first
+                end
+      }
+
+      vert = rulings.select(&:vertical?)
+        .group_by(&:left)
+        .values.reduce([]) { |memo, rs|
+        rs = rs.sort_by(&:top)
+        memo << if rs.size > 1
+                  Tabula::Ruling.new(rs[0].top, rs[0].left, 0, rs[-1].bottom - rs[0].top)
+                else
+                  rs.first
+                end
+      }
 
       # - only keep horizontal rulings that intersect with at least one vertical ruling
       # - only keep vertical rulings that intersect with at least one horizontal ruling
       # yeah, it's a naive heuristic. but hey, it works.
 
-      vert.delete_if  { |v| !horiz.any? { |h| h.intersects?(v) } } unless horiz.empty?
-      horiz.delete_if { |h| !vert.any?  { |v| v.intersects?(h) } } unless vert.empty?
+      # h_mean =  horiz.reduce(0) { |accum, i| accum + i.width } / horiz.size
+      # horiz.reject { |h| h.width < h_mean }
+
+      #vert.delete_if  { |v| !horiz.any? { |h| h.intersects?(v) } } unless horiz.empty?
+      #horiz.delete_if { |h| !vert.any?  { |v| v.intersects?(h) } } unless vert.empty?
 
       return { :horizontal => horiz, :vertical => vert }
     end

@@ -28,7 +28,7 @@ module Tabula
     attach_function :lsd, [ :pointer, :buffer_in, :int, :int ], :pointer
 
     # image to pixels: http://stackoverflow.com/questions/6524196/java-get-pixel-array-from-image
-    def LSD.detect_lines(image_path)
+    def LSD.detect_lines(image_path, scale_factor=1)
       bimage = ImageIO.read(java.io.File.new(image_path))
       image = LSD.image_to_image_double(bimage)
 
@@ -40,12 +40,17 @@ module Tabula
 
       rv = []
       lines_found.times do |i|
-        # TODO generate and return Line objects
         a = out[7*8*i].read_array_of_type(:double, 7)
-        rv << Tabula::Ruling.new(a[1],
-                                 a[0],
-                                 a[2] - a[0],
-                                 a[3] - a[1])
+        a_round = a[0..3].map(&:round)
+        p1, p2 = [[a_round[0], a_round[1]], [a_round[2], a_round[3]]]
+
+        # discard short lines
+        unless ((p1[0] != p2[0]) && (p1[0] - p2[0]).abs < minimum_length) || \
+          ((p1[1] != p2[1]) && (p1[1] - p2[1]).abs < minimum_length)
+          rv << Tabula::Ruling.new(p1[1] * scale_factor,
+                                   p1[0] * scale_factor,
+                                   (p2[0] - p1[0]) * scale_factor,
+                                   (p2[1] - p1[1]) * scale_factor)
       end
       return rv
     end

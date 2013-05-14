@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
 
   s.platform = 'java'
 
-  s.files         = `git ls-files`.split("\n")
+  s.files         = `git ls-files`.split("\n") + Dir['ext/liblsd.{so,dylib,dll}']
   s.test_files    = `git ls-files -- {test,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
