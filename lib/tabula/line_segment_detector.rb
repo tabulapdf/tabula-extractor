@@ -6,7 +6,6 @@ require 'ffi'
 require_relative './entities'
 
 
-
 java_import javax.imageio.ImageIO
 java_import java.awt.image.BufferedImage
 
@@ -41,6 +40,7 @@ module Tabula
       rv = []
       lines_found.times do |i|
         a = out[7*8*i].read_array_of_type(:double, 7)
+
         a_round = a[0..3].map(&:round)
         p1, p2 = [[a_round[0], a_round[1]], [a_round[2], a_round[3]]]
 
@@ -51,6 +51,7 @@ module Tabula
                                    p1[0] * scale_factor,
                                    (p2[0] - p1[0]) * scale_factor,
                                    (p2[1] - p1[1]) * scale_factor)
+        end
       end
       return rv
     end
