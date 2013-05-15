@@ -37,6 +37,7 @@ module Tabula
     def LSD.detect_lines_in_pdf_page(pdf_path, page_number, scale_factor=1)
       pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_path), nil)
       bi = Tabula::Render.pageToBufferedImage(pdf_file.getDocumentCatalog.getAllPages[page_number - 1])
+      pdf_file.close
       detect_lines(bi,scale_factor)
     end
 
