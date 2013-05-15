@@ -1,9 +1,13 @@
 include Makefile.defaults
 
+# link statically with musl-libc
+CC = /home/manuel/Work/musl/bin/musl-gcc
+CFLAGS := -fPIC -Wall -Werror
+
 lib: lib$(NAME).$(VERSION).so
 
 lib$(NAME).$(VERSION).so: $(NAME).o
-	$(CC) -shared -lm -o lib$(NAME).so $^
+	$(CC) -shared -static -o lib$(NAME).so $^
 
 $(NAME)_test: lib$(NAME).$(VERSION).so
 	$(CC) lsd_call_example.c -o $@ -L. -l$(NAME)
