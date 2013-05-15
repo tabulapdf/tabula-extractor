@@ -20,7 +20,11 @@ module Tabula
                                             when /darwin|mac os/
                                               'liblsd.dylib'
                                             when /linux/
-                                              'liblsd.so'
+                                              if RbConfig::CONFIG['target_cpu'] == 'x86_64'
+                                                'liblsd-linux64.so'
+                                              else
+                                                raise 'Linux i386 still not supported'
+                                              end
                                             else
                                               raise "unknown os: #{RbConfig::CONFIG['host_os']}"
                                             end,
@@ -39,7 +43,7 @@ module Tabula
     # image can be either a string (path to image) or a Java::JavaAwtImage::BufferedImage
     # image to pixels: http://stackoverflow.com/questions/6524196/java-get-pixel-array-from-image
     def LSD.detect_lines(image, scale_factor=1)
-      bimage = if image.class == Java::JavaAwtImage::BufferedImage 
+      bimage = if image.class == Java::JavaAwtImage::BufferedImage
                  image
                elsif image.class == String
                  ImageIO.read(java.io.File.new(image))
@@ -76,7 +80,7 @@ module Tabula
         end
       end
 
-      free(out)
+      # free(out) <- this makes musl-libc crash. why?
       bimage.flush
       bimage.getGraphics.dispose
       image = nil
