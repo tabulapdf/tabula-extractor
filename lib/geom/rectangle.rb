@@ -29,17 +29,26 @@ module Geometry
       [point1.x, point2.x].min
     end
 
+    alias_method :left, :x
+
     def y
       [point1.y, point2.y].min
     end
+
+    alias_method :top, :y
 
     def x2
       [point1.x, point2.x].min + width
     end
 
+    alias_method :right, :x2
+
     def y2
       [point1.x, point2.x].min + height
     end
+
+    alias_method :bottom, :y2
+
 
     def width
       (point1.x - point2.x).abs
@@ -57,8 +66,12 @@ module Geometry
       [self.x.to_i / SIMILARITY_DIVISOR, self.y.to_i / SIMILARITY_DIVISOR, self.width.to_i / SIMILARITY_DIVISOR, self.height.to_i / SIMILARITY_DIVISOR].to_s
     end
 
-    def dims
-      [self.x, self.y, self.width, self.height]
+    def dims(*format)
+      if format
+        format.map{|method| self.send(method)}
+      else
+        [self.x, self.y, self.width, self.height]
+      end
     end
 
     def contains?(other_x, other_y)

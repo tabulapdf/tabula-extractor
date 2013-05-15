@@ -92,7 +92,7 @@ module Tabula
         horizontal_lines = lines.select &:horizontal?
       end
 
-      find_tables(vertical_lines, horizontal_lines).inject([]){|memo, next_rect| Geometry::Rectangle.unionize(memo, next_rect )}.sort_by(&:area).reverse.map(&:dims)
+      find_tables(vertical_lines, horizontal_lines).inject([]){|memo, next_rect| Geometry::Rectangle.unionize(memo, next_rect )}.sort_by(&:area).reverse
     end
 
     def TableGuesser.cv_find_lines(src, threshold, name) 
