@@ -3,7 +3,7 @@ require 'json'
 require_relative '../geom/point'
 require_relative '../geom/segment'
 require_relative '../geom/rectangle'
-
+require_relative './pdf_render'
 #CLASSPATH=:./target/javacpp.jar:./target/javacv.jar:./target/javacv-macosx-x86_64.jar:./target/PDFRenderer-0.9.1.jar
 
 require File.join(File.dirname(__FILE__), '../../target/javacpp.jar')
@@ -18,8 +18,13 @@ java_import(com.googlecode.javacv.cpp.opencv_core){'Opencv_core'}
 java_import(com.googlecode.javacv.cpp.opencv_imgproc){'Opencv_imgproc'}
 
 java_import(com.googlecode.javacv.cpp.opencv_highgui){'Opencv_highgui'}
-java_import com.sun.pdfview.PDFFile
-java_import com.sun.pdfview.PDFPage
+
+# java_import com.sun.pdfview.PDFFile
+# java_import com.sun.pdfview.PDFPage
+
+java_import org.apache.pdfbox.pdmodel.PDDocument
+java_import org.apache.pdfbox.pdfviewer.PageDrawer
+
 
 java_import java.awt.image.BufferedImage;
 java_import(java.io.File){'JavaFile'};
@@ -43,17 +48,17 @@ module Tabula
     end
 
     def TableGuesser.find_rects(filename)
-      pdf = load_pdf(filename)
+      pdf = load_pdfbox_pdf(filename)
 
-      if pdf.getNumPages == 0
+      if pdf.getNumberOfPages == 0
         puts "not a pdf!"
         exit
       end
       
-      puts "pages: " + pdf.getNumPages.to_s
+      puts "pages: " + pdf.getNumberOfPages.to_s
       
       tables = []
-      pdf.getNumPages.times do |i|          
+      pdf.getNumberOfPages.times do |i|          
         #gotcha: with PDFView, PDF pages are 1-indexed. If you ask for page 0 and then page 1, you'll get the first page twice. So start with index 1.
         tables << find_rects_on_page(pdf, i + 1)
       end
@@ -62,15 +67,20 @@ module Tabula
     def TableGuesser.find_rects_on_page(pdf, page_index)
       tunable_threshold = 500;
 
-      if pdf.getNumPages > 100
+      if pdf.getNumberOfPages > 100
         STDERR.puts("detecting tables on page #{page_index}")
       end
 
-      apage = pdf.getPage(page_index, true)
-      box = apage.getPageBox()
+      # apage = pdf.getPage(page_index, true) #old com.sun.pdfview stuff.
+      # box = apage.getPageBox()
+      # #Note: sometimes calling getWidth() and getHeight() on apage gives the right result; this used to be called on box, in what DF wrote. Does that ever work better?.
+      # image = apage.getImage(apage.getWidth().to_i, apage.getHeight().to_i , nil ,nil ,true ,true )
 
-      #Note: sometimes calling getWidth() and getHeight() on apage gives the right result; this used to be called on box, in what DF wrote. Does that ever work better?.
-      image = apage.getImage(apage.getWidth().to_i, apage.getHeight().to_i , nil ,nil ,true ,true )
+      pdfbox_page = pdf.getDocumentCatalog.getAllPages[page_index]
+
+      page_width = pdfbox_page.findCropBox.getWidth
+
+      image = Tabula::Render.pageToBufferedImage(pdfbox_page, page_width)
 
       iplImage = Opencv_core::IplImage.createFrom(image)
       lines = cv_find_lines(iplImage, tunable_threshold, page_index)
@@ -132,13 +142,16 @@ module Tabula
       return lines_list
     end
 
-    def TableGuesser.load_pdf(filename)
+    def TableGuesser.load_pdfview_pdf(filename)
       raf = RandomAccessFile.new(filename, "r")
       channel = raf.channel
       buf = channel.map(MapMode::READ_ONLY, 0, channel.size())
       PDFFile.new(buf)
     end
 
+    def TableGuesser.load_pdfbox_pdf(filename)
+      PDDocument.loadNonSeq(java.io.File.new(filename), nil)
+    end
 
     def TableGuesser.euclidean_distance_helper(x1, y1, x2, y2)
       return Math.sqrt( ((x1 - x2) ** 2) + ((y1 - y2) ** 2) )
