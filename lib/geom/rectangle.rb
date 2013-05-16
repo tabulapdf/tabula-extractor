@@ -32,19 +32,21 @@ module Geometry
     alias_method :left, :x
 
     def y
+      #puts "y: [#{point1.y} #{point2.y}].min" 
       [point1.y, point2.y].min
     end
 
     alias_method :top, :y
 
     def x2
-      [point1.x, point2.x].min + width
+      [point1.x, point2.x].max
     end
 
     alias_method :right, :x2
 
     def y2
-      [point1.x, point2.x].min + height
+      #puts "y2: [#{point1.y} #{point2.y}].max" 
+      [point1.y, point2.y].max
     end
 
     alias_method :bottom, :y2
@@ -89,7 +91,7 @@ module Geometry
       new_x2 = [x2, other_rect.x2].max
       new_y2 = [y2, other_rect.y2].max
       new_width = (new_x2 - new_x1).abs
-      new_height = (new_y1 - new_y1).abs
+      new_height = (new_y2 - new_y1).abs
       Rectangle.new_by_x_y_dims(new_x1, new_y1, new_width, new_height)
     end
   end
