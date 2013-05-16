@@ -58,9 +58,9 @@ module Tabula
     end
 
     def get_columns
-      Tabula.group_by_columns(text_elements).map { |c|
+      Tabula.group_by_columns(text_elements).map do |c|
         {'left' => c.left, 'right' => c.right, 'width' => c.width}
-      }
+      end
     end
 
     def get_line_boundaries
@@ -151,11 +151,11 @@ module Tabula
   end
 
   def Tabula.lines_to_csv(lines)
-    CSV.generate { |csv|
-      lines.each { |l|
+    CSV.generate do |csv|
+      lines.each do |l|
         csv << l.map { |c| c.text.strip }
-      }
-    }
+      end
+    end
   end
 
   ONLY_SPACES_RE = Regexp.new('^\s+$')
@@ -170,30 +170,30 @@ module Tabula
 
     # find all the text elements
     # contained within each detected line (table row) boundary
-    line_boundaries.each { |lb|
+    line_boundaries.each do |lb|
       line = Line.new
 
-      line_members = text_elements.find_all { |te|
+      line_members = text_elements.find_all do |te|
         te.vertically_overlaps?(lb)
-      }
+      end
 
       text_elements -= line_members
 
-      line_members.sort_by(&:left).each { |te|
+      line_members.sort_by(&:left).each do |te|
         # skip text_elements that only contain spaces
         next if te.text =~ ONLY_SPACES_RE
         line << te
-      }
+      end
 
       lines << line if line.text_elements.size > 0
-    }
+    end
 
     lines.sort_by!(&:top)
 
     columns = Tabula.group_by_columns(lines.map(&:text_elements).flatten.compact.uniq).sort_by(&:left)
 
     # # insert empty cells if needed
-    lines.each_with_index { |l, line_index|
+    lines.each_with_index do |l, line_index|
       next if l.text_elements.nil?
       l.text_elements.compact! # TODO WHY do I have to do this?
       l.text_elements.uniq!  # TODO WHY do I have to do this?
@@ -208,7 +208,7 @@ module Tabula
           l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, ''))
         end
       end
-    }
+    end
 
     # # merge elements that are in the same column
     columns = Tabula.group_by_columns(lines.map(&:text_elements).flatten.compact.uniq)
@@ -247,8 +247,8 @@ module Tabula
       end
     end
 
-    lines.compact.map { |line|
+    lines.compact.map do |line|
       line.text_elements.sort_by(&:left)
-    }
+    end
   end
 end
