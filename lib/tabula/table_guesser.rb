@@ -117,7 +117,10 @@ module Tabula
     end
 
     def TableGuesser.find_rects_on_page(pdf, page_index)
-      lines = find_lines_on_page(pdf, page_index, 10)
+      find_rects_from_lines(find_lines_on_page(pdf, page_index, 10))
+    end
+
+    def TableGuesser.find_rects_from_lines(lines)
       horizontal_lines = lines.select &:horizontal?
       vertical_lines = lines.select &:vertical?
       find_tables(vertical_lines, horizontal_lines).inject([]){|memo, next_rect| Geometry::Rectangle.unionize(memo, next_rect )}.sort_by(&:area).reverse
