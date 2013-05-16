@@ -62,46 +62,64 @@ module Tabula
         #gotcha: with PDFView, PDF pages are 1-indexed. If you ask for page 0 and then page 1, you'll get the first page twice. So start with index 1.
         tables << find_rects_on_page(pdf, i + 1)
       end
+      tables
     end
 
-    def TableGuesser.find_rects_on_page(pdf, page_index)
+    def TableGuesser.find_lines(filename)
+      pdf = load_pdfbox_pdf(filename)
+
+      if pdf.getNumberOfPages == 0
+        puts "not a pdf!"
+        exit
+      end
+      
+      puts "pages: " + pdf.getNumberOfPages.to_s
+      
+      lines = []
+      pdf.getNumberOfPages.times do |i|          
+        #gotcha: with PDFView, PDF pages are 1-indexed. If you ask for page 0 and then page 1, you'll get the first page twice. So start with index 1.
+        lines << find_lines_on_page(pdf, i + 1)
+      end
+      lines
+    end
+
+    def TableGuesser.find_lines_on_page(pdf, page_index, minimal_lines_threshold=10)
+      #block can be used for filtering lines before they're turned into just arrays of numbers
       tunable_threshold = 500;
 
       if pdf.getNumberOfPages > 100
         STDERR.puts("detecting tables on page #{page_index}")
       end
 
-      # apage = pdf.getPage(page_index, true) #old com.sun.pdfview stuff.
-      # box = apage.getPageBox()
-      # #Note: sometimes calling getWidth() and getHeight() on apage gives the right result; this used to be called on box, in what DF wrote. Does that ever work better?.
-      # image = apage.getImage(apage.getWidth().to_i, apage.getHeight().to_i , nil ,nil ,true ,true )
-
       pdfbox_page = pdf.getDocumentCatalog.getAllPages[page_index]
-
       page_width = pdfbox_page.findCropBox.getWidth
-
-      image = Tabula::Render.pageToBufferedImage(pdfbox_page, page_width)
-
+      draw_page_width = 2048 #needs to be big, or some lines won't get drawn.
+      image = Tabula::Render.pageToBufferedImage(pdfbox_page, draw_page_width)
+      # ImageIO.write(image, 'png',
+      #           java.io.File.new("column_pictures/notext-#{page_index}.png"))
       iplImage = Opencv_core::IplImage.createFrom(image)
       lines = cv_find_lines(iplImage, tunable_threshold, page_index)
-      vertical_lines = lines.select &:vertical?
-      horizontal_lines = lines.select &:horizontal?
-    
+
       current_try = tunable_threshold
       
-      #TODO: set higher threshold for finding columns?
-      minimal_lines_threshold = 10 #for finding tables, this should be very high. The cost of a false positive line is low; the cost of a false negative may be high.
-      while (vertical_lines.size() < minimal_lines_threshold || horizontal_lines.size() < minimal_lines_threshold) do #
+      #for finding tables, minimal_lines_threshold should be very high. The cost of a false positive line is low; the cost of a false negative may be high.
+      while lines.count(&:vertical?) < minimal_lines_threshold || lines.count(&:horizontal?) < minimal_lines_threshold do#lines.count < minimal_lines_threshold do #
         current_try -= 20 #sacrifice speed for success.
 
         # we might need to give up..
         break if current_try < 10
         
         lines = cv_find_lines(iplImage, current_try, page_index)
-        vertical_lines = lines.select &:vertical?
-        horizontal_lines = lines.select &:horizontal?
       end
+      lines.each{|l| l.scale!( page_width / draw_page_width)}
 
+      lines
+    end
+
+    def TableGuesser.find_rects_on_page(pdf, page_index)
+      lines = find_lines_on_page(pdf, page_index, 10)
+      horizontal_lines = lines.select &:horizontal?
+      vertical_lines = lines.select &:vertical?
       find_tables(vertical_lines, horizontal_lines).inject([]){|memo, next_rect| Geometry::Rectangle.unionize(memo, next_rect )}.sort_by(&:area).reverse
     end
 
