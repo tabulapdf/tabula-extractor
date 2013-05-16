@@ -58,7 +58,7 @@ module Tabula
     end
 
     def get_columns
-      Tabula.group_by_columns(text_elements).map do |c|
+      TableExtractor.new(text_elements, {:merge_words => options[:merge_words]}).group_by_columns.map do |c|
         {'left' => c.left, 'right' => c.right, 'width' => c.width}
       end
     end
@@ -191,7 +191,7 @@ module Tabula
 
     lines.sort_by!(&:top)
 
-    columns = Tabula.group_by_columns(lines.map(&:text_elements).flatten.compact.uniq).sort_by(&:left)
+    columns = TableExtractor.new(lines.map(&:text_elements).flatten.compact.uniq, {:merge_words => options[:merge_words]}).group_by_columns.sort_by(&:left)
 
     # # insert empty cells if needed
     lines.each_with_index do |l, line_index|
@@ -212,8 +212,6 @@ module Tabula
     end
 
     # # merge elements that are in the same column
-    #columns = Tabula.group_by_columns(lines.map(&:text_elements).flatten.compact.uniq)
-
     lines.each_with_index do |l, line_index|
       next if l.text_elements.nil?
 
