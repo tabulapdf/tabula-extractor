@@ -10,7 +10,7 @@ module Geometry
 
     def Rectangle.unionize(non_overlapping_rectangles, next_rect)
       #if next_rect doesn't overlap any of non_overlapping_rectangles
-      if (overlapping = non_overlapping_rectangles.select{|r| STDERR.puts(r.inspect); next_rect.overlaps? r}) && !non_overlapping_rectangles.empty?
+      if (overlapping = non_overlapping_rectangles.select{|r| next_rect.overlaps? r}) && !non_overlapping_rectangles.empty?
         #remove all of those that it overlaps from non_overlapping_rectangles and 
         non_overlapping_rectangles -= overlapping
         #add to non_overlapping_rectangles the bounding box of the overlapping rectangles.
@@ -82,8 +82,11 @@ module Geometry
 
     def overlaps?(other_rect)
       return contains?(other_rect.x, other_rect.y) || contains?(other_rect.x2, other_rect.y2) || 
-                contains?(other_rect.x, other_rect.y2) || contains?(other_rect.x2, other_rect.y) #TODO or other_rect.overlaps(other)
+                contains?(other_rect.x, other_rect.y2) || contains?(other_rect.x2, other_rect.y) ||
+                other_rect.contains?(x, y) || other_rect.contains?(x2, y2) || 
+                other_rect.contains?(x, y2) || other_rect.contains?(x2, y)
     end 
+    
     def bounding_box(other_rect)
       #new rect with bounding box of these two
       new_x1 = [x, other_rect.x].min
