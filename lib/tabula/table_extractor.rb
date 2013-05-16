@@ -27,14 +27,31 @@ module Tabula
     # (ie, take into account vertical ruling lines if available)
     def group_by_columns
       columns = []
-      tes = self.text_elements.sort_by(&:left)
+      tes = self.text_elements.sort_by &:left
 
       # we don't have vertical rulings
-      tes.each do |te|
-        if column = columns.detect { |c| te.horizontally_overlaps?(c) }
-          column << te
-        else
-          columns << Column.new(te.left, te.width, [te])
+      if self.options[:vertical_rulings].empty?
+        tes.each do |te|
+          if column = columns.detect { |c| te.horizontally_overlaps?(c) }
+            column << te
+          else
+            columns << Column.new(te.left, te.width, [te])
+          end
+        end
+      else
+        self.options[:vertical_rulings].sort_by! &:left
+        1.upto(self.options[:vertical_rulings].size - 1) do |i|
+          left_ruling_line =  self.options[:vertical_rulings][i - 1]
+          right_ruling_line = self.options[:vertical_rulings][i]
+          columns << Column.new(left_ruling_line.left, right_ruling_line.right, [])
+        end
+        tes.each do |te|
+          if column = columns.detect { |c| te.horizontally_overlaps?(c) }
+            column << te
+          else
+            puts "couldn't find a place for #{te.inspect}"
+            columns << Column.new(te.left, te.width, [te])
+          end
         end
       end
       columns
