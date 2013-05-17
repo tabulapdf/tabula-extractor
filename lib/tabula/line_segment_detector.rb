@@ -97,14 +97,7 @@ module Tabula
       pixels = Java::int[width * height].new
       buffered_image.getRGB(0, 0, width, height, pixels, 0, width)
 
-      pixels.each_with_index { |p, i|
-        # this sucks, memcpy() 8 bytes at a time.
-        # but I couldn't find a better way to write a double[] (java array) into
-        # the Memory Pointer
-        break if i == raster_size
-        image_double[i].write_double(p & 0xff)
-      }
-      image_double
+      image_double.put_array_of_double 0, pixels.to_a
     end
 
   end
