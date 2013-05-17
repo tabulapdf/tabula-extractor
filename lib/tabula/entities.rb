@@ -117,15 +117,16 @@ module Tabula
   end
 
   class TextElement < ZoneEntity
-    attr_accessor :font, :font_size, :text
+    attr_accessor :font, :font_size, :text, :width_of_space
 
     CHARACTER_DISTANCE_THRESHOLD = 1.5
 
-    def initialize(top, left, width, height, font, font_size, text)
+    def initialize(top, left, width, height, font, font_size, text, width_of_space)
       super(top, left, width, height)
       self.font = font
       self.font_size = font_size
       self.text = text
+      self.width_of_space = width_of_space
     end
 
     # more or less returns True if distance < tolerance
@@ -148,11 +149,9 @@ module Tabula
 
       tolerance = ((self.font_size + other.font_size) / 2) * 0.25
 
-      dist = self.horizontal_distance(other)
-      overlaps or
-        (self.height == 0 and other.height != 0) or
-        (other.height == 0 and self.height != 0) and
-        ((tolerance <= dist) and (dist < tolerance*CHARACTER_DISTANCE_THRESHOLD))
+      dist = self.horizontal_distance(other).abs
+      rv = overlaps && (dist.between?(self.width_of_space, self.width_of_space + tolerance))
+      rv
     end
 
     def merge!(other)

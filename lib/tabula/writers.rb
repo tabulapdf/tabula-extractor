@@ -16,7 +16,7 @@ module Tabula
 
     def Writers.TSV(lines, output=$stdout)
       tsv_string = lines.each { |l|
-        output.write(l.map(&:text).join("\t") + '\n')
+        output.write(l.map(&:text).join("\t") + "\n")
       }
     end
 
