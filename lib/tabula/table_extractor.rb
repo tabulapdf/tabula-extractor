@@ -41,9 +41,9 @@ module Tabula
     end
 
     def get_columns
-      Tabula.group_by_columns(text_elements).map { |c|
+      Tabula.group_by_columns(text_elements).map do |c|
         {'left' => c.left, 'right' => c.right, 'width' => c.width}
-      }
+      end
     end
 
     def get_line_boundaries
@@ -107,6 +107,7 @@ module Tabula
           # is there a space? is this within `CHARACTER_DISTANCE_THRESHOLD` points of previous char?
           if (char1.text != " ") and (char2.text != " ") and self.text_elements[current_word_index].should_add_space?(char2)
             self.text_elements[current_word_index].text += " "
+            self.text_elements[current_word_index].width += self.text_elements[current_word_index].width_of_space
           end
           current_word_index = i+1
         end
@@ -134,11 +135,11 @@ module Tabula
   end
 
   def Tabula.lines_to_csv(lines)
-    CSV.generate { |csv|
-      lines.each { |l|
+    CSV.generate do |csv|
+      lines.each do |l|
         csv << l.map { |c| c.text.strip }
-      }
-    }
+      end
+    end
   end
 
   ONLY_SPACES_RE = Regexp.new('^\s+$')
@@ -153,45 +154,43 @@ module Tabula
 
     # find all the text elements
     # contained within each detected line (table row) boundary
-    line_boundaries.each { |lb|
+    line_boundaries.each do |lb|
       line = Line.new
 
-      line_members = text_elements.find_all { |te|
+      line_members = text_elements.find_all do |te|
         te.vertically_overlaps?(lb)
-      }
+      end
 
       text_elements -= line_members
 
-      line_members.sort_by(&:left).each { |te|
+      line_members.sort_by(&:left).each do |te|
         # skip text_elements that only contain spaces
         next if te.text =~ ONLY_SPACES_RE
         line << te
-      }
+      end
 
       lines << line if line.text_elements.size > 0
-    }
+    end
 
     lines.sort_by!(&:top)
 
     columns = Tabula.group_by_columns(lines.map(&:text_elements).flatten.compact.uniq).sort_by(&:left)
 
     # # insert empty cells if needed
-    lines.each_with_index { |l, line_index|
+    lines.each_with_index do |l, line_index|
       next if l.text_elements.nil?
       l.text_elements.compact! # TODO WHY do I have to do this?
       l.text_elements.uniq!  # TODO WHY do I have to do this?
       l.text_elements.sort_by!(&:left)
 
-      # l.text_elements = Tabula.merge_words(l.text_elements)
-
       next unless l.text_elements.size < columns.size
 
       columns.each_with_index do |c, i|
         if (i > l.text_elements.size - 1) or !l.text_elements(&:left)[i].nil? and !c.text_elements.include?(l.text_elements[i])
-          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, ''))
+          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, '', 0))
         end
       end
-    }
+    end
 
     # # merge elements that are in the same column
     columns = Tabula.group_by_columns(lines.map(&:text_elements).flatten.compact.uniq)
@@ -230,8 +229,8 @@ module Tabula
       end
     end
 
-    lines.compact.map { |line|
+    lines.compact.map do |line|
       line.text_elements.sort_by(&:left)
-    }
+    end
   end
 end
