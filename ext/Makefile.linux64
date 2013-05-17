@@ -8,3 +8,4 @@ lib: lib$(NAME).$(VERSION).so
 
 lib$(NAME).$(VERSION).so: $(NAME).o
 	$(CC) -shared -static -o lib$(NAME)-linux64.so $^
+
