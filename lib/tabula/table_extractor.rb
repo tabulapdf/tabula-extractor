@@ -107,6 +107,7 @@ module Tabula
           # is there a space? is this within `CHARACTER_DISTANCE_THRESHOLD` points of previous char?
           if (char1.text != " ") and (char2.text != " ") and self.text_elements[current_word_index].should_add_space?(char2)
             self.text_elements[current_word_index].text += " "
+            self.text_elements[current_word_index].width += self.text_elements[current_word_index].width_of_space
           end
           current_word_index = i+1
         end
@@ -182,13 +183,11 @@ module Tabula
       l.text_elements.uniq!  # TODO WHY do I have to do this?
       l.text_elements.sort_by!(&:left)
 
-      # l.text_elements = Tabula.merge_words(l.text_elements)
-
       next unless l.text_elements.size < columns.size
 
       columns.each_with_index do |c, i|
         if (i > l.text_elements.size - 1) or !l.text_elements(&:left)[i].nil? and !c.text_elements.include?(l.text_elements[i])
-          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, ''))
+          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, '', 0))
         end
       end
     }
