@@ -22,6 +22,8 @@ class TestPagesInfoExtractor < MiniTest::Unit::TestCase
   end
 end
 
+class TestTableGuesser < MiniTest::Unit::TestCase
+end
 
 class TestDumper < MiniTest::Unit::TestCase
 
@@ -57,6 +59,65 @@ class TestExtractor < MiniTest::Unit::TestCase
     expected = [["ABDALA de MATARAZZO, Norma Amanda", "Frente Cívico por Santiago", "Santiago del Estero", "AFIRMATIVO"], ["ALBRIEU, Oscar Edmundo Nicolas", "Frente para la Victoria - PJ", "Rio Negro", "AFIRMATIVO"], ["ALONSO, María Luz", "Frente para la Victoria - PJ", "La Pampa", "AFIRMATIVO"], ["ARENA, Celia Isabel", "Frente para la Victoria - PJ", "Santa Fe", "AFIRMATIVO"], ["ARREGUI, Andrés Roberto", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["AVOSCAN, Herman Horacio", "Frente para la Victoria - PJ", "Rio Negro", "AFIRMATIVO"], ["BALCEDO, María Ester", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["BARRANDEGUY, Raúl Enrique", "Frente para la Victoria - PJ", "Entre Ríos", "AFIRMATIVO"], ["BASTERRA, Luis Eugenio", "Frente para la Victoria - PJ", "Formosa", "AFIRMATIVO"], ["BEDANO, Nora Esther", "Frente para la Victoria - PJ", "Córdoba", "AFIRMATIVO"], ["BERNAL, María Eugenia", "Frente para la Victoria - PJ", "Jujuy", "AFIRMATIVO"], ["BERTONE, Rosana Andrea", "Frente para la Victoria - PJ", "Tierra del Fuego", "AFIRMATIVO"], ["BIANCHI, María del Carmen", "Frente para la Victoria - PJ", "Cdad. Aut. Bs. As.", "AFIRMATIVO"], ["BIDEGAIN, Gloria Mercedes", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["BRAWER, Mara", "Frente para la Victoria - PJ", "Cdad. Aut. Bs. As.", "AFIRMATIVO"], ["BRILLO, José Ricardo", "Movimiento Popular Neuquino", "Neuquén", "AFIRMATIVO"], ["BROMBERG, Isaac Benjamín", "Frente para la Victoria - PJ", "Tucumán", "AFIRMATIVO"], ["BRUE, Daniel Agustín", "Frente Cívico por Santiago", "Santiago del Estero", "AFIRMATIVO"], ["CALCAGNO, Eric", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CARLOTTO, Remo Gerardo", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CARMONA, Guillermo Ramón", "Frente para la Victoria - PJ", "Mendoza", "AFIRMATIVO"], ["CATALAN MAGNI, Julio César", "Frente para la Victoria - PJ", "Tierra del Fuego", "AFIRMATIVO"], ["CEJAS, Jorge Alberto", "Frente para la Victoria - PJ", "Rio Negro", "AFIRMATIVO"], ["CHIENO, María Elena", "Frente para la Victoria - PJ", "Corrientes", "AFIRMATIVO"], ["CIAMPINI, José Alberto", "Frente para la Victoria - PJ", "Neuquén", "AFIRMATIVO"], ["CIGOGNA, Luis Francisco Jorge", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CLERI, Marcos", "Frente para la Victoria - PJ", "Santa Fe", "AFIRMATIVO"], ["COMELLI, Alicia Marcela", "Movimiento Popular Neuquino", "Neuquén", "AFIRMATIVO"], ["CONTI, Diana Beatriz", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CORDOBA, Stella Maris", "Frente para la Victoria - PJ", "Tucumán", "AFIRMATIVO"], ["CURRILEN, Oscar Rubén", "Frente para la Victoria - PJ", "Chubut", "AFIRMATIVO"]]
 
     assert_equal expected, lines_to_array(Tabula.make_table(characters))
+  end
+
+  def test_forest_disclosure_report_dont_regress
+    # this is the current state of the expected output. Ideally the output should be like 
+    # test_forest_disclosure_report, with spaces around the & in Regional Pulmonary & Sleep 
+    # and a solution for half-x-height-offset lines.
+    file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    character_extractor = Tabula::Extraction::CharacterExtractor.new(file_path)
+    pdf = Tabula::TableGuesser::load_pdfbox_pdf(file_path)
+    lines = Tabula::TableGuesser.find_lines_on_page(pdf, 0, 10)
+    vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
+
+
+    characters = character_extractor.extract.next.get_text([110, 28, 218, 833])
+                                                           #top left bottom right
+    expected = [['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '$85.00'],
+                ['TOTAL', '', '', '','$85.00'],
+                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'EDUCATIONAL ITEMS', '$78.80'],
+                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'MEALS', '$392.45'],
+                ['TOTAL', '', '', '', '$471.25'],
+                ['AARON, JOHN', '', 'CLARKSVILLE, TN', 'MEALS', '$20.39'],
+                ['TOTAL', '', '', '','$20.39'],
+                ['AARON, JOSHUA, N', '', 'WEST GROVE, PA', 'MEALS', '$310.33'],
+                ["", "REGIONAL PULMONARY&SLEEP", "", "", ""], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE", "", "", ""], 
+                ['TOTAL', '', '', '', '$5,010.33'],
+                ['AARON, MAUREEN, M', '', 'MARTINSVILLE, VA', 'MEALS', '$193.67'],
+                ['TOTAL', '', '', '', '$193.67'],
+                ['AARON, MICHAEL, L', '', 'WEST ISLIP, NY', 'MEALS', '$19.50']]
+
+    assert_equal expected, lines_to_array(Tabula.make_table_with_vertical_rulings(characters, :vertical_rulings => vertical_rulings))
+  end
+
+
+
+  def test_forest_disclosure_report
+    file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    character_extractor = Tabula::Extraction::CharacterExtractor.new(file_path)
+    pdf = Tabula::TableGuesser::load_pdfbox_pdf(file_path)
+    lines = Tabula::TableGuesser.find_lines_on_page(pdf, 0, 10)
+    vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
+
+
+    characters = character_extractor.extract.next.get_text([110, 28, 218, 833])
+                                                           #top left bottom right
+    expected = [['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '$85.00'],
+                ['TOTAL', '', '', '','$85.00'],
+                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'EDUCATIONAL ITEMS', '$78.80'],
+                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'MEALS', '$392.45'],
+                ['TOTAL', '', '', '', '$471.25'],
+                ['AARON, JOHN', '', 'CLARKSVILLE, TN', 'MEALS', '$20.39'],
+                ['TOTAL', '', '', '','$20.39'],
+                ['AARON, JOSHUA, N', '', 'WEST GROVE, PA', 'MEALS', '$310.33'],
+                ['AARON, JOSHUA, N', 'REGIONAL PULMONARY & SLEEP MEDICINE', 'WEST GROVE, PA', 'SPEAKING FEES', '$4,700.00'],
+                ['TOTAL', '', '', '', '$5,010.33'],
+                ['AARON, MAUREEN, M', '', 'MARTINSVILLE, VA', 'MEALS', '$193.67'],
+                ['TOTAL', '', '', '', '$193.67'],
+                ['AARON, MICHAEL, L', '', 'WEST ISLIP, NY', 'MEALS', '$19.50']]
+
+    assert_equal expected, lines_to_array(Tabula.make_table_with_vertical_rulings(characters, :vertical_rulings => vertical_rulings))
   end
 
   # TODO Spaces inserted in words - fails

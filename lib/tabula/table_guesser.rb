@@ -88,7 +88,7 @@ module Tabula
       tunable_threshold = 500;
 
       if pdf.getNumberOfPages > 100
-        STDERR.puts("detecting tables on page #{page_index}")
+        STDERR.puts("detecting tables on page #{page_index} / #{pdf.getNumberOfPages}")
       end
 
       pdfbox_page = pdf.getDocumentCatalog.getAllPages[page_index]

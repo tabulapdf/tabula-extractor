@@ -283,19 +283,6 @@ module Tabula
     vertical_rulings = options[:vertical_rulings]
     columns = TableExtractor.new(lines.map(&:text_elements).flatten.compact.uniq, {:merge_words => options[:merge_words], :vertical_rulings => vertical_rulings}).group_by_columns.sort_by(&:left)
 
-    # insert empty cells if needed
-    lines.each_with_index do |l, line_index|
-      next if l.text_elements.nil?
-      l.text_elements.compact! # TODO WHY do I have to do this?
-      l.text_elements.uniq!  # TODO WHY do I have to do this?
-      l.text_elements.sort_by!(&:left)
-
-      columns.each_with_index do |c, i|
-        if (l.text_elements.select{|te| te && te.left >= c.left && te.right <= (c.left + c.width)}.empty?) || ((i > l.text_elements.size - 1) or !l.text_elements.sort_by(&:left)[i].nil?) and !c.text_elements.include?(l.text_elements.sort_by(&:left)[i])
-          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, ''))
-        end
-      end
-    end
 
     # # merge elements that are in the same column
     lines.each_with_index do |l, line_index|
@@ -316,6 +303,21 @@ module Tabula
           end
         end
       end
+
+    # insert empty cells if needed
+    lines.each_with_index do |l, line_index|
+      next if l.text_elements.nil?
+      l.text_elements.compact! # TODO WHY do I have to do this?
+      l.text_elements.uniq!  # TODO WHY do I have to do this?
+      l.text_elements.sort_by!(&:left)
+
+      columns.each_with_index do |c, i|
+        if (l.text_elements.select{|te| te && te.left >= c.left && te.left <= (c.left + c.width)}.empty?)
+          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, '', 0))
+        end
+      end
+    end
+
 
       l.text_elements.compact!
     end
