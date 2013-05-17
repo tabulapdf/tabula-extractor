@@ -58,7 +58,7 @@ module Tabula
     end
 
     def get_columns
-      TableExtractor.new(text_elements, {:merge_words => options[:merge_words]}).group_by_columns.map do |c|
+      TableExtractor.new(text_elements).group_by_columns.map do |c|
         {'left' => c.left, 'right' => c.right, 'width' => c.width}
       end
     end
@@ -115,9 +115,12 @@ module Tabula
 
         char2 = self.text_elements[i+1]
 
+
+
         next if char2.nil? or char1.nil?
 
         if self.text_elements[current_word_index].should_merge?(char2)
+          #puts "merging: #{self.text_elements[current_word_index].text}/#{self.text_elements[current_word_index].width}"
           self.text_elements[current_word_index].merge!(char2)
           char1 = char2
           self.text_elements[i+1] = nil
@@ -125,13 +128,14 @@ module Tabula
           # is there a space? is this within `CHARACTER_DISTANCE_THRESHOLD` points of previous char?
           if (char1.text != " ") and (char2.text != " ") and self.text_elements[current_word_index].should_add_space?(char2)
             self.text_elements[current_word_index].text += " "
-            self.text_elements[current_word_index].width += self.text_elements[current_word_index].width_of_space
+            #self.text_elements[current_word_index].width += self.text_elements[current_word_index].width_of_space
           end
           current_word_index = i+1
         end
         i += 1
       end
-      return self.text_elements.compact!
+      self.text_elements.compact!
+      return self.text_elements
     end
   end
 
@@ -283,13 +287,26 @@ module Tabula
     vertical_rulings = options[:vertical_rulings]
     columns = TableExtractor.new(lines.map(&:text_elements).flatten.compact.uniq, {:merge_words => options[:merge_words], :vertical_rulings => vertical_rulings}).group_by_columns.sort_by(&:left)
 
+    # insert empty cells if needed
+    lines.each_with_index do |l, line_index|
+      next if l.text_elements.nil?
+      l.text_elements.compact! # TODO WHY do I have to do this?
+      l.text_elements.uniq!  # TODO WHY do I have to do this?
+      l.text_elements.sort_by!(&:left)
 
-    # # merge elements that are in the same column
+      columns.each_with_index do |c, i|
+        if (l.text_elements.select{|te| te && te.left >= c.left && te.right <= (c.left + c.width)}.empty?)
+          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, '', 0))
+        end
+      end
+    end
+
+    # merge elements that are in the same column
     lines.each_with_index do |l, line_index|
       next if l.text_elements.nil?
 
-      (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|
-        next if l.text_elements[t1].nil? or l.text_elements[t2].nil?
+      (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|  #don't remove a string of empty cells
+        next if l.text_elements[t1].nil? or l.text_elements[t2].nil?    or l.text_elements[t1].text.empty? or l.text_elements[t2].text.empty?
 
         # if same column...
         if columns.detect { |c| c.text_elements.include? l.text_elements[t1] } \
@@ -303,21 +320,6 @@ module Tabula
           end
         end
       end
-
-    # insert empty cells if needed
-    lines.each_with_index do |l, line_index|
-      next if l.text_elements.nil?
-      l.text_elements.compact! # TODO WHY do I have to do this?
-      l.text_elements.uniq!  # TODO WHY do I have to do this?
-      l.text_elements.sort_by!(&:left)
-
-      columns.each_with_index do |c, i|
-        if (l.text_elements.select{|te| te && te.left >= c.left && te.left <= (c.left + c.width)}.empty?)
-          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, '', 0))
-        end
-      end
-    end
-
 
       l.text_elements.compact!
     end

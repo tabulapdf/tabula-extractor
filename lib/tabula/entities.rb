@@ -120,6 +120,7 @@ module Tabula
     attr_accessor :font, :font_size, :text, :width_of_space
 
     CHARACTER_DISTANCE_THRESHOLD = 1.5
+    TOLERANCE_FACTOR = 0.25
 
     def initialize(top, left, width, height, font, font_size, text, width_of_space)
       super(top, left, width, height)
@@ -134,7 +135,7 @@ module Tabula
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
       overlaps = self.vertically_overlaps?(other)
 
-      tolerance = ((self.font_size + other.font_size) / 2) * 0.25
+      tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
 
       overlaps or
         (self.height == 0 and other.height != 0) or
@@ -147,7 +148,7 @@ module Tabula
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
       overlaps = self.vertically_overlaps?(other)
 
-      tolerance = ((self.font_size + other.font_size) / 2) * 0.25
+      tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
 
       dist = self.horizontal_distance(other).abs
       rv = overlaps && (dist.between?(self.width_of_space, self.width_of_space + tolerance))
