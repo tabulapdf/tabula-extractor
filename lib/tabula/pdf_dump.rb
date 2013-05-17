@@ -106,7 +106,8 @@ module Tabula
                                                                  char.getHeightDir.round(2),
                                                                  nil,
                                                                  char.getFontSize.round(2),
-                                                                 char.getCharacter)
+                                                                 char.getCharacter,
+                                                                 char.getWidthOfSpace)
                                        })
             end
           ensure
