@@ -31,6 +31,7 @@ module Tabula
                              File.dirname(__FILE__))
 
     attach_function :lsd, [ :pointer, :buffer_in, :int, :int ], :pointer
+    attach_function :free_values [ :pointer]
 
     def LSD.detect_lines_in_pdf_page(pdf_path, page_number, scale_factor=1)
       pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_path), nil)

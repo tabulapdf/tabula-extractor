@@ -2251,3 +2251,9 @@ double * lsd(int * n_out, double * img, int X, int Y)
 
 }
 /*----------------------------------------------------------------------------*/
+
+/***** added by manuel aristaran ****/
+
+void free_values(double * p) {
+  free((void *) p);
+}
