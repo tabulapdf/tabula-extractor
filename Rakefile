@@ -8,3 +8,5 @@ Bundler::GemHelper.install_tasks
 task :test do
   ruby 'test/tests.rb'
 end
+
+task :default => [:test]
