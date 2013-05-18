@@ -58,11 +58,6 @@ module Tabula
 
       lines_found = lines_found_ptr.get_int
 
-      # minimum length of detected lines = 1% of page width/height, to play safe
-      # (crude noise filter)
-      minimum_length_h = bimage.getWidth * 0.01
-      minimum_length_v = bimage.getHeight * 0.01
-
       rv = []
       lines_found.times do |i|
         a = out[7*8*i].read_array_of_type(:double, 7)
@@ -70,14 +65,10 @@ module Tabula
         a_round = a[0..3].map(&:round)
         p1, p2 = [[a_round[0], a_round[1]], [a_round[2], a_round[3]]]
 
-        # discard short lines
-        unless ((p1[0] != p2[0]) && (p1[0] - p2[0]).abs < minimum_length_h) || \
-          ((p1[1] != p2[1]) && (p1[1] - p2[1]).abs < minimum_length_v)
-          rv << Tabula::Ruling.new(p1[1] * scale_factor,
-                                   p1[0] * scale_factor,
-                                   (p2[0] - p1[0]) * scale_factor,
-                                   (p2[1] - p1[1]) * scale_factor)
-        end
+        rv << Tabula::Ruling.new(p1[1] * scale_factor,
+                                 p1[0] * scale_factor,
+                                 (p2[0] - p1[0]) * scale_factor,
+                                 (p2[1] - p1[1]) * scale_factor)
       end
 
       free_values(out)
