@@ -277,5 +277,7 @@ double * lsd_scale(int * n_out, double * img, int X, int Y, double scale);
  */
 double * lsd(int * n_out, double * img, int X, int Y);
 
+void free_values(double * p);
+
 #endif /* !LSD_HEADER */
 /*----------------------------------------------------------------------------*/
