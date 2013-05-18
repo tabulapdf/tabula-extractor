@@ -23,7 +23,7 @@ module Tabula
                                               if RbConfig::CONFIG['target_cpu'] == 'x86_64'
                                                 'liblsd-linux64.so'
                                               else
-                                                raise 'Linux i386 still not supported'
+                                                'liblsd-linux32.so'
                                               end
                                             else
                                               raise "unknown os: #{RbConfig::CONFIG['host_os']}"

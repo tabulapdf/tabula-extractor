@@ -1,0 +1,11 @@
+include Makefile.defaults
+
+# link statically with musl-libc
+CC = /home/manuel/tabula-build/musl-32/bin/musl-gcc
+CFLAGS := -fPIC -Wall -Werror
+
+lib: lib$(NAME).$(VERSION).so
+
+lib$(NAME).$(VERSION).so: $(NAME).o
+	$(CC) -shared -static -o lib$(NAME)-linux32.so $^
+
