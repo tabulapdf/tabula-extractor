@@ -1,0 +1,6 @@
+language: ruby
+rvm:
+  - jruby-19mode # JRuby in 1.9 mode
+branches:
+  only:
+    - master

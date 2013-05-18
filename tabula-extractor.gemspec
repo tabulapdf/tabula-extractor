@@ -21,7 +21,7 @@ Gem::Specification.new do |s|
   s.require_paths = ["lib"]
 
   s.add_development_dependency 'minitest'
-  s.add_development_dependency 'bundler', '>= 1.3.5'
+  s.add_development_dependency 'bundler', '>= 1.3.4'
 
   s.add_runtime_dependency "trollop", ["~> 2.0"]
 end
