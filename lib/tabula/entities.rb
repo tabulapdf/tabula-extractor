@@ -282,10 +282,10 @@ module Tabula
 
       skip = false
 
-      horiz = rulings.select(&:horizontal?)
+      horiz = rulings.select { |r| r.horizontal? && r.width > max_distance }
         .group_by(&:top)
         .values.reduce([]) { |memo, rs|
-        rs.sort_by(&:left)
+        rs = rs.sort_by(&:left)
 
         memo << if rs.size > 1
                   Tabula::Ruling.new(rs[0].top, rs[0].left, rs[-1].right - rs[0].left, 0)
@@ -297,8 +297,13 @@ module Tabula
       .sort_by(&:top)
 
       h = []
-      (horiz.size - 1).times do |i| 
-        break if i == horiz.size - 1
+      horiz.size.times do |i| 
+
+        if i == horiz.size - 1
+          h << horiz[-1]
+          break
+        end
+
         if skip
           skip = false; 
           next
@@ -314,7 +319,7 @@ module Tabula
       end
       horiz = h
 
-      vert = rulings.select(&:vertical?)
+      vert = rulings.select { |r| r.vertical? && r.height > max_distance }
         .group_by(&:left)
         .values.reduce([]) { |memo, rs|
 
@@ -328,20 +333,25 @@ module Tabula
         .sort_by(&:left)
       
       v = []
-      (vert.size - 1).times do |i|
-           break if i == vert.size - 1
-           if skip
-             skip = false; 
-             next
-           end
-           d = (vert[i+1].left - vert[i].left).abs
+      vert.size.times do |i|
+        
+        if i == vert.size - 1
+          v << vert[-1]
+          break
+        end
 
-           v << if d < 4 # THRESHOLD DISTANCE between vertical lines
-                  skip = true
-                  Tabula::Ruling.new([vert[i+1].top, vert[i].top].min, vert[i].left + d / 2, 0, [vert[i+1].height.abs, vert[i].height.abs].max)
-                else
-                  vert[i]
-                end
+        if skip
+          skip = false; 
+          next
+        end
+        d = (vert[i+1].left - vert[i].left).abs
+
+        v << if d < 4 # THRESHOLD DISTANCE between vertical lines
+               skip = true
+               Tabula::Ruling.new([vert[i+1].top, vert[i].top].min, vert[i].left + d / 2, 0, [vert[i+1].height.abs, vert[i].height.abs].max)
+             else
+               vert[i]
+             end
       end
       vert = v
 
@@ -356,7 +366,7 @@ module Tabula
       #vert.delete_if  { |v| !horiz.any? { |h| h.intersects?(v) } } unless horiz.empty?
       #horiz.delete_if { |h| !vert.any?  { |v| v.intersects?(h) } } unless vert.empty?
 
-      return { :horizontal => horiz, :vertical => vert }
+      return horiz += vert
     end
 
 
