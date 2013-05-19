@@ -5,7 +5,7 @@ require 'ffi'
 
 require_relative './entities'
 require_relative './pdf_render'
-require File.join(File.dirname(__FILE__), '../../target/pdfbox-app-1.8.0.jar')
+require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
 
 java_import javax.imageio.ImageIO
 java_import java.awt.image.BufferedImage
