@@ -1,4 +1,5 @@
 # -*- coding: utf-8 -*-
+require 'minitest'
 require 'minitest/autorun'
 
 require_relative '../lib/tabula'
@@ -9,7 +10,7 @@ def lines_to_array(lines)
   }
 end
 
-class TestPagesInfoExtractor < MiniTest::Unit::TestCase
+class TestPagesInfoExtractor < Minitest::Test
   def test_pages_info_extractor
     extractor = Tabula::Extraction::PagesInfoExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
 
@@ -23,7 +24,7 @@ class TestPagesInfoExtractor < MiniTest::Unit::TestCase
 end
 
 
-class TestDumper < MiniTest::Unit::TestCase
+class TestDumper < Minitest::Test
 
   def test_extractor
     extractor = Tabula::Extraction::CharacterExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
@@ -40,7 +41,7 @@ class TestDumper < MiniTest::Unit::TestCase
   end
 end
 
-class TestExtractor < MiniTest::Unit::TestCase
+class TestExtractor < Minitest::Test
 
   def test_table_extraction_1
     character_extractor = Tabula::Extraction::CharacterExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
