@@ -3,7 +3,7 @@ require 'observer'
 require_relative './entities.rb'
 
 require 'java'
-require File.join(File.dirname(__FILE__), '../../target/pdfbox-app-1.8.0.jar')
+require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.util.PDFTextStripper
@@ -51,7 +51,7 @@ module Tabula
     class PagesInfoExtractor
       def initialize(pdf_filename)
         raise Errno::ENOENT unless File.exists?(pdf_filename)
-        @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
+        @pdf_file = PDDocument.load(java.io.File.new(pdf_filename))
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
       end
 
@@ -79,7 +79,7 @@ module Tabula
 
       def initialize(pdf_filename, pages=[1])
         raise Errno::ENOENT unless File.exists?(pdf_filename)
-        @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
+        @pdf_file = PDDocument.load(java.io.File.new(pdf_filename))
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
         @pages = pages
         @extractor = TextExtractor.new
