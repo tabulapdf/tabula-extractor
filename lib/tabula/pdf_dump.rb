@@ -79,7 +79,7 @@ module Tabula
 
       def initialize(pdf_filename, pages=[1])
         raise Errno::ENOENT unless File.exists?(pdf_filename)
-        @pdf_file = PDDocument.load(java.io.File.new(pdf_filename))
+        @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
         @pages = pages
         @extractor = TextExtractor.new

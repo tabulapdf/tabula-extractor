@@ -1,6 +1,5 @@
 module Tabula
-  #  PDFBOX = 'pdfbox-app-1.8.0.jar'
-  PDFBOX = 'pdfbox-app-2.0.0-SNAPSHOT.jar'
+  PDFBOX = 'pdfbox-app-1.8.0-plus-r1484277.jar'
 end
 
 require_relative './tabula/version'
