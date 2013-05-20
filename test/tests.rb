@@ -91,7 +91,22 @@ class TestExtractor < MiniTest::Unit::TestCase
     assert_equal expected, lines_to_array(Tabula.make_table_with_vertical_rulings(characters, :vertical_rulings => vertical_rulings))
   end
 
+  def test_missing_spaces_around_an_ampersand
+    file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    character_extractor = Tabula::Extraction::CharacterExtractor.new(file_path)
+    pdf = Tabula::TableGuesser::load_pdfbox_pdf(file_path)
+    lines = Tabula::TableGuesser.find_lines_on_page(pdf, 0, 10)
+    vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
 
+
+    characters = character_extractor.extract.next.get_text([175, 28, 185, 833])
+                                                           #top left bottom right
+    expected = [
+                 ["", "REGIONAL PULMONARY & SLEEP", "", "", ""], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE", "", "", ""], 
+                ]
+
+    assert_equal expected, lines_to_array(Tabula.make_table_with_vertical_rulings(characters, :vertical_rulings => vertical_rulings))
+  end
 
   def test_forest_disclosure_report
     file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
