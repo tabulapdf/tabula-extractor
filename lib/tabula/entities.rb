@@ -148,10 +148,12 @@ module Tabula
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
       overlaps = self.vertically_overlaps?(other)
 
-      tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
+      up_tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
+      down_tolerance = 0.95
 
       dist = self.horizontal_distance(other).abs
-      rv = overlaps && (dist.between?(self.width_of_space, self.width_of_space + tolerance))
+      
+      rv = overlaps && (dist.between?(self.width_of_space * down_tolerance, self.width_of_space + up_tolerance))
       rv
     end
 
