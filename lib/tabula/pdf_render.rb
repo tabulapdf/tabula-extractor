@@ -1,6 +1,6 @@
 require 'java'
 
-require File.join(File.dirname(__FILE__), '../../target/pdfbox-app-1.8.0-plus-r1484277.jar')
+require File.join(File.dirname(__FILE__), '../../target/pdfbox-app-2.0.0-SNAPSHOT.jar')
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.pdfviewer.PageDrawer
 java_import java.awt.image.BufferedImage
