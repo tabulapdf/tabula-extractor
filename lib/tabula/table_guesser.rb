@@ -113,6 +113,9 @@ module Tabula
       end
       lines.each{|l| l.scale!( page_width / draw_page_width)}
 
+      
+      iplImage.release #let's not crash from memory problems
+
       lines
     end
 
