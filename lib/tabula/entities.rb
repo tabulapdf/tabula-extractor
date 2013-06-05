@@ -120,7 +120,7 @@ module Tabula
     attr_accessor :font, :font_size, :text, :width_of_space
 
     CHARACTER_DISTANCE_THRESHOLD = 1.5
-    TOLERANCE_FACTOR = 0.25
+    TOLERANCE_FACTOR = 0.25 #25
 
     def initialize(top, left, width, height, font, font_size, text, width_of_space)
       super(top, left, width, height)
@@ -149,7 +149,7 @@ module Tabula
       overlaps = self.vertically_overlaps?(other)
 
       up_tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
-      down_tolerance = 0.95
+      down_tolerance = 0.90 #90?
 
       dist = self.horizontal_distance(other).abs
       
