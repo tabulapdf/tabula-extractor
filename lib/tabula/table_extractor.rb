@@ -198,6 +198,8 @@ module Tabula
 
     columns = TableExtractor.new(lines.map(&:text_elements).flatten.compact.uniq, {:merge_words => options[:merge_words]}).group_by_columns.sort_by(&:left)
 
+    puts "Colsize: " + columns.size.to_s
+
     # # insert empty cells if needed
     lines.each_with_index do |l, line_index|
       next if l.text_elements.nil?
