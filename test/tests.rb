@@ -83,7 +83,7 @@ class TestExtractor < Minitest::Test
                 ['AARON, JOHN', '', 'CLARKSVILLE, TN', 'MEALS', '$20.39'],
                 ['TOTAL', '', '', '','$20.39'],
                 ['AARON, JOSHUA, N', '', 'WEST GROVE, PA', 'MEALS', '$310.33'],
-                ["", "REGIONAL PULMONARY&SLEEP", "", "", ""], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE", "", "", ""], 
+                ["", "REGIONAL PULMONARY & SLEEP", "", "", ""], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE", "", "", ""], 
                 ['TOTAL', '', '', '', '$5,010.33'],
                 ['AARON, MAUREEN, M', '', 'MARTINSVILLE, VA', 'MEALS', '$193.67'],
                 ['TOTAL', '', '', '', '$193.67'],
@@ -100,7 +100,7 @@ class TestExtractor < Minitest::Test
     vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
 
 
-    characters = character_extractor.extract.next.get_text([175, 28, 185, 833])
+    characters = character_extractor.extract.next.get_text([170, 28, 185, 833])
                                                            #top left bottom right
     expected = [
                  ["", "REGIONAL PULMONARY & SLEEP", "", "", ""], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE", "", "", ""], 

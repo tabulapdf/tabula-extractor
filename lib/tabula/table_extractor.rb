@@ -198,6 +198,8 @@ module Tabula
 
     columns = TableExtractor.new(lines.map(&:text_elements).flatten.compact.uniq, {:merge_words => options[:merge_words]}).group_by_columns.sort_by(&:left)
 
+    puts "Colsize: " + columns.size.to_s
+
     # # insert empty cells if needed
     lines.each_with_index do |l, line_index|
       next if l.text_elements.nil?
@@ -205,10 +207,10 @@ module Tabula
       l.text_elements.uniq!  # TODO WHY do I have to do this?
       l.text_elements.sort_by!(&:left)
 
-      next unless l.text_elements.size < columns.size
+      #next unless l.text_elements.size < columns.size
 
       columns.each_with_index do |c, i|
-        if (i > l.text_elements.size - 1) or !l.text_elements(&:left)[i].nil? and !c.text_elements.include?(l.text_elements[i])
+        if (i > l.text_elements.size - 1) or (!l.text_elements[i].nil? and !c.text_elements.include?(l.text_elements[i]))
           l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, '', 0))
         end
       end
@@ -219,7 +221,7 @@ module Tabula
       next if l.text_elements.nil?
 
       (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|
-        next if l.text_elements[t1].nil? or l.text_elements[t2].nil?
+        next if l.text_elements[t1].nil? or l.text_elements[t2].nil? or l.text_elements[t1].text.empty? or l.text_elements[t2].text.empty?
 
         # if same column...
         if columns.detect { |c| c.text_elements.include? l.text_elements[t1] } \
