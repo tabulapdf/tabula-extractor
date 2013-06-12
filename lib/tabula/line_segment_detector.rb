@@ -33,16 +33,27 @@ module Tabula
     attach_function :lsd, [ :pointer, :buffer_in, :int, :int ], :pointer
     attach_function :free_values, [ :pointer ], :void
 
-    def LSD.detect_lines_in_pdf_page(pdf_path, page_number, scale_factor=1)
+    DETECT_LINES_DEFAULTS = {
+      :scale_factor => 1,
+      :image_size => 2048
+    }
+
+    def LSD.detect_lines_in_pdf_page(pdf_path, page_number, options={})
+      options = DETECT_LINES_DEFAULTS.merge(options)
+
       pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_path), nil)
-      bi = Tabula::Render.pageToBufferedImage(pdf_file.getDocumentCatalog.getAllPages[page_number])
+      bi = Tabula::Render.pageToBufferedImage(pdf_file.getDocumentCatalog.getAllPages[page_number],
+                                              options[:image_size])
       pdf_file.close
-      detect_lines(bi,scale_factor)
+      detect_lines(bi, options[:scale_factor])
     end
 
     # image can be either a string (path to image) or a Java::JavaAwtImage::BufferedImage
     # image to pixels: http://stackoverflow.com/questions/6524196/java-get-pixel-array-from-image
-    def LSD.detect_lines(image, scale_factor=1)
+    def LSD.detect_lines(image, options={})
+
+      options = DETECT_LINES_DEFAULTS.merge(options)
+
       bimage = if image.class == Java::JavaAwtImage::BufferedImage
                  image
                elsif image.class == String
@@ -65,10 +76,10 @@ module Tabula
         a_round = a[0..3].map(&:round)
         p1, p2 = [[a_round[0], a_round[1]], [a_round[2], a_round[3]]]
 
-        rv << Tabula::Ruling.new(p1[1] * scale_factor,
-                                 p1[0] * scale_factor,
-                                 (p2[0] - p1[0]) * scale_factor,
-                                 (p2[1] - p1[1]) * scale_factor)
+        rv << Tabula::Ruling.new(p1[1] * options[:scale_factor],
+                                 p1[0] * options[:scale_factor],
+                                 (p2[0] - p1[0]) * options[:scale_factor],
+                                 (p2[1] - p1[1]) * options[:scale_factor])
       end
 
       free_values(out)
