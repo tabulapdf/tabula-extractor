@@ -66,10 +66,9 @@ class TestExtractor < Minitest::Test
     # this is the current state of the expected output. Ideally the output should be like 
     # test_forest_disclosure_report, with spaces around the & in Regional Pulmonary & Sleep 
     # and a solution for half-x-height-offset lines.
-    file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    character_extractor = Tabula::Extraction::CharacterExtractor.new(file_path)
-    pdf = Tabula::TableGuesser::load_pdfbox_pdf(file_path)
-    lines = Tabula::TableGuesser.find_lines_on_page(pdf, 0, 10)
+    pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    character_extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path)
+    lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
     vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
 
 
@@ -93,10 +92,9 @@ class TestExtractor < Minitest::Test
   end
 
   def test_missing_spaces_around_an_ampersand
-    file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    character_extractor = Tabula::Extraction::CharacterExtractor.new(file_path)
-    pdf = Tabula::TableGuesser::load_pdfbox_pdf(file_path)
-    lines = Tabula::TableGuesser.find_lines_on_page(pdf, 0, 10)
+    pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    character_extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path)
+    lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
     vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
 
 
@@ -110,10 +108,9 @@ class TestExtractor < Minitest::Test
   end
 
   def test_forest_disclosure_report
-    file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    character_extractor = Tabula::Extraction::CharacterExtractor.new(file_path)
-    pdf = Tabula::TableGuesser::load_pdfbox_pdf(file_path)
-    lines = Tabula::TableGuesser.find_lines_on_page(pdf, 0, 10)
+    pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    character_extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path)
+    lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
     vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
 
 

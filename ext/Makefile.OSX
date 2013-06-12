@@ -1,0 +1,15 @@
+include Makefile.defaults
+
+lib: lib$(NAME).$(VERSION).dylib
+
+lib$(NAME).$(VERSION).dylib: $(NAME).o
+	$(CC) -dynamiclib -lm -o lib$(NAME).dylib $^
+
+clean:
+	$(RM) *.o
+
+$(NAME)_test: lib$(NAME).$(VERSION).dylib
+	$(CC) lsd_call_example.c -o $@ -L. -l$(NAME)
+
+test: $(NAME)_test
+	LD_LIBRARY_PATH=. ./$(NAME)_test

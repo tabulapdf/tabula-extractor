@@ -1,0 +1,9 @@
+CFLAGS := -fPIC -O3 -g -Wall -Werror 
+CC := gcc
+MAJOR := 1
+MINOR := 0
+NAME := lsd
+VERSION := $(MAJOR).$(MINOR)
+
+clean:
+	$(RM) *.o *.so* *.dylib

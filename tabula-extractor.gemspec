@@ -14,7 +14,8 @@ Gem::Specification.new do |s|
 
   s.platform = 'java'
 
-  s.files         = `git ls-files`.split("\n")
+  shared_libs = ['liblsd.dylib', 'liblsd-linux64.so', 'liblsd-linux32.so', 'liblsd.dll'].map { |f| 'ext/' + f }
+  s.files         = `git ls-files`.split("\n") + shared_libs.map.reject { |f| !File.exists?(f) }
   s.test_files    = `git ls-files -- {test,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]

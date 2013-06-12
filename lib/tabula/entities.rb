@@ -247,19 +247,144 @@ module Tabula
 
   end
 
+  require_relative './core_ext'
+
   class Ruling < ZoneEntity
-    attr_accessor :color
+    # 2D line intersection test taken from comp.graphics.algorithms FAQ
+    def intersects?(other)
+      r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
+      / ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
 
-    def initialize(top, left, width, height, color)
-      super(top, left, width, height)
-      self.color = color
+        s = ((self.top-other.top)*(self.right-self.left) - (self.left-other.left)*(self.bottom-self.top)) \
+            / ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
+
+      r >= 0 and r < 1 and s >= 0 and s < 1
     end
 
-    def to_h
-      hash = super
-      hash[:color] = self.color
-      hash
+    def length
+      Math.sqrt( (self.right - self.left).abs ** 2 + (self.bottom - self.top).abs ** 2 )
     end
+
+    def vertical?
+      left == right
+    end
+
+    def horizontal?
+      top == bottom
+    end
+
+    def right
+      left + width
+    end
+    def bottom
+      top + height
+    end
+
+    def to_json(arg)
+      [left, top, right, bottom].to_json
+    end
+
+    def to_xml
+      "<ruling x1=\"%.2f\" y1=\"%.2f\" x2=\"%.2f\" y2=\"%.2f\" />" \
+      % [left, top, right, bottom]
+    end
+
+    def self.clean_rulings(rulings, max_distance=4)
+
+      # merge horizontal and vertical lines
+      # TODO this should be iterative
+
+      skip = false
+
+      horiz = rulings.select { |r| r.horizontal? && r.width > max_distance }
+        .group_by(&:top)
+        .values.reduce([]) { |memo, rs|
+        rs = rs.sort_by(&:left)
+
+        memo << if rs.size > 1
+                  Tabula::Ruling.new(rs[0].top, rs[0].left, rs[-1].right - rs[0].left, 0)
+                else
+                  rs.first
+                end
+
+      }
+      .sort_by(&:top)
+
+      h = []
+      horiz.size.times do |i| 
+
+        if i == horiz.size - 1
+          h << horiz[-1]
+          break
+        end
+
+        if skip
+          skip = false; 
+          next
+        end
+        d = (horiz[i+1].top - horiz[i].top).abs
+
+        h << if d < 4 # THRESHOLD DISTANCE between horizontal lines
+               skip = true
+               Tabula::Ruling.new(horiz[i].top + d / 2, [horiz[i].left, horiz[i+1].left].min, [horiz[i+1].width.abs, horiz[i].width.abs].max, 0)
+             else
+               horiz[i]
+             end
+      end
+      horiz = h
+
+      vert = rulings.select { |r| r.vertical? && r.height > max_distance }
+        .group_by(&:left)
+        .values.reduce([]) { |memo, rs|
+
+        rs = rs.sort_by(&:top)
+        memo << if rs.size > 1
+                  Tabula::Ruling.new(rs[0].top, rs[0].left, 0, rs[-1].bottom - rs[0].top)
+                else rs.first
+                  rs.first
+                end
+        }
+        .sort_by(&:left)
+      
+      v = []
+      vert.size.times do |i|
+        
+        if i == vert.size - 1
+          v << vert[-1]
+          break
+        end
+
+        if skip
+          skip = false; 
+          next
+        end
+        d = (vert[i+1].left - vert[i].left).abs
+
+        v << if d < 4 # THRESHOLD DISTANCE between vertical lines
+               skip = true
+               Tabula::Ruling.new([vert[i+1].top, vert[i].top].min, vert[i].left + d / 2, 0, [vert[i+1].height.abs, vert[i].height.abs].max)
+             else
+               vert[i]
+             end
+      end
+      vert = v
+
+      
+      # - only keep horizontal rulings that intersect with at least one vertical ruling
+      # - only keep vertical rulings that intersect with at least one horizontal ruling
+      # yeah, it's a naive heuristic. but hey, it works.
+
+      # h_mean =  horiz.reduce(0) { |accum, i| accum + i.width } / horiz.size
+      # horiz.reject { |h| h.width < h_mean }
+
+      #vert.delete_if  { |v| !horiz.any? { |h| h.intersects?(v) } } unless horiz.empty?
+      #horiz.delete_if { |h| !vert.any?  { |v| v.intersects?(h) } } unless vert.empty?
+
+      return horiz += vert
+    end
+
+
+
 
   end
 

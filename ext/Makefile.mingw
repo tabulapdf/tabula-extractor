@@ -1,0 +1,10 @@
+include Makefile.defaults
+
+#CC = /usr/local/gcc-4.8.0-qt-4.8.4-for-mingw32/win32-gcc/bin/i586-mingw32-gcc
+CC = /usr/bin/i686-w64-mingw32-gcc-4.6
+CFLAGS := -Wall -Werror
+
+lib: lib$(NAME).$(VERSION).dll
+
+lib$(NAME).$(VERSION).dll: $(NAME).o 
+	$(CC) -shared -o lib$(NAME).dll liblsd.def $^

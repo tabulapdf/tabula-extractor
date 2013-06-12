@@ -66,8 +66,6 @@ module Tabula
     end
 
     def TableGuesser.find_lines(filename)
-      pdf = load_pdfbox_pdf(filename)
-
       if pdf.getNumberOfPages == 0
         puts "not a pdf!"
         exit
@@ -78,44 +76,8 @@ module Tabula
       lines = []
       pdf.getNumberOfPages.times do |i|          
         #gotcha: with PDFView, PDF pages are 1-indexed. If you ask for page 0 and then page 1, you'll get the first page twice. So start with index 1.
-        lines << find_lines_on_page(pdf, i + 1)
+        lines << detect_lines_in_pdf_page(filename, i + 1)
       end
-      lines
-    end
-
-    def TableGuesser.find_lines_on_page(pdf, page_index, minimal_lines_threshold=10)
-      #block can be used for filtering lines before they're turned into just arrays of numbers
-      tunable_threshold = 500;
-
-      if pdf.getNumberOfPages > 100
-        STDERR.puts("detecting tables on page #{page_index} / #{pdf.getNumberOfPages}")
-      end
-
-      pdfbox_page = pdf.getDocumentCatalog.getAllPages[page_index]
-      page_width = pdfbox_page.findCropBox.getWidth
-      draw_page_width = 2048 #needs to be big, or some lines won't get drawn.
-      image = Tabula::Render.pageToBufferedImage(pdfbox_page, draw_page_width)
-      # ImageIO.write(image, 'png',
-      #           java.io.File.new("column_pictures/notext-#{page_index}.png"))
-      iplImage = Opencv_core::IplImage.createFrom(image)
-      lines = cv_find_lines(iplImage, tunable_threshold, page_index)
-
-      current_try = tunable_threshold
-      
-      #for finding tables, minimal_lines_threshold should be very high. The cost of a false positive line is low; the cost of a false negative may be high.
-      while lines.count(&:vertical?) < minimal_lines_threshold || lines.count(&:horizontal?) < minimal_lines_threshold do#lines.count < minimal_lines_threshold do #
-        current_try -= 20 #sacrifice speed for success.
-
-        # we might need to give up..
-        break if current_try < 10
-        
-        lines = cv_find_lines(iplImage, current_try, page_index)
-      end
-      lines.each{|l| l.scale!( page_width / draw_page_width)}
-
-      
-      iplImage.release #let's not crash from memory problems
-
       lines
     end
 
@@ -129,67 +91,14 @@ module Tabula
       find_tables(vertical_lines, horizontal_lines).inject([]){|memo, next_rect| Geometry::Rectangle.unionize(memo, next_rect )}.sort_by(&:area).reverse
     end
 
-    def TableGuesser.cv_find_lines(src, threshold, name) 
-      dst = Opencv_core::cvCreateImage(Opencv_core::cvGetSize(src), src.depth, 1)
-      colorDst = Opencv_core::cvCreateImage(Opencv_core::cvGetSize(src), src.depth(), 3)
 
-      Opencv_imgproc::cvCanny(src, dst, 50, 200, 3)
-      Opencv_imgproc::cvCvtColor(dst, colorDst, Opencv_imgproc::CV_GRAY2BGR)
-
-      storage = Opencv_core::cvCreateMemStorage(0)
-      # /*
-      #  * http:#opencv.willowgarage.com/documentation/feature_detection.html#houghlines2
-      #  * 
-      #  * distance resolution in pixel-related units.
-      #  * angle resolution in radians
-      #  * "accumulator value"
-      #  * second-to-last parameter: minimum line length # was 50
-      #  * last parameter: join lines if they are within N pixels of each other.
-      #  * 
-      #  */
-      lines = Opencv_imgproc::cvHoughLines2(dst, storage, Opencv_imgproc::CV_HOUGH_PROBABILISTIC, 1, Math::PI / 180, threshold, 20, 10)
-      lines_list = []
-
-      lines.total.times do |i|
-          line = Opencv_core::cvGetSeqElem(lines, i)
-          pt1 = Opencv_core::CvPoint.new(line).position(0)
-          pt2 = Opencv_core::CvPoint.new(line).position(1)
-          lines_list << Geometry::Segment.new_by_arrays([pt1.x, pt1.y], [pt2.x, pt2.y])
-          Opencv_core::cvLine(colorDst, pt1, pt2, Opencv_core::CV_RGB(255, 0, 0), 1, Opencv_core::CV_AA, 0) #actually draw the line on the img.
-      end
-
-      #N.B.: No images are saved if column_pictures folder in app root doesn't exist.
-      Opencv_highgui::cvSaveImage("column_pictures/#{name}.png", colorDst)
-      Opencv_core::cvReleaseImage(dst)
-      Opencv_core::cvReleaseImage(colorDst)
-
-      return lines_list
-    end
-
-    def TableGuesser.load_pdfview_pdf(filename)
-      raf = RandomAccessFile.new(filename, "r")
-      channel = raf.channel
-      buf = channel.map(MapMode::READ_ONLY, 0, channel.size())
-      PDFFile.new(buf)
-    end
-
-    def TableGuesser.load_pdfbox_pdf(filename)
-      PDDocument.loadNonSeq(java.io.File.new(filename), nil)
-    end
-
-    def TableGuesser.euclidean_distance_helper(x1, y1, x2, y2)
+    def TableGuesser.euclidean_distance(x1, y1, x2, y2)
       return Math.sqrt( ((x1 - x2) ** 2) + ((y1 - y2) ** 2) )
-    end
-
-    def TableGuesser.euclidean_distance(p1, p2)
-      euclidean_distance_helper(p1.x, p1.y, p2.x, p2.y)
     end
     
     def TableGuesser.is_upward_oriented(line, y_value)
       #return true if this line is oriented upwards, i.e. if the majority of it's length is above y_value.
-      topPoint = line.topmost_endpoint.y
-      bottomPoint = line.bottommost_endpoint.y
-      return (y_value - topPoint > bottomPoint - y_value);
+      return (y_value - line.top > line.bottom - y_value);
     end
     
     def TableGuesser.find_tables(verticals, horizontals)
@@ -214,17 +123,17 @@ module Tabula
           #for the left vertical line.
           verticals.each do |vertical_line|
             #1. if it is correctly oriented (up or down) given the outer loop here. (We don't want a false-positive rectangle with one "arm" going down, and one going up.)
-            next unless is_upward_oriented(vertical_line, horizontal_line.leftmost_endpoint.y) == up_or_down_lines
+            next unless is_upward_oriented(vertical_line, horizontal_line.top) == up_or_down_lines
             
             vertical_line_length = vertical_line.length
             longer_line_length = [horizontal_line_length, vertical_line_length].max
             corner_proximity = corner_proximity_threshold * longer_line_length
             #make this the left vertical line:
             #2. if it begins near the left vertex of the horizontal line.
-            if euclidean_distance(horizontal_line.leftmost_endpoint, vertical_line.topmost_endpoint) < corner_proximity || 
-               euclidean_distance(horizontal_line.leftmost_endpoint, vertical_line.bottommost_endpoint) < corner_proximity
+            if euclidean_distance(horizontal_line.left, horizontal_line.top, vertical_line.left, vertical_line.top) < corner_proximity || 
+               euclidean_distance(horizontal_line.left, horizontal_line.top, vertical_line.left, vertical_line.bottom) < corner_proximity
               #3. if it is farther to the left of the line we already have.  
-              if left_vertical_line.nil? || left_vertical_line.leftmost_endpoint.x > vertical_line.leftmost_endpoint.x #is this line is more to the left than left_vertical_line. #"What's your opinion on Das Kapital?"
+              if left_vertical_line.nil? || left_vertical_line.left> vertical_line.left #is this line is more to the left than left_vertical_line. #"What's your opinion on Das Kapital?"
                 has_vertical_line_from_the_left = true
                 left_vertical_line = vertical_line
               end
@@ -235,14 +144,14 @@ module Tabula
           right_vertical_line = nil
           #for the right vertical line.
           verticals.each do |vertical_line|
-            next unless is_upward_oriented(vertical_line, horizontal_line.leftmost_endpoint.y) == up_or_down_lines
+            next unless is_upward_oriented(vertical_line, horizontal_line.top) == up_or_down_lines
             vertical_line_length = vertical_line.length
             longer_line_length = [horizontal_line_length, vertical_line_length].max
             corner_proximity = corner_proximity_threshold * longer_line_length
-            if euclidean_distance(horizontal_line.rightmost_endpoint, vertical_line.topmost_endpoint) < corner_proximity ||
-              euclidean_distance(horizontal_line.rightmost_endpoint, vertical_line.bottommost_endpoint) < corner_proximity
+            if euclidean_distance(horizontal_line.right, horizontal_line.top, vertical_line.left, vertical_line.top) < corner_proximity ||
+              euclidean_distance(horizontal_line.right, horizontal_line.top, vertical_line.left, vertical_line.bottom) < corner_proximity
 
-              if right_vertical_line.nil? || right_vertical_line.rightmost_endpoint.x > vertical_line.rightmost_endpoint.x  #is this line is more to the right than right_vertical_line. #"Can you recite all of John Galt's speech?"
+              if right_vertical_line.nil? || right_vertical_line.right > vertical_line.right  #is this line is more to the right than right_vertical_line. #"Can you recite all of John Galt's speech?"
                 #do two passes to guarantee we don't get a horizontal line with a upwards and downwards line coming from each of its corners.
                 #i.e. ensuring that both "arms" of the rectangle have the same orientation (up or down).
                 has_vertical_line_from_the_right = true
@@ -253,11 +162,11 @@ module Tabula
 
           if has_vertical_line_from_the_right && has_vertical_line_from_the_left
             #in case we eventually tolerate not-quite-vertical lines, this computers the distance in Y directly, rather than depending on the vertical lines' lengths.
-            height = [left_vertical_line.bottommost_endpoint.y - left_vertical_line.topmost_endpoint.y, right_vertical_line.bottommost_endpoint.y - right_vertical_line.topmost_endpoint.y].max
+            height = [left_vertical_line.bottom - left_vertical_line.top, right_vertical_line.bottom - right_vertical_line.top].max
             
-            y = [left_vertical_line.topmost_endpoint.y, right_vertical_line.topmost_endpoint.y].min
-            width = horizontal_line.rightmost_endpoint.x - horizontal_line.leftmost_endpoint.x
-            r = Geometry::Rectangle.new_by_x_y_dims(horizontal_line.leftmost_endpoint.x, y, width, height ) #x, y, w, h
+            y = [left_vertical_line.top, right_vertical_line.top].min
+            width = horizontal_line.right - horizontal_line.left
+            r = Geometry::Rectangle.new_by_x_y_dims(horizontal_line.left, y, width, height ) #x, y, w, h
             #rectangles.put(hashRectangle(r), r); #TODO: I dont' think I need this now that I'm in Rubyland
             rectangles << r
           end
@@ -275,9 +184,9 @@ module Tabula
             longer_line_length = [horizontal_line_length, vertical_line_length].max
             corner_proximity = corner_proximity_threshold * longer_line_length
 
-            if euclidean_distance(vertical_line.topmost_endpoint, horizontal_line.leftmost_endpoint) < corner_proximity ||
-                euclidean_distance(vertical_line.topmost_endpoint, horizontal_line.rightmost_endpoint) < corner_proximity
-                if top_horizontal_line.nil? || top_horizontal_line.topmost_endpoint.y > horizontal_line.topmost_endpoint.y #is this line is more to the top than the one we've got already.
+            if euclidean_distance(vertical_line.left, vertical_line.top, horizontal_line.left, horizontal_line.top) < corner_proximity ||
+                euclidean_distance(vertical_line.left, vertical_line.top, horizontal_line.right, horizontal_line.top) < corner_proximity
+                if top_horizontal_line.nil? || top_horizontal_line.top > horizontal_line.top #is this line is more to the top than the one we've got already.
                   has_horizontal_line_from_the_top = true;
                   top_horizontal_line = horizontal_line;
                 end
@@ -291,9 +200,9 @@ module Tabula
             longer_line_length = [horizontal_line_length, vertical_line_length].max
             corner_proximity = corner_proximity_threshold * longer_line_length
 
-            if euclidean_distance(vertical_line.bottommost_endpoint, horizontal_line.leftmost_endpoint) < corner_proximity ||
-              euclidean_distance(vertical_line.bottommost_endpoint, horizontal_line.rightmost_endpoint) < corner_proximity
-              if bottom_horizontal_line.nil? || bottom_horizontal_line.bottommost_endpoint.y > horizontal_line.bottommost_endpoint.y  #is this line is more to the bottom than the one we've got already. 
+            if euclidean_distance(vertical_line.left, vertical_line.bottom, horizontal_line.left, horizontal_line.top) < corner_proximity ||
+              euclidean_distance(vertical_line.left, vertical_line.bottom, horizontal_line.left, horizontal_line.top) < corner_proximity
+              if bottom_horizontal_line.nil? || bottom_horizontal_line.bottom > horizontal_line.bottom  #is this line is more to the bottom than the one we've got already. 
                 has_horizontal_line_from_the_bottom = true;
                 bottom_horizontal_line = horizontal_line;
               end
@@ -301,10 +210,10 @@ module Tabula
           end
 
           if has_horizontal_line_from_the_bottom && has_horizontal_line_from_the_top
-            x = [top_horizontal_line.leftmost_endpoint.x, bottom_horizontal_line.leftmost_endpoint.x].min
-            y = vertical_line.topmost_endpoint.y
-            width = [top_horizontal_line.rightmost_endpoint.x - top_horizontal_line.leftmost_endpoint.x, bottom_horizontal_line.rightmost_endpoint.x - bottom_horizontal_line.rightmost_endpoint.x].max
-            height = vertical_line.bottommost_endpoint.y - vertical_line.topmost_endpoint.y
+            x = [top_horizontal_line.left, bottom_horizontal_line.left].min
+            y = vertical_line.top
+            width = [top_horizontal_line.right - top_horizontal_line.left, bottom_horizontal_line.right - bottom_horizontal_line.right].max
+            height = vertical_line.bottom - vertical_line.top
             r = Geometry::Rectangle.new_by_x_y_dims(x, y, width, height); #x, y, w, h
             #rectangles.put(hashRectangle(r), r);
             rectangles << r
