@@ -34,7 +34,7 @@ module Tabula
     attach_function :free_values, [ :pointer ], :void
 
     DETECT_LINES_DEFAULTS = {
-      :scale_factor => 1,
+      :scale_factor => nil,
       :image_size => 2048
     }
 
@@ -42,10 +42,12 @@ module Tabula
       options = DETECT_LINES_DEFAULTS.merge(options)
 
       pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_path), nil)
-      bi = Tabula::Render.pageToBufferedImage(pdf_file.getDocumentCatalog.getAllPages[page_number - 1],
+      page = pdf_file.getDocumentCatalog.getAllPages[page_number - 1]
+      bi = Tabula::Render.pageToBufferedImage(page,
                                               options[:image_size])
       pdf_file.close
-      detect_lines(bi, options[:scale_factor])
+      detect_lines(bi,
+                   options[:scale_factor] || (page.findCropBox.width / options[:image_size]))
     end
 
     # image can be either a string (path to image) or a Java::JavaAwtImage::BufferedImage
