@@ -50,9 +50,7 @@ module Tabula
 
     # image can be either a string (path to image) or a Java::JavaAwtImage::BufferedImage
     # image to pixels: http://stackoverflow.com/questions/6524196/java-get-pixel-array-from-image
-    def LSD.detect_lines(image, options={})
-
-      options = DETECT_LINES_DEFAULTS.merge(options)
+    def LSD.detect_lines(image, scale_factor=1)
 
       bimage = if image.class == Java::JavaAwtImage::BufferedImage
                  image
@@ -76,10 +74,10 @@ module Tabula
         a_round = a[0..3].map(&:round)
         p1, p2 = [[a_round[0], a_round[1]], [a_round[2], a_round[3]]]
 
-        rv << Tabula::Ruling.new(p1[1] * options[:scale_factor],
-                                 p1[0] * options[:scale_factor],
-                                 (p2[0] - p1[0]) * options[:scale_factor],
-                                 (p2[1] - p1[1]) * options[:scale_factor])
+        rv << Tabula::Ruling.new(p1[1] * scale_factor,
+                                 p1[0] * scale_factor,
+                                 (p2[0] - p1[0]) * scale_factor,
+                                 (p2[1] - p1[1]) * scale_factor)
       end
 
       free_values(out)

@@ -152,7 +152,7 @@ module Tabula
       down_tolerance = 0.90 #90?
 
       dist = self.horizontal_distance(other).abs
-      
+
       rv = overlaps && (dist.between?(self.width_of_space * down_tolerance, self.width_of_space + up_tolerance))
       rv
     end
@@ -298,20 +298,31 @@ module Tabula
 
       horiz = rulings.select { |r| r.horizontal? && r.width > max_distance }
         .group_by(&:top)
-        .values.reduce([]) { |memo, rs|
+        .values.reduce([]) do |memo, rs|
+
         rs = rs.sort_by(&:left)
-
-        memo << if rs.size > 1
-                  Tabula::Ruling.new(rs[0].top, rs[0].left, rs[-1].right - rs[0].left, 0)
-                else
-                  rs.first
-                end
-
-      }
+        if rs.size > 1
+          memo +=
+            rs.each_cons(2)
+            .chunk { |p| p[1].left - p[0].right < 7 }
+            .select { |c| c[0] }
+            .map { |group|
+            group = group.last.flatten.uniq
+            Tabula::Ruling.new(group[0].top,
+                               group[0].left,
+                               group[-1].right - group[0].left,
+                               0)
+          }
+          Tabula::Ruling.new(rs[0].top, rs[0].left, rs[-1].right - rs[0].left, 0)
+        else
+          memo << rs.first
+        end
+        memo
+      end
       .sort_by(&:top)
 
       h = []
-      horiz.size.times do |i| 
+      horiz.size.times do |i|
 
         if i == horiz.size - 1
           h << horiz[-1]
@@ -319,7 +330,7 @@ module Tabula
         end
 
         if skip
-          skip = false; 
+          skip = false;
           next
         end
         d = (horiz[i+1].top - horiz[i].top).abs
@@ -335,41 +346,55 @@ module Tabula
 
       vert = rulings.select { |r| r.vertical? && r.height > max_distance }
         .group_by(&:left)
-        .values.reduce([]) { |memo, rs|
+        .values
+        .reduce([]) do |memo, rs|
 
-        rs = rs.sort_by(&:top)
-        memo << if rs.size > 1
-                  Tabula::Ruling.new(rs[0].top, rs[0].left, 0, rs[-1].bottom - rs[0].top)
-                else rs.first
-                  rs.first
-                end
-        }
-        .sort_by(&:left)
-      
-      v = []
-      vert.size.times do |i|
-        
-        if i == vert.size - 1
-          v << vert[-1]
-          break
-        end
+          rs = rs.sort_by(&:top)
 
-        if skip
-          skip = false; 
-          next
-        end
-        d = (vert[i+1].left - vert[i].left).abs
+          if rs.size > 1
+            # Here be dragons:
+            # merge consecutive segments of lines that are close enough
+            memo +=
+              rs.each_cons(2)
+              .chunk { |p| p[1].top - p[0].bottom < 7 }
+              .select { |c| c[0] }
+              .map { |group|
+                group = group.last.flatten.uniq
+                Tabula::Ruling.new(group[0].top,
+                                   group[0].left,
+                                   0,
+                                   group[-1].bottom - group[0].top)
+              }
+         else
+           memo << rs.first
+         end
+         memo
+      end.sort_by(&:left)
 
-        v << if d < 4 # THRESHOLD DISTANCE between vertical lines
-               skip = true
-               Tabula::Ruling.new([vert[i+1].top, vert[i].top].min, vert[i].left + d / 2, 0, [vert[i+1].height.abs, vert[i].height.abs].max)
-             else
-               vert[i]
-             end
-      end
-      vert = v
+      # v = []
 
-      
+      # vert.size.times do |i|
+      #   if i == vert.size - 1
+      #     v << vert[-1]
+      #     break
+      #   end
+
+      #   if skip
+      #     skip = false;
+      #     next
+      #   end
+      #   d = (vert[i+1].left - vert[i].left).abs
+
+      #   v << if d < 4 # THRESHOLD DISTANCE between vertical lines
+      #          skip = true
+      #          Tabula::Ruling.new([vert[i+1].top, vert[i].top].min, vert[i].left + d / 2, 0, [vert[i+1].height.abs, vert[i].height.abs].max)
+      #        else
+      #          vert[i]
+      #        end
+      # end
+      # vert = v
+
+
       # - only keep horizontal rulings that intersect with at least one vertical ruling
       # - only keep vertical rulings that intersect with at least one horizontal ruling
       # yeah, it's a naive heuristic. but hey, it works.
