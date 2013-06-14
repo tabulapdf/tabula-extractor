@@ -16,7 +16,11 @@ module Tabula
     extend FFI::Library
     ffi_lib File.expand_path('../../ext/' + case RbConfig::CONFIG['host_os']
                                             when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-                                              'liblsd.dll'
+                                              if RbConfig::CONFIG['host_cpu'] == 'x86_64'
+                                                'liblsd64.dll'
+                                              else
+                                                'liblsd.dll'
+                                              end
                                             when /darwin|mac os/
                                               'liblsd.dylib'
                                             when /linux/
