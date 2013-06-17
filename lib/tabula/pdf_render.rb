@@ -20,7 +20,7 @@ module Tabula
       end
     end
 
-    TRANSPARENT_WHITE = Color.new(255, 255, 255, 0)
+    TRANSPARENT_WHITE = java.awt.Color.new(255, 255, 255, 0)
 
     # 2048 width is important, if this is too small, thin lines won't be drawn.
     def self.pageToBufferedImage(page, width=2048, pageDrawerClass=PageDrawerNoText)
