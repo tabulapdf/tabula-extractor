@@ -51,6 +51,10 @@ module Tabula
       lines
     end
 
+    def TableGuesser.find_lines_on_page(pdf, page_index)
+      Tabula::LSD.detect_lines_in_pdf_page(filename, page_index)
+    end
+
     def TableGuesser.find_rects_on_page(pdf, page_index)
       find_rects_from_lines(find_lines_on_page(pdf, page_index, 10))
     end
