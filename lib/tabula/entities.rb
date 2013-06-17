@@ -99,10 +99,10 @@ module Tabula
 
       # spaces are not detected, b/c they have height == 0
       # ze = ZoneEntity.new(area[0], area[1], area[3] - area[1], area[2] - area[0])
-      # self.texts.select { |t| t.overlaps? ze }
-      self.texts.select { |t|
+      # self.texts.select { |t| t.overlaps? ze } 
+      self.texts.select do |t| 
         t.top > area[0] && t.top + t.height < area[2] && t.left > area[1] && t.left + t.width < area[3]
-      }
+      end
     end
 
     def to_json(options={})
@@ -120,7 +120,7 @@ module Tabula
     attr_accessor :font, :font_size, :text, :width_of_space
 
     CHARACTER_DISTANCE_THRESHOLD = 1.5
-    TOLERANCE_FACTOR = 0.25
+    TOLERANCE_FACTOR = 0.25 #25
 
     def initialize(top, left, width, height, font, font_size, text, width_of_space)
       super(top, left, width, height)
@@ -149,7 +149,7 @@ module Tabula
       overlaps = self.vertically_overlaps?(other)
 
       up_tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
-      down_tolerance = 0.95
+      down_tolerance = 0.90 #90?
 
       dist = self.horizontal_distance(other).abs
 
@@ -261,12 +261,23 @@ module Tabula
       r >= 0 and r < 1 and s >= 0 and s < 1
     end
 
+    def length
+      Math.sqrt( (self.right - self.left).abs ** 2 + (self.bottom - self.top).abs ** 2 )
+    end
+
     def vertical?
       left == right
     end
 
     def horizontal?
       top == bottom
+    end
+
+    def right
+      left + width
+    end
+    def bottom
+      top + height
     end
 
     def to_json(arg)

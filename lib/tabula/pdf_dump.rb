@@ -77,11 +77,12 @@ module Tabula
     class CharacterExtractor
       include Observable
 
+      #N.B. pages can be :all, a list of pages or a range.
       def initialize(pdf_filename, pages=[1])
         raise Errno::ENOENT unless File.exists?(pdf_filename)
         @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
-        @pages = pages
+        @pages = pages == :all ?  (1..@all_pages.size) : pages
         @extractor = TextExtractor.new
       end
 

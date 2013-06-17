@@ -34,6 +34,7 @@ EOS
 
     opt :pages, 'Comma separated list of ranges. Examples: --pages 1-3,5-7 or --pages 3. Default is --pages 1', :default => '1', :type => String
     opt :area, 'Portion of the page to analyze (top,left,bottom,right). Example: --area 269.875,12.75,790.5,561. Default is entire page', :type => String, :default => nil
+    opt :guess, 'Guess the portion of the page to analyze per page. Slow.'
     opt :format, "Output format (#{FORMATS.join(",")})", :default => 'CSV'
     opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
   end
@@ -51,7 +52,6 @@ EOS
   Trollop::die 'file does not exist' unless File.exists? pdf_filename
 
   return opts, pdf_filename
-
 end
 
 def main
@@ -60,11 +60,15 @@ def main
   area = opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)
   out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'w')
   extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]))
-  extractor.extract.each do |page|
-    text = page.get_text(area)
-    Tabula::Writers.send(opts[:format].to_sym,
-                         Tabula.make_table(text),
-                         out)
+  extractor.extract.each_with_index do |page, page_index|
+    page_areas = opts[:guess] ? Tabula::TableGuesser::find_rects_on_page(Tabula::TableGuesser::load_pdf(filename), page_index) : [area]
+
+    page_areas.each do |page_area|
+      text = page.get_text( page_area )
+      Tabula::Writers.send(opts[:format].to_sym,
+                           Tabula.make_table(text),
+                           out)
+    end
   end
   out.close
 end
