@@ -6,36 +6,6 @@ require_relative '../geom/rectangle'
 require_relative './pdf_render'
 #CLASSPATH=:./target/javacpp.jar:./target/javacv.jar:./target/javacv-macosx-x86_64.jar:./target/PDFRenderer-0.9.1.jar
 
-require File.join(File.dirname(__FILE__), '../../target/javacpp.jar')
-require File.join(File.dirname(__FILE__), '../../target/javacv.jar')
-require File.join(File.dirname(__FILE__), '../../target/javacv-macosx-x86_64.jar') #TODO: change this to the right one for the platform
-require File.join(File.dirname(__FILE__), '../../target/PDFRenderer-0.9.1.jar')
-
-
-java_import com.googlecode.javacpp.Pointer
-java_import com.googlecode.javacv.CanvasFrame
-java_import(com.googlecode.javacv.cpp.opencv_core){'Opencv_core'}
-java_import(com.googlecode.javacv.cpp.opencv_imgproc){'Opencv_imgproc'}
-
-java_import(com.googlecode.javacv.cpp.opencv_highgui){'Opencv_highgui'}
-
-# java_import com.sun.pdfview.PDFFile
-# java_import com.sun.pdfview.PDFPage
-
-java_import org.apache.pdfbox.pdmodel.PDDocument
-java_import org.apache.pdfbox.pdfviewer.PageDrawer
-
-
-java_import java.awt.image.BufferedImage;
-java_import(java.io.File){'JavaFile'};
-java_import java.io.RandomAccessFile;
-java_import java.nio.ByteBuffer;
-java_import java.nio.channels.FileChannel::MapMode;
-java_import java.util.ArrayList;
-java_import java.util.Collections;
-java_import java.util.List;
-java_import java.util.HashMap;
-java_import java.util.Comparator;
 
 module Tabula
   module TableGuesser

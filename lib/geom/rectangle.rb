@@ -6,7 +6,7 @@
 
 module Geometry
   class Rectangle < Struct.new(:point1, :point2)
-    SIMILARITY_DIVISOR = 10
+    SIMILARITY_DIVISOR = 20
 
     def Rectangle.unionize(non_overlapping_rectangles, next_rect)
       #if next_rect doesn't overlap any of non_overlapping_rectangles
