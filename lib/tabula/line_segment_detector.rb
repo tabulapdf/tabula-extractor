@@ -46,7 +46,7 @@ module Tabula
       options = DETECT_LINES_DEFAULTS.merge(options)
 
       pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_path), nil)
-      page = pdf_file.getDocumentCatalog.getAllPages[page_number - 1]
+      page = pdf_file.getDocumentCatalog.getAllPages[page_number]
       bi = Tabula::Render.pageToBufferedImage(page,
                                               options[:image_size])
       pdf_file.close
