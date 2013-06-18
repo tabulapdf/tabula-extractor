@@ -24,11 +24,11 @@ module Tabula
         puts "not a pdf!"
         exit
       end
-      
+
       puts "pages: " + pdf.getNumberOfPages.to_s
-      
+
       tables = []
-      pdf.getNumberOfPages.times do |i|          
+      pdf.getNumberOfPages.times do |i|
         #gotcha: with PDFView, PDF pages are 1-indexed. If you ask for page 0 and then page 1, you'll get the first page twice. So start with index 1.
         tables << find_rects_on_page(pdf, i + 1)
       end
@@ -40,19 +40,18 @@ module Tabula
         puts "not a pdf!"
         exit
       end
-      
+
       puts "pages: " + pdf.getNumberOfPages.to_s
-      
+
       lines = []
-      pdf.getNumberOfPages.times do |i|          
-        #gotcha: with PDFView, PDF pages are 1-indexed. If you ask for page 0 and then page 1, you'll get the first page twice. So start with index 1.
-        lines << detect_lines_in_pdf_page(filename, i + 1)
+      pdf.getNumberOfPages.times do |i|
+        lines << detect_lines_in_pdf_page(filename, i)
       end
       lines
     end
 
     def TableGuesser.find_lines_on_page(pdf, page_index)
-      Tabula::LSD.detect_lines_in_pdf_page(filename, page_index)
+      Tabula::LSD.detect_lines_in_pdf_page(pdf, page_index)
     end
 
     def TableGuesser.find_rects_on_page(pdf, page_index)
@@ -69,44 +68,44 @@ module Tabula
     def TableGuesser.euclidean_distance(x1, y1, x2, y2)
       return Math.sqrt( ((x1 - x2) ** 2) + ((y1 - y2) ** 2) )
     end
-    
+
     def TableGuesser.is_upward_oriented(line, y_value)
       #return true if this line is oriented upwards, i.e. if the majority of it's length is above y_value.
       return (y_value - line.top > line.bottom - y_value);
     end
-    
+
     def TableGuesser.find_tables(verticals, horizontals)
       # /*
       #  * Find all the rectangles in the vertical and horizontal lines given.
-      #  * 
+      #  *
       #  * Rectangles are deduped with hashRectangle, which considers two rectangles identical if each point rounds to the same tens place as the other.
-      #  * 
+      #  *
       #  * TODO: generalize this.
       #  */
       corner_proximity_threshold = 0.10;
-      
+
       rectangles = []
       #find rectangles with one horizontal line and two vertical lines that end within $threshold to the ends of the horizontal line.
-            
+
       [true, false].each do |up_or_down_lines|
         horizontals.each do |horizontal_line|
           horizontal_line_length = horizontal_line.length
 
           has_vertical_line_from_the_left = false
-          left_vertical_line = nil 
+          left_vertical_line = nil
           #for the left vertical line.
           verticals.each do |vertical_line|
             #1. if it is correctly oriented (up or down) given the outer loop here. (We don't want a false-positive rectangle with one "arm" going down, and one going up.)
             next unless is_upward_oriented(vertical_line, horizontal_line.top) == up_or_down_lines
-            
+
             vertical_line_length = vertical_line.length
             longer_line_length = [horizontal_line_length, vertical_line_length].max
             corner_proximity = corner_proximity_threshold * longer_line_length
             #make this the left vertical line:
             #2. if it begins near the left vertex of the horizontal line.
-            if euclidean_distance(horizontal_line.left, horizontal_line.top, vertical_line.left, vertical_line.top) < corner_proximity || 
+            if euclidean_distance(horizontal_line.left, horizontal_line.top, vertical_line.left, vertical_line.top) < corner_proximity ||
                euclidean_distance(horizontal_line.left, horizontal_line.top, vertical_line.left, vertical_line.bottom) < corner_proximity
-              #3. if it is farther to the left of the line we already have.  
+              #3. if it is farther to the left of the line we already have.
               if left_vertical_line.nil? || left_vertical_line.left> vertical_line.left #is this line is more to the left than left_vertical_line. #"What's your opinion on Das Kapital?"
                 has_vertical_line_from_the_left = true
                 left_vertical_line = vertical_line
@@ -137,7 +136,7 @@ module Tabula
           if has_vertical_line_from_the_right && has_vertical_line_from_the_left
             #in case we eventually tolerate not-quite-vertical lines, this computers the distance in Y directly, rather than depending on the vertical lines' lengths.
             height = [left_vertical_line.bottom - left_vertical_line.top, right_vertical_line.bottom - right_vertical_line.top].max
-            
+
             y = [left_vertical_line.top, right_vertical_line.top].min
             width = horizontal_line.right - horizontal_line.left
             r = Geometry::Rectangle.new_by_x_y_dims(horizontal_line.left, y, width, height ) #x, y, w, h
@@ -149,7 +148,7 @@ module Tabula
         #find rectangles with one vertical line and two horizontal lines that end within $threshold to the ends of the vertical line.
         verticals.each do |vertical_line|
           vertical_line_length = vertical_line.length
-            
+
           has_horizontal_line_from_the_top = false
           top_horizontal_line = nil
           #for the top horizontal line.
@@ -176,7 +175,7 @@ module Tabula
 
             if euclidean_distance(vertical_line.left, vertical_line.bottom, horizontal_line.left, horizontal_line.top) < corner_proximity ||
               euclidean_distance(vertical_line.left, vertical_line.bottom, horizontal_line.left, horizontal_line.top) < corner_proximity
-              if bottom_horizontal_line.nil? || bottom_horizontal_line.bottom > horizontal_line.bottom  #is this line is more to the bottom than the one we've got already. 
+              if bottom_horizontal_line.nil? || bottom_horizontal_line.bottom > horizontal_line.bottom  #is this line is more to the bottom than the one we've got already.
                 has_horizontal_line_from_the_bottom = true;
                 bottom_horizontal_line = horizontal_line;
               end
@@ -194,7 +193,7 @@ module Tabula
           end
         end
       end
-      return rectangles.uniq &:similarity_hash 
-    end       
+      return rectangles.uniq &:similarity_hash
+    end
   end
 end
