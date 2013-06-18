@@ -6,7 +6,7 @@ require 'tabula/version'
 Gem::Specification.new do |s|
   s.name        = "tabula-extractor"
   s.version     = Tabula::VERSION
-  s.authors     = ["Manuel Aristarán"]
+  s.authors     = ["Manuel Aristarán", "Jeremy B. Merill", "Mike Tigas"]
   s.email       = ["manuel@jazzido.com"]
   s.homepage    = "https://github.com/jazzido/tabula-extractor"
   s.summary     = %q{extract tables from PDF files}
@@ -14,7 +14,7 @@ Gem::Specification.new do |s|
 
   s.platform = 'java'
 
-  shared_libs = ['liblsd.dylib', 'liblsd-linux64.so', 'liblsd-linux32.so', 'liblsd.dll'].map { |f| 'ext/' + f }
+  shared_libs = ['liblsd.dylib', 'liblsd-linux64.so', 'liblsd-linux32.so', 'liblsd.dll', 'liblsd64.dll'].map { |f| 'ext/' + f }
   s.files         = `git ls-files`.split("\n") + shared_libs.map.reject { |f| !File.exists?(f) }
   s.test_files    = `git ls-files -- {test,features}/*`.split("\n")
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
