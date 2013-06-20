@@ -61,7 +61,13 @@ def main
   out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'w')
   extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]))
   extractor.extract.each_with_index do |page, page_index|
-    page_areas = opts[:guess] ? Tabula::TableGuesser::find_rects_on_page(Tabula::TableGuesser::load_pdf(filename), page_index) : [area]
+    if opts[:guess] 
+      lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index + 1))
+      page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)      
+      page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
+    else
+      [area]
+    end
 
     page_areas.each do |page_area|
       text = page.get_text( page_area )
