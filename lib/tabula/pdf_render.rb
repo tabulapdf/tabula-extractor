@@ -20,7 +20,8 @@ module Tabula
       end
     end
 
-    TRANSPARENT_WHITE = java.awt.Color.new(255, 255, 255, 0)
+    #ugh jruby; suppresses "ambiguous method" warning that arises due to Java's overloaded constructor.
+    TRANSPARENT_WHITE =  java.awt.Color.java_class.constructor(Java::int, Java::int, Java::int, Java::int).new_instance(255, 255, 255, 0)
 
     # 2048 width is important, if this is too small, thin lines won't be drawn.
     def self.pageToBufferedImage(page, width=2048, pageDrawerClass=PageDrawerNoText)
@@ -30,8 +31,10 @@ module Tabula
       rotation = java.lang.Math.toRadians(page.findRotation)
 
       scaling = width / (rotation == 0 ? widthPt : heightPt)
-      widthPx, heightPx = java.lang.Math.round(widthPt * scaling), java.lang.Math.round(heightPt * scaling)
-      
+      #widthPx, heightPx = java.lang.Math.round(widthPt * scaling), java.lang.Math.round(heightPt * scaling)
+      widthPx, heightPx = (java.lang.Math.java_send :round, [Java::float], widthPt * scaling ), (java.lang.Math.java_send :round, [Java::float], heightPt * scaling)
+
+
       retval = if rotation != 0
                  BufferedImage.new(heightPx, widthPx, BufferedImage::TYPE_BYTE_GRAY)
                else
