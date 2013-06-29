@@ -1,9 +1,12 @@
 include Makefile.defaults
 
+
+CFLAGS := -arch i386 -arch x86_64 -fPIC -O3 -g -Wall -Werror
+
 lib: lib$(NAME).$(VERSION).dylib
 
 lib$(NAME).$(VERSION).dylib: $(NAME).o
-	$(CC) -dynamiclib -lm -o lib$(NAME).dylib $^
+	$(CC) -arch i386 -arch x86_64 -dynamiclib -lm -o lib$(NAME).dylib $^
 
 clean:
 	$(RM) *.o
