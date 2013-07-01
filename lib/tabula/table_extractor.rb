@@ -115,8 +115,6 @@ module Tabula
 
         char2 = self.text_elements[i+1]
 
-
-
         next if char2.nil? or char1.nil?
 
         if self.text_elements[current_word_index].should_merge?(char2)
@@ -168,30 +166,16 @@ module Tabula
 
   # Returns an array of Tabula::Line
   def Tabula.make_table(text_elements, options={})
-    extractor = TableExtractor.new(text_elements, options)
-
-    # group by lines
+    extractor = TableExtractor.new(text_elements, options).text_elements
     lines = []
-    line_boundaries = extractor.get_line_boundaries
-
-    # find all the text elements
-    # contained within each detected line (table row) boundary
-    line_boundaries.each do |lb|
-      line = Line.new
-
-      line_members = text_elements.find_all do |te|
-        te.vertically_overlaps?(lb)
+    text_elements.each do |te|
+      next if te.text =~ ONLY_SPACES_RE
+      l = lines.find { |line| line.horizontal_overlap_ratio(te) >= 0.2 }
+      if l.nil?
+        l = Line.new
+        lines << l
       end
-
-      text_elements -= line_members
-
-      line_members.sort_by(&:left).each do |te|
-        # skip text_elements that only contain spaces
-        next if te.text =~ ONLY_SPACES_RE
-        line << te
-      end
-
-      lines << line if line.text_elements.size > 0
+      l << te
     end
 
     lines.sort_by!(&:top)

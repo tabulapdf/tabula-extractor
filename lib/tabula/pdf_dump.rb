@@ -10,6 +10,8 @@ java_import org.apache.pdfbox.util.PDFTextStripper
 
 module Tabula
   module Extraction
+
+
     class TextExtractor < org.apache.pdfbox.util.PDFTextStripper
 
       attr_accessor :characters, :fonts
@@ -28,8 +30,9 @@ module Tabula
       end
 
 
+
       def processTextPosition(text)
-        #    return if text.getCharacter == ' '
+        # return if text.getCharacter == ' '
 
         # text_font = text.getFont
         # text_size = text.getFontSize
@@ -105,7 +108,7 @@ module Tabula
                                                                  char.getXDirAdj.round(2),
                                                                  char.getWidthDirAdj.round(2),
                                                                  char.getHeightDir.round(2),
-                                                                 nil,
+                                                                 char.getFont,
                                                                  char.getFontSize.round(2),
                                                                  char.getCharacter,
                                                                  char.getWidthOfSpace)

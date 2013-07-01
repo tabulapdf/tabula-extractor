@@ -18,4 +18,8 @@ module Enumerable
     return Math.sqrt(self.sample_variance)
   end
 
-end 
+  def sorted?
+    each_cons(2).all? { |a, b| (a <=> b) <= 0 }
+  end
+
+end
