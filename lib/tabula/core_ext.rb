@@ -10,7 +10,7 @@ module Enumerable
 
   def sample_variance
     m = self.mean
-    sum = self.inject(0){|accum, i| accum +(i-m)**2 }
+    sum = self.inject(0) {|accum, i| accum + (i-m)**2 }
     sum/(self.length - 1).to_f
   end
 

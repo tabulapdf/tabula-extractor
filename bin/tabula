@@ -38,7 +38,7 @@ EOS
     opt :format, "Output format (#{FORMATS.join(",")})", :default => 'CSV'
     opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
   end
-  
+
   if !opts[:area].nil?
     unless opts[:area].split(',').size == 4 \
       && opts[:area].split(',').all? { |x| x.strip =~ /(\d+\.?\d*)/ }
@@ -61,9 +61,9 @@ def main
   out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'w')
   extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]))
   extractor.extract.each_with_index do |page, page_index|
-    if opts[:guess] 
+    if opts[:guess]
       lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index))
-      page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)      
+      page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
       page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
     else
       page_areas = [area]
@@ -80,4 +80,3 @@ def main
 end
 
 main
-
