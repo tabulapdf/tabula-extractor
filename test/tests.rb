@@ -114,7 +114,6 @@ class TestExtractor < Minitest::Test
     lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
     vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
 
-
     characters = character_extractor.extract.next.get_text([110, 28, 218, 833])
                                                            #top left bottom right
     expected = [['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '$85.00'],

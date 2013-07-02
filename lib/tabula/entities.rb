@@ -195,12 +195,32 @@ module Tabula
     end
   end
 
+  class Table
+    attr_reader :lines
+    def initialize(line_count, separators)
+      @separators = separators
+      @lines = (0...line_count).inject([]) { |m| m << Line.new }
+    end
+
+    def add_text_element(text_element, i, j)
+      if @lines.size <= i
+        @lines[i] = Line.new
+      end
+      if @lines[i].text_elements[j]
+        @lines[i].text_elements[j].merge!(text_element)
+      else
+        @lines[i].text_elements[j] = text_element
+      end
+    end
+  end
 
   class Line < ZoneEntity
     attr_accessor :text_elements
+    attr_reader :index
 
-    def initialize
+    def initialize(index=nil)
       self.text_elements = []
+      @index = index
     end
 
     def <<(t)
