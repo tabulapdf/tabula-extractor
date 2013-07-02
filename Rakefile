@@ -6,7 +6,7 @@ require 'rake'
 Bundler::GemHelper.install_tasks
 
 task :test do
-  ruby %{--debug -J-d32 -X-C -J-Xmx512m test/tests.rb}
+  ruby %{--debug -X-C -J-Xmx512m test/tests.rb}
 end
 
 task :default => [:test]
