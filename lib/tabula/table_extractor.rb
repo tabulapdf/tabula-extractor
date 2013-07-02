@@ -186,13 +186,9 @@ module Tabula
     lines = group_by_lines(text_elements)
     top = lines[0].text_elements.map(&:top).min
     right = 0
-    mean_width = text_elements.map(&:width).mean
-    stddev_width = text_elements.map(&:width).standard_deviation
-
     columns = []
 
     text_elements.sort_by(&:left).each do |te|
-      next if te.width > (mean_width + 2*stddev_width)
       next if te.text =~ ONLY_SPACES_RE
       if te.top >= top
         left = te.left
