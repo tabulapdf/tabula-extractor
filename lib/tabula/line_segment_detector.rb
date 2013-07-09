@@ -5,6 +5,7 @@ require 'ffi'
 
 require_relative './entities'
 require_relative './pdf_render'
+require_relative './pdf_dump'
 require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
 
 java_import javax.imageio.ImageIO
@@ -45,7 +46,7 @@ module Tabula
     def LSD.detect_lines_in_pdf_page(pdf_path, page_number, options={})
       options = DETECT_LINES_DEFAULTS.merge(options)
 
-      pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_path), nil)
+      pdf_file = Extraction.openPDF(pdf_path)
       page = pdf_file.getDocumentCatalog.getAllPages[page_number]
       bi = Tabula::Render.pageToBufferedImage(page,
                                               options[:image_size])
@@ -62,9 +63,14 @@ module Tabula
                  image
                elsif image.class == String
                  ImageIO.read(java.io.File.new(image))
-                 else
+               else
                  raise ArgumentError, 'image must be a string or a BufferedImage'
                end
+
+      ImageIO.write(bimage,
+                    'png',
+                    java.io.File.new("/tmp/white.png"))
+
       image = LSD.image_to_image_double(bimage)
 
       lines_found_ptr = FFI::MemoryPointer.new(:int, 1)
