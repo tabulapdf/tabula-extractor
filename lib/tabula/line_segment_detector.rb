@@ -42,6 +42,18 @@ module Tabula
       :image_size => 2048
     }
 
+    def LSD.detect_lines_in_pdf(pdf_path, options={})
+      options = DETECT_LINES_DEFAULTS.merge(options)
+
+      pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_path), nil)
+      lines = pdf_file.getDocumentCatalog.getAllPages.to_a.map do |page|
+        bi = Tabula::Render.pageToBufferedImage(page, options[:image_size])
+        detect_lines(bi, options[:scale_factor] || (page.findCropBox.width / options[:image_size]))
+      end
+      pdf_file.close
+      lines
+    end
+
     def LSD.detect_lines_in_pdf_page(pdf_path, page_number, options={})
       options = DETECT_LINES_DEFAULTS.merge(options)
 
