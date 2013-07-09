@@ -115,12 +115,9 @@ module Tabula
 
         char2 = self.text_elements[i+1]
 
-
-
         next if char2.nil? or char1.nil?
 
         if self.text_elements[current_word_index].should_merge?(char2)
-          #puts "merging: #{self.text_elements[current_word_index].text}/#{self.text_elements[current_word_index].width}"
           self.text_elements[current_word_index].merge!(char2)
           char1 = char2
           self.text_elements[i+1] = nil
@@ -166,92 +163,60 @@ module Tabula
 
   ONLY_SPACES_RE = Regexp.new('^\s+$')
 
+  def Tabula.group_by_lines(text_elements)
+    lines = []
+    text_elements.each do |te|
+      next if te.text =~ ONLY_SPACES_RE
+      l = lines.find { |line| line.horizontal_overlap_ratio(te) >= 0.01 }
+      if l.nil?
+        l = Line.new
+        lines << l
+      end
+      l << te
+    end
+    lines
+  end
+
   # Returns an array of Tabula::Line
   def Tabula.make_table(text_elements, options={})
-    extractor = TableExtractor.new(text_elements, options)
+    default_options = {:separators => []}
+    options = default_options.merge(options)
 
-    # group by lines
-    lines = []
-    line_boundaries = extractor.get_line_boundaries
+    extractor = TableExtractor.new(text_elements, options).text_elements
+    lines = group_by_lines(text_elements)
+    top = lines[0].text_elements.map(&:top).min
+    right = 0
+    columns = []
 
-    # find all the text elements
-    # contained within each detected line (table row) boundary
-    line_boundaries.each do |lb|
-      line = Line.new
-
-      line_members = text_elements.find_all do |te|
-        te.vertically_overlaps?(lb)
-      end
-
-      text_elements -= line_members
-
-      line_members.sort_by(&:left).each do |te|
-        # skip text_elements that only contain spaces
-        next if te.text =~ ONLY_SPACES_RE
-        line << te
-      end
-
-      lines << line if line.text_elements.size > 0
-    end
-
-    lines.sort_by!(&:top)
-
-    columns = TableExtractor.new(lines.map(&:text_elements).flatten.compact.uniq, {:merge_words => options[:merge_words]}).group_by_columns.sort_by(&:left)
-
-    # # insert empty cells if needed
-    lines.each_with_index do |l, line_index|
-      next if l.text_elements.nil?
-      l.text_elements.compact! # TODO WHY do I have to do this?
-      l.text_elements.uniq!  # TODO WHY do I have to do this?
-      l.text_elements.sort_by!(&:left)
-
-      #next unless l.text_elements.size < columns.size
-
-      columns.each_with_index do |c, i|
-        if (i > l.text_elements.size - 1) or (!l.text_elements[i].nil? and !c.text_elements.include?(l.text_elements[i]))
-          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, '', 0))
+    text_elements.sort_by(&:left).each do |te|
+      next if te.text =~ ONLY_SPACES_RE
+      if te.top >= top
+        left = te.left
+        if (left > right)
+          columns << right
+          right = te.right
+        elsif te.right > right
+          right = te.right
         end
       end
     end
 
-    # # merge elements that are in the same column
-    lines.each_with_index do |l, line_index|
-      next if l.text_elements.nil?
+    separators = columns[1..-1].sort.reverse
 
-      (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|
-        next if l.text_elements[t1].nil? or l.text_elements[t2].nil? or l.text_elements[t1].text.empty? or l.text_elements[t2].text.empty?
-
-        # if same column...
-        if columns.detect { |c| c.text_elements.include? l.text_elements[t1] } \
-          == columns.detect { |c| c.text_elements.include? l.text_elements[t2] }
-          if l.text_elements[t1].bottom <= l.text_elements[t2].bottom
-            l.text_elements[t1].merge!(l.text_elements[t2])
-            l.text_elements[t2] = nil
-          else
-            l.text_elements[t2].merge!(l.text_elements[t1])
-            l.text_elements[t1] = nil
-          end
-        end
-      end
-
-      l.text_elements.compact!
-    end
-
-    # remove duplicate lines
-    # TODO this shouldn't have happened here, check why we have to do
-    # this (maybe duplication is happening in the column merging phase?)
-    (0..lines.size - 2).each do |i|
-      next if lines[i].nil?
-      # if any of the elements on the next line is duplicated, kill
-      # the next line
-      if (0..lines[i].text_elements.size-1).any? { |j| lines[i].text_elements[j] == lines[i+1].text_elements[j] }
-        lines[i+1] = nil
+    table = Table.new(lines.count, separators)
+    lines.each_with_index do |line, i|
+      line.text_elements.each do |te|
+        j = separators.find_index { |s| te.left > s } || separators.count
+        table.add_text_element(te, i, separators.count - j)
       end
     end
 
-    lines.compact.map do |line|
-      line.text_elements.sort_by(&:left)
+    table.lines.map do |l|
+      l.text_elements.map! { |te|
+        te.nil? ? TextElement.new(nil, nil, nil, nil, nil, nil, '', nil) : te
+      }
     end
+
   end
 
 
@@ -340,9 +305,4 @@ module Tabula
       line.text_elements.sort_by(&:left)
     end
   end
-
-
-
-
-
 end

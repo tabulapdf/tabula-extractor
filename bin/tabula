@@ -34,11 +34,13 @@ EOS
 
     opt :pages, 'Comma separated list of ranges. Examples: --pages 1-3,5-7 or --pages 3. Default is --pages 1', :default => '1', :type => String
     opt :area, 'Portion of the page to analyze (top,left,bottom,right). Example: --area 269.875,12.75,790.5,561. Default is entire page', :type => String, :default => nil
+    opt :password, 'Password to decrypt document. Default is empty', :default => ''
     opt :guess, 'Guess the portion of the page to analyze per page. Slow.'
+    opt :debug, 'Print detected table areas instead of processing.'
     opt :format, "Output format (#{FORMATS.join(",")})", :default => 'CSV'
     opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
   end
-  
+
   if !opts[:area].nil?
     unless opts[:area].split(',').size == 4 \
       && opts[:area].split(',').all? { |x| x.strip =~ /(\d+\.?\d*)/ }
@@ -59,25 +61,29 @@ def main
 
   area = opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)
   out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'w')
-  extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]))
+  extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
   extractor.extract.each_with_index do |page, page_index|
-    if opts[:guess] 
+    if opts[:guess]
       lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index))
-      page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)      
+      page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
       page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
     else
       page_areas = [area]
     end
 
     page_areas.each do |page_area|
-      text = page.get_text( page_area )
-      Tabula::Writers.send(opts[:format].to_sym,
-                           Tabula.make_table(text),
-                           out)
+      if opts[:guess] && opts[:debug]
+        puts (page_index + 1).to_s + ', ' + page_area.to_s
+      else
+        text = page.get_text( page_area )
+        Tabula::Writers.send(opts[:format].to_sym,
+                            Tabula.make_table(text),
+                            out)
+      end
+
     end
   end
   out.close
 end
 
 main
-

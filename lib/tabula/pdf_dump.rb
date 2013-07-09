@@ -7,9 +7,22 @@ require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.util.PDFTextStripper
+java_import org.apache.pdfbox.pdmodel.encryption.StandardDecryptionMaterial
 
 module Tabula
+
   module Extraction
+
+    def Extraction.openPDF(pdf_filename, password='')
+      raise Errno::ENOENT unless File.exists?(pdf_filename)
+      document = PDDocument.load(pdf_filename)
+      if document.isEncrypted
+        sdm = StandardDecryptionMaterial.new(password)
+        document.openProtection(sdm)
+      end
+      document
+    end
+
     class TextExtractor < org.apache.pdfbox.util.PDFTextStripper
 
       attr_accessor :characters, :fonts
@@ -28,8 +41,9 @@ module Tabula
       end
 
 
+
       def processTextPosition(text)
-        #    return if text.getCharacter == ' '
+        # return if text.getCharacter == ' '
 
         # text_font = text.getFont
         # text_size = text.getFontSize
@@ -49,9 +63,8 @@ module Tabula
     end
 
     class PagesInfoExtractor
-      def initialize(pdf_filename)
-        raise Errno::ENOENT unless File.exists?(pdf_filename)
-        @pdf_file = PDDocument.load(java.io.File.new(pdf_filename))
+      def initialize(pdf_filename, password='')
+        @pdf_file = Extraction.openPDF(pdf_filename, password)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
       end
 
@@ -60,7 +73,7 @@ module Tabula
           begin
             @all_pages.each_with_index do |page, i|
               contents = page.getContents
-              next if contents.nil?
+#              next if contents.nil?
               y.yield Tabula::Page.new(page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
@@ -78,9 +91,9 @@ module Tabula
       include Observable
 
       #N.B. pages can be :all, a list of pages or a range.
-      def initialize(pdf_filename, pages=[1])
+      def initialize(pdf_filename, pages=[1], password='')
         raise Errno::ENOENT unless File.exists?(pdf_filename)
-        @pdf_file = PDDocument.loadNonSeq(java.io.File.new(pdf_filename), nil)
+        @pdf_file = Extraction.openPDF(pdf_filename, password)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
         @pages = pages == :all ?  (1..@all_pages.size) : pages
         @extractor = TextExtractor.new
@@ -105,7 +118,7 @@ module Tabula
                                                                  char.getXDirAdj.round(2),
                                                                  char.getWidthDirAdj.round(2),
                                                                  char.getHeightDir.round(2),
-                                                                 nil,
+                                                                 char.getFont,
                                                                  char.getFontSize.round(2),
                                                                  char.getCharacter,
                                                                  char.getWidthOfSpace)

@@ -10,7 +10,7 @@ module Enumerable
 
   def sample_variance
     m = self.mean
-    sum = self.inject(0){|accum, i| accum +(i-m)**2 }
+    sum = self.inject(0) {|accum, i| accum + (i-m)**2 }
     sum/(self.length - 1).to_f
   end
 
@@ -18,4 +18,8 @@ module Enumerable
     return Math.sqrt(self.sample_variance)
   end
 
-end 
+  def sorted?
+    each_cons(2).all? { |a, b| (a <=> b) <= 0 }
+  end
+
+end

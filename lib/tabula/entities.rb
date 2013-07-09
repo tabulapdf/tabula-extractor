@@ -70,6 +70,22 @@ module Tabula
       intersection_area / union_area
     end
 
+    # as defined by PDF-TREX paper
+    def horizontal_overlap_ratio(other)
+      delta = [self.bottom - self.top, other.bottom - other.top].min
+      if [other.top, self.top, other.bottom, self.bottom].sorted?
+        (other.bottom - self.top) / delta
+      elsif [self.top, other.top, self.bottom, other.bottom].sorted?
+        (self.bottom - other.top) / delta
+      elsif [self.top, other.top, other.bottom, self.bottom].sorted?
+        (other.bottom - other.top) / delta
+      elsif [other.top, self.top, self.bottom, other.bottom].sorted?
+        (self.bottom - self.top) / delta
+      else
+        0
+      end
+    end
+
     def to_h
       hash = {}
       [:top, :left, :width, :height].each do |m|
@@ -99,8 +115,8 @@ module Tabula
 
       # spaces are not detected, b/c they have height == 0
       # ze = ZoneEntity.new(area[0], area[1], area[3] - area[1], area[2] - area[0])
-      # self.texts.select { |t| t.overlaps? ze } 
-      self.texts.select do |t| 
+      # self.texts.select { |t| t.overlaps? ze }
+      self.texts.select do |t|
         t.top > area[0] && t.top + t.height < area[2] && t.left > area[1] && t.left + t.width < area[3]
       end
     end
@@ -179,12 +195,32 @@ module Tabula
     end
   end
 
+  class Table
+    attr_reader :lines
+    def initialize(line_count, separators)
+      @separators = separators
+      @lines = (0...line_count).inject([]) { |m| m << Line.new }
+    end
+
+    def add_text_element(text_element, i, j)
+      if @lines.size <= i
+        @lines[i] = Line.new
+      end
+      if @lines[i].text_elements[j]
+        @lines[i].text_elements[j].merge!(text_element)
+      else
+        @lines[i].text_elements[j] = text_element
+      end
+    end
+  end
 
   class Line < ZoneEntity
     attr_accessor :text_elements
+    attr_reader :index
 
-    def initialize
+    def initialize(index=nil)
       self.text_elements = []
+      @index = index
     end
 
     def <<(t)
