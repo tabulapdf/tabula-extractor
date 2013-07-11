@@ -40,8 +40,6 @@ module Tabula
         self.characters = []; self.fonts = {}
       end
 
-
-
       def processTextPosition(text)
         # return if text.getCharacter == ' '
 
