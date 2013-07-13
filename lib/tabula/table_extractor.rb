@@ -182,6 +182,10 @@ module Tabula
     default_options = {:separators => []}
     options = default_options.merge(options)
 
+    if text_elements.empty?
+      return []
+    end
+
     extractor = TableExtractor.new(text_elements, options).text_elements
     lines = group_by_lines(text_elements)
     top = lines[0].text_elements.map(&:top).min
