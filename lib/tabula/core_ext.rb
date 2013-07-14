@@ -24,16 +24,34 @@ module Enumerable
 
 end
 
-class java.awt.geom.Line2D::Double
+class java.awt.geom.Line2D::Float
   def to_json(*args)
     [self.getX1, self.getY1, self.getX2, self.getY2].to_json(*args)
   end
 
   def transform!(affine_transform)
-    newP1, newP2 = java.awt.geom.Point2D::Double.new, java.awt.geom.Point2D::Double.new
+    newP1, newP2 = java.awt.geom.Point2D::Float.new, java.awt.geom.Point2D::Float.new
     affine_transform.transform(self.getP1, newP1)
     affine_transform.transform(self.getP2, newP2)
     setLine(newP1, newP2)
     self
   end
+
+  def snap!(cell_size)
+    newP1, newP2 = java.awt.geom.Point2D::Float.new, java.awt.geom.Point2D::Float.new
+    newP1.setLocation((self.getX1 / cell_size).round * cell_size,
+                      (self.getY1 / cell_size).round * cell_size)
+    newP2.setLocation((self.getX2 / cell_size).round * cell_size,
+                      (self.getY2 / cell_size).round * cell_size)
+    setLine(newP1, newP2)
+  end
+
+  def horizontal?(threshold=0.00001)
+    (self.getY2 - self.getY2).abs < threshold
+  end
+
+  def vertical?(threshold=0.00001)
+    (self.getX2 - self.getX1).abs < threshold
+  end
+
 end

@@ -10,6 +10,7 @@ java_import java.awt.geom.PathIterator
 java_import java.awt.geom.Point2D
 java_import java.awt.geom.GeneralPath
 java_import java.awt.geom.AffineTransform
+java_import java.awt.Color
 
 require_relative './core_ext'
 
@@ -17,37 +18,41 @@ require_relative './core_ext'
 class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
 
   attr_accessor :currentX, :currentY
+  attr_accessor :currentPath
   attr_accessor :rulings
+  attr_accessor :options
   field_accessor :page
 
-  class LineToOperator < org.apache.pdfbox.util.operator.OperatorProcessor
+  class LineToOperator < OperatorProcessor
     def process(operator, arguments)
       drawer = self.context
       x, y = arguments[0], arguments[1]
-      ppos = drawer.TransformedPoint(x.doubleValue, y.doubleValue)
+      ppos = drawer.TransformedPoint(x.floatValue, y.floatValue)
 
-      drawer.addRuling java.awt.geom.Line2D::Double.new(drawer.currentX, drawer.currentY, ppos.getX, ppos.getY)
+      l = java.awt.geom.Line2D::Float.new(drawer.currentX, drawer.currentY, ppos.getX, ppos.getY)
+
+      drawer.currentPath << l if l.horizontal? or l.vertical?
 
       drawer.currentX, drawer.currentY = ppos.getX, ppos.getY
     end
   end
 
-  class MoveToOperator < org.apache.pdfbox.util.operator.OperatorProcessor
+  class MoveToOperator < OperatorProcessor
     def process(operator, arguments)
-
       drawer = self.context
       x, y = arguments[0], arguments[1]
 
-      ppos = drawer.TransformedPoint(x.doubleValue, y.doubleValue)
+      ppos = drawer.TransformedPoint(x.floatValue, y.floatValue)
 
       drawer.currentX, drawer.currentY = ppos.getX, ppos.getY
     end
   end
 
-  class AppendRectangleToPathOperator < org.apache.pdfbox.util.operator.OperatorProcessor
+  class AppendRectangleToPathOperator < OperatorProcessor
     def process(operator, arguments)
+
       drawer = self.context
-      finalX, finalY, finalW, finalH = arguments.to_array.map(&:doubleValue)
+      finalX, finalY, finalW, finalH = arguments.to_array.map(&:floatValue)
 
       ppos = drawer.TransformedPoint(finalX, finalY)
       psize = drawer.ScaledPoint(finalW, finalH)
@@ -58,31 +63,86 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
       end
 
       # add every edge of the rectangle to drawer.rulings
-      drawer.addRuling java.awt.geom.Line2D::Double.new(ppos.getX, finalY, ppos.getX + psize.getX, finalY)
-      drawer.addRuling java.awt.geom.Line2D::Double.new(ppos.getX, finalY, ppos.getX, finalY + psize.getY)
-      drawer.addRuling java.awt.geom.Line2D::Double.new(ppos.getX+psize.getX, finalY, ppos.getX + psize.getX, finalY + psize.getY)
-      drawer.addRuling java.awt.geom.Line2D::Double.new(ppos.getX, finalY+psize.getY, ppos.getX + psize.getX, finalY + psize.getY)
+      lines = [java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX + psize.getX, finalY),
+               java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX, finalY + psize.getY),
+               java.awt.geom.Line2D::Float.new(ppos.getX+psize.getX, finalY, ppos.getX + psize.getX, finalY + psize.getY),
+               java.awt.geom.Line2D::Float.new(ppos.getX, finalY+psize.getY, ppos.getX + psize.getX, finalY + psize.getY)]
+      drawer.currentPath += lines.select { |l| l.horizontal? or l.vertical? }
 
     end
   end
 
-  DETECT_LINES_DEFAULTS = {}
+  class StrokePathOperator < OperatorProcessor
+    def process(operator, arguments)
+      drawer = self.context
+
+      # pretty lame, but i've never seen white lines
+      # should be safe to discard
+      strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
+      if strokeColorComps.any? { |c| c < 0.9 }
+        drawer.currentPath.each { |segment| drawer.addRuling(segment) }
+      end
+
+      drawer.currentPath = []
+    end
+  end
+
+  class CloseFillNonZeroAndStrokePathOperator < OperatorProcessor
+    def process(operator, arguments)
+      drawer = self.context
+      fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
+      if fillColorComps.any? { |c| c < 0.9 }
+        drawer.currentPath.each { |segment| drawer.addRuling(segment) }
+      end
+      drawer.currentPath = []
+    end
+  end
+
+  class CloseAndStrokePathOperator < OperatorProcessor
+    def process(operator, arguments)
+      drawer = self.context
+      drawer.currentPath.each { |segment| drawer.addRuling(segment) }
+      drawer.currentPath = []
+    end
+  end
+
+  class EndPathOperator < OperatorProcessor
+    def process(operator, arguments)
+      drawer = self.context
+      # end without stroke, we don't care about it. discard it
+      drawer.currentPath = []
+    end
+  end
+
+  class FillNonZeroRuleOperator < OperatorProcessor
+    def process(operator, arguments)
+      drawer = self.context
+      # end without stroke, we don't care about it. discard it
+      drawer.currentPath = []
+    end
+  end
+
 
   def self.lines_in_pdf_page(pdf_path, page_number, options={})
-    options = DETECT_LINES_DEFAULTS.merge(options)
-
     pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
     page = pdf_file.getDocumentCatalog.getAllPages[page_number]
-    le = self.new
+    le = self.new(options)
     le.processStream(page, page.findResources, page.getContents.getStream)
-
-    return le.rulings
+    le.rulings.uniq! { |r| puts [r.getP1.getX, r.getP1.getY, r.getP2.getX, r.getP2.getY] }
+    le.rulings
   end
 
   OPERATOR_PROCESSORS = {
     'm' => MoveToOperator.new,
     're' => AppendRectangleToPathOperator.new,
     'l' => LineToOperator.new,
+    'S' => StrokePathOperator.new,
+    's' => StrokePathOperator.new,
+    'n' => EndPathOperator.new,
+    'b' => CloseFillNonZeroAndStrokePathOperator.new,
+    'b*' => CloseFillNonZeroAndStrokePathOperator.new,
+    'f' => CloseFillNonZeroAndStrokePathOperator.new,
+    'f*' => CloseFillNonZeroAndStrokePathOperator.new,
     'BT' => org.apache.pdfbox.util.operator.BeginText.new,
     'cm' => org.apache.pdfbox.util.operator.Concatenate.new,
     'CS' => org.apache.pdfbox.util.operator.SetStrokingColorSpace.new,
@@ -97,7 +157,6 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     'Q' => org.apache.pdfbox.util.operator.GRestore.new,
     'RG' => org.apache.pdfbox.util.operator.SetStrokingRGBColor.new,
     'rg' => org.apache.pdfbox.util.operator.SetNonStrokingRGBColor.new,
-    's' => org.apache.pdfbox.util.operator.CloseAndStrokePath.new,
     'SC' => org.apache.pdfbox.util.operator.SetStrokingColor.new,
     'sc' => org.apache.pdfbox.util.operator.SetNonStrokingColor.new,
     'SCN' => org.apache.pdfbox.util.operator.SetStrokingColor.new,
@@ -119,16 +178,22 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     '\"' => org.apache.pdfbox.util.operator.SetMoveAndShow.new,
   }
 
+  DETECT_LINES_DEFAULTS = {
+    :snapping_grid_cell_size => 2
+  }
 
-  def initialize
-    super
+  def initialize(options={})
+    super()
+    @options = options.merge!(DETECT_LINES_DEFAULTS)
     self.clear!
     OPERATOR_PROCESSORS.each { |k,v| registerOperatorProcessor(k, v) }
   end
 
   def clear!
     self.rulings = []
-    self.currentX = -1; self.currentY = -1
+    self.currentX = -1
+    self.currentY = -1
+    self.currentPath = []
     @pageSize = nil
   end
 
@@ -147,10 +212,13 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
                                                mb.getWidth / mb.getHeight)
       trans.concatenate(affine_transform)
       scale.concatenate(trans)
-      self.rulings << ruling.transform!(scale)
-    else
-      self.rulings << ruling
+      ruling.transform!(scale)
     end
+
+    # snapping
+    ruling.snap!(options[:snapping_grid_cell_size])
+    self.rulings << ruling
+
   end
 
   ##
@@ -187,16 +255,16 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
       finalY = y * scaleY;
     end
 
-    return java.awt.geom.Point2D::Double.new(finalX, finalY);
+    return java.awt.geom.Point2D::Float.new(finalX, finalY);
 
   end
 
   def TransformedPoint(x, y)
-    position = [x,y].to_java(:double)
+    position = [x,y].to_java(:float)
     at = self.getGraphicsState.getCurrentTransformationMatrix.createAffineTransform
     at.transform(position, 0, position, 0, 1)
     position[1] = fixY(position[1])
-    java.awt.geom.Point2D::Double.new(position[0], position[1])
+    java.awt.geom.Point2D::Float.new(position[0], position[1])
   end
 
 end
