@@ -13,7 +13,8 @@ java_import java.awt.geom.AffineTransform
 java_import java.awt.Color
 
 require_relative './core_ext'
-
+require_relative './line_segment_detector'
+require_relative './entities'
 
 class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
 
@@ -22,6 +23,26 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   attr_accessor :rulings
   attr_accessor :options
   field_accessor :page
+
+
+  def self.lines_in_pdf_page(pdf_path, page_number, options={})
+    unless options[:render_pdf]
+      pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
+      page = pdf_file.getDocumentCatalog.getAllPages[page_number]
+      le = self.new(options)
+      le.processStream(page, page.findResources, page.getContents.getStream)
+      pdf_file.close
+      le.rulings.map do |l|
+        ::Tabula::Ruling.new(l.getP1.getY,
+                             l.getP1.getX,
+                             l.getP2.getX - l.getP1.getX,
+                             l.getP2.getY - l.getP1.getY)
+      end
+
+    else
+      Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options)
+    end
+  end
 
   class LineToOperator < OperatorProcessor
     def process(operator, arguments)
@@ -120,16 +141,6 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
       # end without stroke, we don't care about it. discard it
       drawer.currentPath = []
     end
-  end
-
-
-  def self.lines_in_pdf_page(pdf_path, page_number, options={})
-    pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
-    page = pdf_file.getDocumentCatalog.getAllPages[page_number]
-    le = self.new(options)
-    le.processStream(page, page.findResources, page.getContents.getStream)
-    le.rulings.uniq! { |r| puts [r.getP1.getX, r.getP1.getY, r.getP2.getX, r.getP2.getY] }
-    le.rulings
   end
 
   OPERATOR_PROCESSORS = {
