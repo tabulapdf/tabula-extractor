@@ -24,8 +24,12 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   attr_accessor :options
   field_accessor :page
 
+  DETECT_LINES_DEFAULTS = {
+    :snapping_grid_cell_size => 2
+  }
 
   def self.lines_in_pdf_page(pdf_path, page_number, options={})
+    options = options.merge!(DETECT_LINES_DEFAULTS)
     unless options[:render_pdf]
       pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
       page = pdf_file.getDocumentCatalog.getAllPages[page_number]
@@ -187,10 +191,6 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     'Tz' => org.apache.pdfbox.util.operator.SetHorizontalTextScaling.new,
     "\'" => org.apache.pdfbox.util.operator.MoveAndShow.new,
     '\"' => org.apache.pdfbox.util.operator.SetMoveAndShow.new,
-  }
-
-  DETECT_LINES_DEFAULTS = {
-    :snapping_grid_cell_size => 2
   }
 
   def initialize(options={})
