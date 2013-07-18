@@ -286,6 +286,14 @@ module Tabula
   require_relative './core_ext'
 
   class Ruling < ZoneEntity
+
+    attr_accessor :stroking_color
+
+    def initialize(top, left, width, height, stroking_color=nil)
+      super(top, left, width, height)
+      self.stroking_color = stroking_color
+    end
+
     # 2D line intersection test taken from comp.graphics.algorithms FAQ
     def intersects?(other)
       r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
@@ -332,7 +340,7 @@ module Tabula
 
       skip = false
 
-      horiz = rulings.select { |r| r.horizontal? && r.width > max_distance }
+      horiz = rulings.select { |r| r.horizontal? }
         .group_by(&:top)
         .values.reduce([]) do |memo, rs|
 
@@ -355,7 +363,7 @@ module Tabula
         end
         memo
       end
-      .sort_by(&:top)
+        .sort_by(&:top)
 
       h = []
       horiz.size.times do |i|
@@ -371,7 +379,7 @@ module Tabula
         end
         d = (horiz[i+1].top - horiz[i].top).abs
 
-        h << if d < 4 # THRESHOLD DISTANCE between horizontal lines
+        h << if d < max_distance # THRESHOLD DISTANCE between horizontal lines
                skip = true
                Tabula::Ruling.new(horiz[i].top + d / 2, [horiz[i].left, horiz[i+1].left].min, [horiz[i+1].width.abs, horiz[i].width.abs].max, 0)
              else
@@ -380,66 +388,32 @@ module Tabula
       end
       horiz = h
 
-      vert = rulings.select { |r| r.vertical? && r.height > max_distance }
+      vert = rulings.select { |r| r.vertical? }
         .group_by(&:left)
         .values
         .reduce([]) do |memo, rs|
 
-          rs = rs.sort_by(&:top)
+        rs = rs.sort_by(&:top)
 
-          if rs.size > 1
-            # Here be dragons:
-            # merge consecutive segments of lines that are close enough
-            memo +=
-              rs.each_cons(2)
-              .chunk { |p| p[1].top - p[0].bottom < 7 }
-              .select { |c| c[0] }
-              .map { |group|
-                group = group.last.flatten.uniq
-                Tabula::Ruling.new(group[0].top,
-                                   group[0].left,
-                                   0,
-                                   group[-1].bottom - group[0].top)
-              }
-         else
-           memo << rs.first
-         end
-         memo
+        if rs.size > 1
+          # Here be dragons:
+          # merge consecutive segments of lines that are close enough
+          memo +=
+            rs.each_cons(2)
+            .chunk { |p| p[1].top - p[0].bottom < 7 }
+            .select { |c| c[0] }
+            .map { |group|
+            group = group.last.flatten.uniq
+            Tabula::Ruling.new(group[0].top,
+                               group[0].left,
+                               0,
+                               group[-1].bottom - group[0].top)
+          }
+        else
+          memo << rs.first
+        end
+        memo
       end.sort_by(&:left)
-
-      # v = []
-
-      # vert.size.times do |i|
-      #   if i == vert.size - 1
-      #     v << vert[-1]
-      #     break
-      #   end
-
-      #   if skip
-      #     skip = false;
-      #     next
-      #   end
-      #   d = (vert[i+1].left - vert[i].left).abs
-
-      #   v << if d < 4 # THRESHOLD DISTANCE between vertical lines
-      #          skip = true
-      #          Tabula::Ruling.new([vert[i+1].top, vert[i].top].min, vert[i].left + d / 2, 0, [vert[i+1].height.abs, vert[i].height.abs].max)
-      #        else
-      #          vert[i]
-      #        end
-      # end
-      # vert = v
-
-
-      # - only keep horizontal rulings that intersect with at least one vertical ruling
-      # - only keep vertical rulings that intersect with at least one horizontal ruling
-      # yeah, it's a naive heuristic. but hey, it works.
-
-      # h_mean =  horiz.reduce(0) { |accum, i| accum + i.width } / horiz.size
-      # horiz.reject { |h| h.width < h_mean }
-
-      #vert.delete_if  { |v| !horiz.any? { |h| h.intersects?(v) } } unless horiz.empty?
-      #horiz.delete_if { |h| !vert.any?  { |v| v.intersects?(h) } } unless vert.empty?
 
       return horiz += vert
     end
