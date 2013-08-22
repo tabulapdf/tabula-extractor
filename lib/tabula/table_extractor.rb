@@ -167,12 +167,15 @@ module Tabula
 
         if self.text_elements[current_word_index].should_merge?(char2)
           
-            self.text_elements[current_word_index].merge!(char2)
-            
             if self.text_elements[current_word_index].text.include? "MORG"
               puts [self.text_elements[current_word_index].text, char2.text].inspect
+              puts vertical_ruling_locations.map{|loc| self.text_elements[current_word_index].left < loc && char2.left > loc}.inspect
+              puts ""
             end
-
+            unless vertical_ruling_locations.map{|loc| self.text_elements[current_word_index].left < loc && char2.left > loc}.include?(true)
+              self.text_elements[current_word_index].merge!(char2)
+            end
+    
             char1 = char2
             self.text_elements[i+1] = nil
         else
