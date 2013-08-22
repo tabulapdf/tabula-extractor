@@ -49,7 +49,7 @@ module Tabula
           if column = columns.detect { |c| te.horizontally_overlaps?(c) }
             column << te
           else
-            puts "couldn't find a place for #{te.inspect}"
+            #puts "couldn't find a place for #{te.inspect}"
             #columns << Column.new(te.left, te.width, [te])
           end
         end
