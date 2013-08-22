@@ -12,7 +12,7 @@ extractor.extract.each_with_index do |pdf_page, page_index|
   scale_factor = pdf_page.width / 1700
   puts scale_factor
 
-  vertical_rulings = [0, 360, 506, 617, 906, 700, 1034, 1160, 1290, 1418, 1548].map{|n| Geometry::Segment.new_by_arrays([n * scale_factor, 0], [n * scale_factor, 1000])}
+  vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Geometry::Segment.new_by_arrays([n * scale_factor, 0], [n * scale_factor, 1000])}
 
   page_areas.each do |page_area|
     text = pdf_page.get_text( page_area ) #all the characters within the given area.
