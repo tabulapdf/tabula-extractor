@@ -233,6 +233,9 @@ module Tabula
       else
         if in_same_column = self.text_elements.find { |te| te.horizontally_overlaps?(t) }
           #sometimes a space needs to be added here
+          unless in_same_column.vertically_overlaps?(t)
+            t.text = " " + t.text
+          end
           in_same_column.merge!(t)
         else
           self.text_elements << t
