@@ -55,12 +55,6 @@ module Tabula
         end
         tes.each do |te|
           if column = columns.detect { |c| te.horizontally_overlaps?(c) }
-
-            # if overlapped_columns = columns.select{|c| te.horizontally_overlaps?(c) }
-
-            #split te at the leftmost column's right boundary, recursively (eventually) [I should do this before merging?]
-
-
             column << te
           else
             #puts "couldn't find a place for #{te.inspect}"
@@ -166,12 +160,6 @@ module Tabula
         next if char2.nil? or char1.nil?
 
         if self.text_elements[current_word_index].should_merge?(char2)
-          
-            if self.text_elements[current_word_index].text.include? "MORG"
-              puts [self.text_elements[current_word_index].text, char2.text].inspect
-              puts vertical_ruling_locations.map{|loc| self.text_elements[current_word_index].left < loc && char2.left > loc}.inspect
-              puts ""
-            end
             unless vertical_ruling_locations.map{|loc| self.text_elements[current_word_index].left < loc && char2.left > loc}.include?(true)
               self.text_elements[current_word_index].merge!(char2)
             end
