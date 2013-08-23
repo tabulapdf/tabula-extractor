@@ -14,7 +14,15 @@ module Tabula
     def initialize(text_elements, options = {})
       self.text_elements = text_elements
       self.options = DEFAULT_OPTIONS.merge(options)
-      merge_words! if self.options[:merge_words]
+
+      if self.options[:merge_words]
+        if self.options[:vertical_rulings]
+          merge_words_in_a_vertical_rulings_aware_manner!(self.options[:vertical_rulings])
+        else
+          merge_words!
+        end
+      end
+      
     end
 
     def get_rows
@@ -134,21 +142,69 @@ module Tabula
       self.text_elements.compact!
       return self.text_elements
     end
+
+      #this is where spaces come from!
+    def merge_words_in_a_vertical_rulings_aware_manner!(vertical_rulings)
+      #don't merge words across a ruling.
+
+      return self.text_elements if @merged # only merge once. awful hack.
+      @merged = true
+      current_word_index = i = 0
+      char1 = self.text_elements[i]
+      vertical_ruling_locations = vertical_rulings.map &:left
+
+      while i < self.text_elements.size-1 do
+
+        char2 = self.text_elements[i+1]
+
+        next if char2.nil? or char1.nil?
+
+        if self.text_elements[current_word_index].should_merge?(char2)
+            unless vertical_ruling_locations.map{|loc| self.text_elements[current_word_index].left < loc && char2.left > loc}.include?(true)
+              self.text_elements[current_word_index].merge!(char2)
+            end
+    
+            char1 = char2
+            self.text_elements[i+1] = nil
+        else
+          # is there a space? is this within `CHARACTER_DISTANCE_THRESHOLD` points of previous char?
+          if (char1.text != " ") and (char2.text != " ") and self.text_elements[current_word_index].should_add_space?(char2)
+            self.text_elements[current_word_index].text += " "
+            #self.text_elements[current_word_index].width += self.text_elements[current_word_index].width_of_space
+          end
+          current_word_index = i+1
+        end
+        i += 1
+      end
+      self.text_elements.compact!
+      return self.text_elements
+    end
   end
 
-  # TODO next four module methods are deprecated
+  ##
+  # Deprecated.
+  ##
   def Tabula.group_by_columns(text_elements, merge_words=false)
     TableExtractor.new(text_elements, :merge_words => merge_words).group_by_columns
   end
 
+  ##
+  # Deprecated.
+  ##
   def Tabula.get_line_boundaries(text_elements)
     TableExtractor.new(text_elements).get_line_boundaries
   end
 
+  ##
+  # Deprecated.
+  ##
   def Tabula.get_columns(text_elements, merge_words=true)
     TableExtractor.new(text_elements, :merge_words => merge_words).get_columns
   end
 
+  ##
+  # Deprecated.
+  ##
   def Tabula.get_rows(text_elements, merge_words=true)
     TableExtractor.new(text_elements, :merge_words => merge_words).get_rows
   end
@@ -256,7 +312,7 @@ module Tabula
     vertical_rulings = options[:vertical_rulings]
     columns = TableExtractor.new(lines.map(&:text_elements).flatten.compact.uniq, {:merge_words => options[:merge_words], :vertical_rulings => vertical_rulings}).group_by_columns.sort_by(&:left)
 
-    # insert empty cells if needed
+    # insert an empty cell in a given column if there's no text elements within that column's boundaries
     lines.each_with_index do |l, line_index|
       next if l.text_elements.nil?
       l.text_elements.compact! # TODO WHY do I have to do this?
@@ -271,26 +327,28 @@ module Tabula
     end
 
     # merge elements that are in the same column
-    lines.each_with_index do |l, line_index|
-      next if l.text_elements.nil?
+    unless options[:dontmerge]
+      lines.each_with_index do |l, line_index|
+        next if l.text_elements.nil?
 
-      (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|  #don't remove a string of empty cells
-        next if l.text_elements[t1].nil? or l.text_elements[t2].nil?    or l.text_elements[t1].text.empty? or l.text_elements[t2].text.empty?
+        (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|  #don't remove a string of empty cells
+          next if l.text_elements[t1].nil? or l.text_elements[t2].nil?  or l.text_elements[t1].text.empty? or l.text_elements[t2].text.empty?
 
-        # if same column...
-        if columns.detect { |c| c.text_elements.include? l.text_elements[t1] } \
-          == columns.detect { |c| c.text_elements.include? l.text_elements[t2] }
-          if l.text_elements[t1].bottom <= l.text_elements[t2].bottom
-            l.text_elements[t1].merge!(l.text_elements[t2])
-            l.text_elements[t2] = nil
-          else
-            l.text_elements[t2].merge!(l.text_elements[t1])
-            l.text_elements[t1] = nil
+          # if same column...
+          if columns.detect { |c| c.text_elements.include? l.text_elements[t1] } \
+            == columns.detect { |c| c.text_elements.include? l.text_elements[t2] }
+            if l.text_elements[t1].bottom <= l.text_elements[t2].bottom
+              l.text_elements[t1].merge!(l.text_elements[t2])
+              l.text_elements[t2] = nil
+            else
+              l.text_elements[t2].merge!(l.text_elements[t1])
+              l.text_elements[t1] = nil
+            end
           end
         end
-      end
 
-      l.text_elements.compact!
+        l.text_elements.compact!
+      end
     end
 
     # remove duplicate lines
