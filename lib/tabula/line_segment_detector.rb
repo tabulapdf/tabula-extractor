@@ -79,10 +79,6 @@ module Tabula
                  raise ArgumentError, 'image must be a string or a BufferedImage'
                end
 
-      ImageIO.write(bimage,
-                    'png',
-                    java.io.File.new("/tmp/white.png"))
-
       image = LSD.image_to_image_double(bimage)
 
       lines_found_ptr = FFI::MemoryPointer.new(:int, 1)

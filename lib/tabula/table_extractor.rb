@@ -271,11 +271,11 @@ module Tabula
       end
     end
 
-    table.lines.map do |l|
+    table.lines.map { |l|
       l.text_elements.map! { |te|
         te.nil? ? TextElement.new(nil, nil, nil, nil, nil, nil, '', nil) : te
       }
-    end
+    }.sort_by { |l| l.map { |te| te.top or 0 }.max }
 
   end
 
