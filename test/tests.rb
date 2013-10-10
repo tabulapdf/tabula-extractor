@@ -143,4 +143,31 @@ class TestExtractor < Minitest::Test
   end
 
 
+  def test_vertical_rulings_splitting_words
+    #if a vertical ruling crosses over a word, the word should be split at that vertical ruling
+    # before, the entire word would end up on one side of the vertical ruling.
+    pdf_file_path = File.expand_path('data/vertical_rulings_bug.pdf', File.dirname(__FILE__))
+
+    expected = [["ABRAHAMS, HARRISON M", "ARLINGTON", "TX", "HARRISON M ABRAHAMS", "", "", "$3.08", "", "", "$3.08"], ["ABRAHAMS, ROGER A", "MORGANTOWN", "WV", "ROGER A ABRAHAMS", "", "$1500.00", "$76.28", "$49.95", "", "$1626.23"], ["ABRAHAMSON, TIMOTHY GARTH", "URBANDALE", "IA", "TIMOTHY GARTH ABRAHAMSON", "", "", "$22.93", "", "", "$22.93"]]
+    #N.B. it's "MORGANTOWN", "WV" that we're most interested in here (it used to show up as ["MORGANTOWNWV", "", ""])
+
+
+    extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path, 1...2) #:all ) # 1..2643
+    extractor.extract.each_with_index do |pdf_page, page_index|
+
+      lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(pdf_file_path, page_index))
+      page_areas = [[250, 0, 350, 1700]]
+
+      scale_factor = pdf_page.width / 1700
+
+      vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Geometry::Segment.new_by_arrays([n * scale_factor, 0], [n * scale_factor, 1000])}
+
+      tables = page_areas.map do |page_area|
+        text = pdf_page.get_text( page_area ) #all the characters within the given area.
+        Tabula.make_table_with_vertical_rulings(text, {:vertical_rulings => vertical_rulings, :merge_words => true})
+      end
+      assert_equal expected, lines_to_array(tables.first)
+    end
+  end
+
 end

@@ -22,7 +22,7 @@ module Tabula
           merge_words!
         end
       end
-      
+
     end
 
     def get_rows
@@ -159,11 +159,13 @@ module Tabula
 
         next if char2.nil? or char1.nil?
 
-        if self.text_elements[current_word_index].should_merge?(char2)
-            unless vertical_ruling_locations.map{|loc| self.text_elements[current_word_index].left < loc && char2.left > loc}.include?(true)
-              self.text_elements[current_word_index].merge!(char2)
-            end
-    
+
+        if self.text_elements[current_word_index].should_merge?(char2) && !vertical_ruling_locations.map{|loc| self.text_elements[current_word_index].left < loc && char2.left > loc}.include?(true)
+            #should_merge? isn't aware of vertical rulings, so even if two text elements are close enough that they ought to be merged by that account
+            #we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
+            # Why are both of those `.left`?, you might ask. The intuition is that a letter that starts on the left of a vertical ruling ought to remain on the left of it.
+            self.text_elements[current_word_index].merge!(char2)
+
             char1 = char2
             self.text_elements[i+1] = nil
         else
@@ -271,11 +273,11 @@ module Tabula
       end
     end
 
-    table.lines.map { |l|
-      l.text_elements.map! { |te|
+    table.lines.map do |l|
+      l.text_elements.map! do |te|
         te.nil? ? TextElement.new(nil, nil, nil, nil, nil, nil, '', nil) : te
-      }
-    }.sort_by { |l| l.map { |te| te.top or 0 }.max }
+      end
+    end.sort_by { |l| l.map { |te| te.top or 0 }.max }
 
   end
 
@@ -327,29 +329,28 @@ module Tabula
     end
 
     # merge elements that are in the same column
-    unless options[:dontmerge]
-      lines.each_with_index do |l, line_index|
-        next if l.text_elements.nil?
+    lines.each_with_index do |l, line_index|
+      next if l.text_elements.nil?
 
-        (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|  #don't remove a string of empty cells
-          next if l.text_elements[t1].nil? or l.text_elements[t2].nil?  or l.text_elements[t1].text.empty? or l.text_elements[t2].text.empty?
+      (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|  #don't remove a string of empty cells
+        next if l.text_elements[t1].nil? or l.text_elements[t2].nil?  or l.text_elements[t1].text.empty? or l.text_elements[t2].text.empty?
 
-          # if same column...
-          if columns.detect { |c| c.text_elements.include? l.text_elements[t1] } \
-            == columns.detect { |c| c.text_elements.include? l.text_elements[t2] }
-            if l.text_elements[t1].bottom <= l.text_elements[t2].bottom
-              l.text_elements[t1].merge!(l.text_elements[t2])
-              l.text_elements[t2] = nil
-            else
-              l.text_elements[t2].merge!(l.text_elements[t1])
-              l.text_elements[t1] = nil
-            end
+        # if same column...
+        if columns.detect { |c| c.text_elements.include? l.text_elements[t1] } \
+          == columns.detect { |c| c.text_elements.include? l.text_elements[t2] }
+          if l.text_elements[t1].bottom <= l.text_elements[t2].bottom
+            l.text_elements[t1].merge!(l.text_elements[t2])
+            l.text_elements[t2] = nil
+          else
+            l.text_elements[t2].merge!(l.text_elements[t1])
+            l.text_elements[t1] = nil
           end
         end
-
-        l.text_elements.compact!
       end
+
+      l.text_elements.compact!
     end
+
 
     # remove duplicate lines
     # TODO this shouldn't have happened here, check why we have to do
