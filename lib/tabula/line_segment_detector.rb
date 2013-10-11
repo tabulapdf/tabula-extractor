@@ -79,7 +79,7 @@ module Tabula
                  raise ArgumentError, 'image must be a string or a BufferedImage'
                end
 
-      image = LSD.image_to_image_double(bimage)
+      image = LSD.image_to_image_float(bimage)
 
       lines_found_ptr = FFI::MemoryPointer.new(:int, 1)
 
@@ -89,7 +89,7 @@ module Tabula
 
       rv = []
       lines_found.times do |i|
-        a = out[7*8*i].read_array_of_type(:double, 7)
+        a = out[7*4*i].read_array_of_type(:float, 7)
 
         a_round = a[0..3].map(&:round)
         p1, p2 = [[a_round[0], a_round[1]], [a_round[2], a_round[3]]]
@@ -109,16 +109,28 @@ module Tabula
     end
 
     private
-    def LSD.image_to_image_double(buffered_image)
+    # def LSD.image_to_image_double(buffered_image)
+    #   width = buffered_image.getWidth; height = buffered_image.getHeight
+    #   raster_size = width * height
+
+    #   image_double = FFI::MemoryPointer.new(:double, raster_size)
+    #   pixels = Java::int[width * height].new
+    #   buffered_image.getRGB(0, 0, width, height, pixels, 0, width)
+
+    #   image_double.put_array_of_double 0, pixels.to_a
+    # end
+
+    def LSD.image_to_image_float(buffered_image)
       width = buffered_image.getWidth; height = buffered_image.getHeight
       raster_size = width * height
 
-      image_double = FFI::MemoryPointer.new(:double, raster_size)
+      image_float = FFI::MemoryPointer.new(:float, raster_size)
       pixels = Java::int[width * height].new
       buffered_image.getRGB(0, 0, width, height, pixels, 0, width)
 
-      image_double.put_array_of_double 0, pixels.to_a
+      image_float.put_array_of_float 0, pixels.to_a
     end
+
 
   end
 end

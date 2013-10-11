@@ -60,7 +60,7 @@ def main
   opts, filename = parse_command_line
 
   area = opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)
-  out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'w')
+  out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'wb')
   extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
   extractor.extract.each_with_index do |page, page_index|
     if opts[:guess]

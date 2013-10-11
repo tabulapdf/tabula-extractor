@@ -135,10 +135,10 @@
                        line segment number 'n+1' are obtained with
                        'out[7*n+0]' to 'out[7*n+6]'.
  */
-double * LineSegmentDetection( int * n_out,
-                               double * img, int X, int Y,
-                               double scale, double sigma_scale, double quant,
-                               double ang_th, double log_eps, double density_th,
+float * LineSegmentDetection( int * n_out,
+                               float * img, int X, int Y,
+                               float scale, float sigma_scale, float quant,
+                               float ang_th, float log_eps, float density_th,
                                int n_bins,
                                int ** reg_img, int * reg_x, int * reg_y );
 
@@ -203,8 +203,8 @@ double * LineSegmentDetection( int * n_out,
                        line segment number 'n+1' are obtained with
                        'out[7*n+0]' to 'out[7*n+6]'.
  */
-double * lsd_scale_region( int * n_out,
-                           double * img, int X, int Y, double scale,
+float * lsd_scale_region( int * n_out,
+                           float * img, int X, int Y, float scale,
                            int ** reg_img, int * reg_x, int * reg_y );
 
 /*----------------------------------------------------------------------------*/
@@ -244,7 +244,7 @@ double * lsd_scale_region( int * n_out,
                        line segment number 'n+1' are obtained with
                        'out[7*n+0]' to 'out[7*n+6]'.
  */
-double * lsd_scale(int * n_out, double * img, int X, int Y, double scale);
+float * lsd_scale(int * n_out, float * img, int X, int Y, float scale);
 
 /*----------------------------------------------------------------------------*/
 /** LSD Simple Interface
@@ -275,9 +275,9 @@ double * lsd_scale(int * n_out, double * img, int X, int Y, double scale);
                        line segment number 'n+1' are obtained with
                        'out[7*n+0]' to 'out[7*n+6]'.
  */
-double * lsd(int * n_out, double * img, int X, int Y);
+float * lsd(int * n_out, float * img, int X, int Y);
 
-void free_values(double * p);
+void free_values(float * p);
 
 #endif /* !LSD_HEADER */
 /*----------------------------------------------------------------------------*/

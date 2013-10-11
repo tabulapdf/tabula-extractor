@@ -11,6 +11,7 @@ Gem::Specification.new do |s|
   s.homepage    = "https://github.com/jazzido/tabula-extractor"
   s.summary     = %q{extract tables from PDF files}
   s.description = %q{extract tables from PDF files}
+  s.license     = 'MIT'
 
   s.platform = 'java'
 
