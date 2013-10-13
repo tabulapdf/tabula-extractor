@@ -332,11 +332,6 @@ module Tabula
       [left, top, right, bottom].to_json
     end
 
-    def to_xml
-      "<ruling x1=\"%.2f\" y1=\"%.2f\" x2=\"%.2f\" y2=\"%.2f\" />" \
-      % [left, top, right, bottom]
-    end
-
     def self.clean_rulings(rulings, max_distance=4)
 
       # merge horizontal and vertical lines
