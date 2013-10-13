@@ -87,11 +87,21 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
         finalY = 0
       end
 
-      # add every edge of the rectangle to drawer.rulings
-      lines = [java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX + psize.getX, finalY),
-               java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX, finalY + psize.getY),
-               java.awt.geom.Line2D::Float.new(ppos.getX+psize.getX, finalY, ppos.getX + psize.getX, finalY + psize.getY),
-               java.awt.geom.Line2D::Float.new(ppos.getX, finalY+psize.getY, ppos.getX + psize.getX, finalY + psize.getY)]
+      width = psize.getX
+      height = psize.getY
+
+      lines = if width > height and height < 1 # horizontal line, "thin" rectangle.
+                [java.awt.geom.Line2D::Float.new(ppos.getX, finalY + psize.getY/2, ppos.getX + psize.getX, finalY + psize.getY/2)]
+              elsif width < height and width < 1 # vertical line, "thin" rectangle
+                [java.awt.geom.Line2D::Float.new(ppos.getX + psize.getX/2, finalY, ppos.getX + psize.getX/2, finalY + psize.getY)]
+              else
+                # add every edge of the rectangle to drawer.rulings
+                [java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX + psize.getX, finalY),
+                 java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX, finalY + psize.getY),
+                 java.awt.geom.Line2D::Float.new(ppos.getX+psize.getX, finalY, ppos.getX + psize.getX, finalY + psize.getY),
+                 java.awt.geom.Line2D::Float.new(ppos.getX, finalY+psize.getY, ppos.getX + psize.getX, finalY + psize.getY)]
+              end
+
       drawer.currentPath += lines.select { |l| l.horizontal? or l.vertical? }
 
     end
