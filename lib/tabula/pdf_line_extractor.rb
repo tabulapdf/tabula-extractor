@@ -87,12 +87,12 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
         finalY = 0
       end
 
-      width = psize.getX
-      height = psize.getY
+      width = psize.getX.abs
+      height = psize.getY.abs
 
-      lines = if width > height and height < 1 # horizontal line, "thin" rectangle.
+      lines = if width > height and height < 2 # horizontal line, "thin" rectangle.
                 [java.awt.geom.Line2D::Float.new(ppos.getX, finalY + psize.getY/2, ppos.getX + psize.getX, finalY + psize.getY/2)]
-              elsif width < height and width < 1 # vertical line, "thin" rectangle
+              elsif width < height and width < 2 # vertical line, "thin" rectangle
                 [java.awt.geom.Line2D::Float.new(ppos.getX + psize.getX/2, finalY, ppos.getX + psize.getX/2, finalY + psize.getY)]
               else
                 # add every edge of the rectangle to drawer.rulings
