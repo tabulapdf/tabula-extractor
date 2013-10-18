@@ -62,6 +62,13 @@ EOS
   return opts, pdf_filename
 end
 
+def rulings_from_columns(page, area, vertical_rulings)
+  area = [page.top, page.left, page.bottom, page.right ] if area.nil?
+  vertical_rulings.map { |vr|
+    Tabula::Ruling.new(area[0], vr, 0, page.height)
+  }
+end
+
 def main
   opts, filename = parse_command_line
 
@@ -83,7 +90,12 @@ def main
         puts (page_index + 1).to_s + ', ' + page_area.to_s
       else
         text = page.get_text( page_area )
-        table = vertical_rulings.nil? ? Tabula.make_table(text) : Tabula.make_table_with_vertical_rulings(text, :vertical_rulings => vertical_rulings)
+        table = if vertical_rulings.nil?
+                  Tabula.make_table(text)
+                else
+                  Tabula.make_table_with_vertical_rulings(text,
+                                                          :vertical_rulings => rulings_from_columns(page, area, vertical_rulings))
+                end
         Tabula::Writers.send(opts[:format].to_sym,
                             table,
                             out)
