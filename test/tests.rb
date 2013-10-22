@@ -24,6 +24,15 @@ class TestPagesInfoExtractor < Minitest::Test
 end
 
 class TestTableGuesser < Minitest::Test
+  def test_find_rects_from_lines
+    filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    page_index = 0
+    lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index))
+    page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
+    page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
+    expected_page_areas = [[54.38671875, 50.203125, 733.921875, 550.44140625], [734.220703125, 50.203125, 54.087890625, 550.44140625], [54.087890625, 550.44140625, 734.220703125, 50.203125]]
+    assert_equal page_areas, expected_page_areas
+  end
 end
 
 class TestDumper < Minitest::Test
@@ -178,7 +187,7 @@ class TestExtractor < Minitest::Test
 
       scale_factor = pdf_page.width / 1700
 
-      vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Geometry::Segment.new_by_arrays([n * scale_factor, 0], [n * scale_factor, 1000])}
+      vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Tabula::Ruling.new(0, n * scale_factor, 0, 1000)}
 
       tables = page_areas.map do |page_area|
         text = pdf_page.get_text( page_area ) #all the characters within the given area.

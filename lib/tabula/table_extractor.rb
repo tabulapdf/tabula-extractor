@@ -202,7 +202,6 @@ module Tabula
 
     unless options[:vertical_rulings].empty?
       columns = options[:vertical_rulings].map &:left #pixel locations, not entities
-      puts "Jer:" + columns.inspect
     end
 
     separators = columns[1..-1].sort.reverse
