@@ -146,7 +146,7 @@ module Tabula
     end
   end
 
-
+  ## Deprecated. 10/22/13 -JBM
   def Tabula.lines_to_csv(lines)
     CSV.generate do |csv|
       lines.each do |l|
