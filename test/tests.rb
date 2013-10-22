@@ -187,7 +187,7 @@ class TestExtractor < Minitest::Test
 
       scale_factor = pdf_page.width / 1700
 
-      vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Geometry::Segment.new_by_arrays([n * scale_factor, 0], [n * scale_factor, 1000])}
+      vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Tabula::Ruling.new(0, n * scale_factor, 0, 1000)}
 
       tables = page_areas.map do |page_area|
         text = pdf_page.get_text( page_area ) #all the characters within the given area.
