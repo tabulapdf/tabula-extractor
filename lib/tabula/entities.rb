@@ -74,6 +74,12 @@ module Tabula
       self.width_of_space = width_of_space
     end
 
+    EMPTY = TextElement.new(0, 0, 0, 0, nil, 0, '', 0)
+
+    # def self.empty
+    #   TextElement.new(0, 0, 0, 0, nil, 0, '', 0)
+    # end
+
     # more or less returns True if distance < tolerance
     def should_merge?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
@@ -111,6 +117,10 @@ module Tabula
       end
       hash
     end
+
+    def ==(other)
+      self.text.strip == other.text.strip
+    end
   end
 
   class Table
@@ -130,6 +140,52 @@ module Tabula
         @lines[i].text_elements[j] = text_element
       end
     end
+
+    #TODO: move to csv/tsv 'writer' methods here
+
+    # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
+    # probably only used for testing
+    def self.new_from_array(array_of_rows)
+      t = Table.new(array_of_rows.size, [])
+      array_of_rows.each_with_index do |row, index|
+        t.lines[index].text_elements = row.map{|cell| TextElement.new(nil, nil, nil, nil, nil, nil, cell, nil)}
+      end
+      t
+    end
+
+    #for equality testing, return @lines stripped of leading columns of empty strings
+    #TODO: write a method to strip all totally-empty columns (or not?)
+    def lstrip_lines
+      return @lines if @lines.include?(nil)
+      min_leading_empty_strings = Float::INFINITY
+      @lines.each do |line|
+        empties = line.text_elements.map{|t| t.text.empty? }
+        min_leading_empty_strings = [min_leading_empty_strings, empties.index(false)].min
+      end
+      if min_leading_empty_strings == 0
+        @lines
+      else
+        @lines.each{|line| line.text_elements = line.text_elements[min_leading_empty_strings..-1]}
+        @lines
+      end
+    end
+
+    #used for testing, ignores separator locations (they'll sometimes be nil/empty)
+    def ==(other)
+      puts other.lines.inspect
+      self.instance_variable_set(:@lines, self.lstrip_lines)
+      other.instance_variable_set(:@lines, other.lstrip_lines)
+      puts other.lines.inspect
+      self.instance_variable_set(:@lines, self.lines.rpad(nil, other.lines.size))
+      other.instance_variable_set(:@lines, other.lines.rpad(nil, self.lines.size))
+      puts other.lines.inspect
+
+      self.lines.zip(other.lines).inject(true) do |memo, my_yours|
+        my, yours = my_yours
+        memo && my == yours
+      end
+
+    end
   end
 
   class Line < ZoneEntity
@@ -137,19 +193,19 @@ module Tabula
     attr_reader :index
 
     def initialize(index=nil)
-      self.text_elements = []
+      @text_elements = []
       @index = index
     end
 
     def <<(t)
-      if self.text_elements.size == 0
-        self.text_elements << t
+      if @text_elements.size == 0
+        @text_elements << t
         self.top = t.top
         self.left = t.left
         self.width = t.width
         self.height = t.height
       else
-        if in_same_column = self.text_elements.find { |te| te.horizontally_overlaps?(t) }
+        if in_same_column = @text_elements.find { |te| te.horizontally_overlaps?(t) }
           #sometimes a space needs to be added here
           unless in_same_column.vertically_overlaps?(t)
             t.text = " " + t.text
@@ -162,7 +218,16 @@ module Tabula
       end
     end
 
-
+    #used for testing, ignores text element stuff besides stripped text.
+    def ==(other)
+      return false if other.nil?
+      self.text_elements = self.text_elements.rpad(TextElement::EMPTY, other.text_elements.size)
+      other.text_elements = other.text_elements.rpad(TextElement::EMPTY, self.text_elements.size)
+      self.text_elements.zip(other.text_elements).inject(true) do |memo, my_yours|
+        my, yours = my_yours
+        memo && my == yours
+      end
+    end
   end
 
   class Column < ZoneEntity

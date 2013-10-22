@@ -2,6 +2,17 @@ java_import java.awt.geom.Point2D
 java_import java.awt.geom.Line2D
 java_import java.awt.geom.Rectangle2D
 
+class Array
+  def rpad(padding, target_size)
+    if self.size < target_size
+      self + [padding] * (target_size - self.size)
+    else
+      self
+    end
+  end
+end
+
+
 module Enumerable
 
   def sum
