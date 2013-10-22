@@ -24,6 +24,15 @@ class TestPagesInfoExtractor < Minitest::Test
 end
 
 class TestTableGuesser < Minitest::Test
+  def test_find_rects_from_lines
+    filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    page_index = 0
+    lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index))
+    page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
+    page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
+    expected_page_areas = [[54.38671875, 50.203125, 733.921875, 550.44140625], [734.220703125, 50.203125, 54.087890625, 550.44140625], [54.087890625, 550.44140625, 734.220703125, 50.203125]]
+    assert_equal page_areas, expected_page_areas
+  end
 end
 
 class TestDumper < Minitest::Test
@@ -74,37 +83,41 @@ class TestExtractor < Minitest::Test
 
     characters = character_extractor.extract.next.get_text([110, 28, 218, 833])
                                                            #top left bottom right
-    expected = [['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '$85.00'],
-                ['TOTAL', '', '', '','$85.00'],
-                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'EDUCATIONAL ITEMS', '$78.80'],
-                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'MEALS', '$392.45'],
-                ['TOTAL', '', '', '', '$471.25'],
-                ['AARON, JOHN', '', 'CLARKSVILLE, TN', 'MEALS', '$20.39'],
-                ['TOTAL', '', '', '','$20.39'],
-                ['AARON, JOSHUA, N', '', 'WEST GROVE, PA', 'MEALS', '$310.33'],
-                ["", "REGIONAL PULMONARY & SLEEP", "", "", ""], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE", "", "", ""],
-                ['TOTAL', '', '', '', '$5,010.33'],
-                ['AARON, MAUREEN, M', '', 'MARTINSVILLE, VA', 'MEALS', '$193.67'],
-                ['TOTAL', '', '', '', '$193.67'],
-                ['AARON, MICHAEL, L', '', 'WEST ISLIP, NY', 'MEALS', '$19.50']]
 
-    assert_equal expected, lines_to_array(Tabula.make_table_with_vertical_rulings(characters, :vertical_rulings => vertical_rulings))
+    expected = [['', 'AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '', '$85.00'],
+                ['', 'TOTAL', '', '', '', '', '$85.00'],
+                ['', 'AARON, CAREN, T', '', 'RICHMOND, VA', 'EDUCATIONAL ITEMS', '', '$78.80'],
+                ['', 'AARON, CAREN, T', '', 'RICHMOND, VA', 'MEALS', '', '$392.45'],
+                ['', 'TOTAL', '', '', '', '', '$471.25'],
+                ['', 'AARON, JOHN', '', 'CLARKSVILLE, TN', 'MEALS', '', '$20.39'],
+                ['', 'TOTAL', '', '', '', '', '$20.39'],
+                ['', 'AARON, JOSHUA, N', '', 'WEST GROVE, PA', 'MEALS', '', '$310.33'],
+                ['', "", "REGIONAL PULMONARY & SLEEP"], ['', "AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", '', "$4,700.00"], ["", '',  "MEDICINE"],
+                ['', 'TOTAL', '', '', '', '',  '$5,010.33'],
+                ['', 'AARON, MAUREEN, M', '', 'MARTINSVILLE, VA', 'MEALS', '', '$193.67'],
+                ['', 'TOTAL', '', '', '', '', '$193.67'],
+                ['', 'AARON, MICHAEL, L', '', 'WEST ISLIP, NY', 'MEALS', '', '$19.50']]
+
+
+    assert_equal expected, lines_to_array(Tabula.make_table(characters, :vertical_rulings => vertical_rulings))
   end
 
   def test_missing_spaces_around_an_ampersand
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     character_extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path)
     lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
-    vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
+    vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }[1..-1]
 
 
     characters = character_extractor.extract.next.get_text([170, 28, 185, 833])
                                                            #top left bottom right
     expected = [
-                 ["", "REGIONAL PULMONARY & SLEEP", "", "", ""], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE", "", "", ""],
+                 ["", "REGIONAL PULMONARY & SLEEP",],
+                 ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", '', "$4,700.00"],
+                 ["", "MEDICINE", ],
                 ]
 
-    assert_equal expected, lines_to_array(Tabula.make_table_with_vertical_rulings(characters, :vertical_rulings => vertical_rulings))
+    assert_equal expected, lines_to_array(Tabula.make_table(characters, :vertical_rulings => vertical_rulings))
   end
 
   def test_forest_disclosure_report
@@ -116,21 +129,21 @@ class TestExtractor < Minitest::Test
 
     characters = character_extractor.extract.next.get_text([110, 28, 218, 833])
                                                            #top left bottom right
-    expected = [['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '$85.00'],
+    expected = [['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '', '$85.00'],
                 ['TOTAL', '', '', '','$85.00'],
-                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'EDUCATIONAL ITEMS', '$78.80'],
-                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'MEALS', '$392.45'],
+                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'EDUCATIONAL ITEMS', '', '$78.80'],
+                ['AARON, CAREN, T', '', 'RICHMOND, VA', 'MEALS', '', '$392.45'],
                 ['TOTAL', '', '', '', '$471.25'],
-                ['AARON, JOHN', '', 'CLARKSVILLE, TN', 'MEALS', '$20.39'],
+                ['AARON, JOHN', '', 'CLARKSVILLE, TN', 'MEALS', '', '$20.39'],
                 ['TOTAL', '', '', '','$20.39'],
-                ['AARON, JOSHUA, N', '', 'WEST GROVE, PA', 'MEALS', '$310.33'],
-                ['AARON, JOSHUA, N', 'REGIONAL PULMONARY & SLEEP MEDICINE', 'WEST GROVE, PA', 'SPEAKING FEES', '$4,700.00'],
+                ['AARON, JOSHUA, N', '', 'WEST GROVE, PA', 'MEALS', '', '$310.33'],
+                ['AARON, JOSHUA, N', 'REGIONAL PULMONARY & SLEEP MEDICINE', 'WEST GROVE, PA', 'SPEAKING FEES', '', '$4,700.00'],
                 ['TOTAL', '', '', '', '$5,010.33'],
-                ['AARON, MAUREEN, M', '', 'MARTINSVILLE, VA', 'MEALS', '$193.67'],
+                ['AARON, MAUREEN, M', '', 'MARTINSVILLE, VA', 'MEALS', '', '$193.67'],
                 ['TOTAL', '', '', '', '$193.67'],
-                ['AARON, MICHAEL, L', '', 'WEST ISLIP, NY', 'MEALS', '$19.50']]
+                ['AARON, MICHAEL, L', '', 'WEST ISLIP, NY', 'MEALS', '', '$19.50']]
 
-    assert_equal expected, lines_to_array(Tabula.make_table_with_vertical_rulings(characters, :vertical_rulings => vertical_rulings))
+    assert_equal expected, lines_to_array(Tabula.make_table(characters, :vertical_rulings => vertical_rulings))
   end
 
   # TODO Spaces inserted in words - fails
@@ -148,7 +161,21 @@ class TestExtractor < Minitest::Test
     # before, the entire word would end up on one side of the vertical ruling.
     pdf_file_path = File.expand_path('data/vertical_rulings_bug.pdf', File.dirname(__FILE__))
 
-    expected = [["ABRAHAMS, HARRISON M", "ARLINGTON", "TX", "HARRISON M ABRAHAMS", "", "", "$3.08", "", "", "$3.08"], ["ABRAHAMS, ROGER A", "MORGANTOWN", "WV", "ROGER A ABRAHAMS", "", "$1500.00", "$76.28", "$49.95", "", "$1626.23"], ["ABRAHAMSON, TIMOTHY GARTH", "URBANDALE", "IA", "TIMOTHY GARTH ABRAHAMSON", "", "", "$22.93", "", "", "$22.93"]]
+    #both of these are semantically "correct"; the difference is in how we handle multi-line cells
+    expected = [
+                ["ABRAHAMS, HARRISON M", "ARLINGTON", "TX", "HARRISON M ABRAHAMS", "", "", "$3.08", "", "", "$3.08"],
+                ["ABRAHAMS, ROGER A", "MORGANTOWN", "WV", "ROGER A ABRAHAMS", "", "$1500.00", "$76.28", "$49.95", "", "$1626.23"],
+                ["ABRAHAMSON, TIMOTHY GARTH", "URBANDALE", "IA", "TIMOTHY GARTH ABRAHAMSON", "", "", "$22.93", "", "", "$22.93"]
+               ]
+    other_expected = [
+                ["ABRAHAMS, HARRISON M", "ARLINGTON", "TX", "HARRISON M ABRAHAMS", "", "", "$3.08", "", "", "$3.08"],
+                ["ABRAHAMS, ROGER A", "MORGANTOWN", "WV", "ROGER A ABRAHAMS", "", "$1500.00", "$76.28", "$49.95", "", "$1626.23"],
+                ["ABRAHAMSON, TIMOTHY GARTH", "URBANDALE", "IA", "TIMOTHY GARTH", "", "", "$22.93", "", "", "$22.93"],
+                ["", "", "", "ABRAHAMSON"]
+               ]
+
+
+
     #N.B. it's "MORGANTOWN", "WV" that we're most interested in here (it used to show up as ["MORGANTOWNWV", "", ""])
 
 
@@ -164,10 +191,9 @@ class TestExtractor < Minitest::Test
 
       tables = page_areas.map do |page_area|
         text = pdf_page.get_text( page_area ) #all the characters within the given area.
-        Tabula.make_table_with_vertical_rulings(text, {:vertical_rulings => vertical_rulings, :merge_words => true})
+        Tabula.make_table(text, {:vertical_rulings => vertical_rulings, :merge_words => true})
       end
-      assert_equal expected, lines_to_array(tables.first)
+      assert_equal other_expected, lines_to_array(tables.first)
     end
   end
-
 end
