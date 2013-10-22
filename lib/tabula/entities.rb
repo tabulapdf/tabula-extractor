@@ -136,7 +136,7 @@ module Tabula
     attr_accessor :font, :font_size, :text, :width_of_space
 
     CHARACTER_DISTANCE_THRESHOLD = 1.5
-    TOLERANCE_FACTOR = 0.25 #25
+    TOLERANCE_FACTOR = 0.3 #25
 
     def initialize(top, left, width, height, font, font_size, text, width_of_space)
       super(top, left, width, height)
@@ -151,33 +151,23 @@ module Tabula
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
       overlaps = self.vertically_overlaps?(other)
 
-      tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
+      tolerance = ((self.width + other.width) / 2) * TOLERANCE_FACTOR
 
-      overlaps or
-        (self.height == 0 and other.height != 0) or
-        (other.height == 0 and self.height != 0) and
-        self.horizontal_distance(other) < tolerance
+      overlaps && self.horizontal_distance(other) < tolerance && !self.should_add_space?(other)
     end
 
     # more or less returns True if (tolerance <= distance < CHARACTER_DISTANCE_THRESHOLD*tolerance)
     def should_add_space?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
+#      return false if other == ' '
       overlaps = self.vertically_overlaps?(other)
 
-      up_tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
-      down_tolerance = 0.90 #90?
-
       dist = self.horizontal_distance(other).abs
-
-      rv = overlaps && (dist.between?(self.width_of_space * down_tolerance, self.width_of_space + up_tolerance))
-      rv
+      overlaps && dist.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))
     end
 
     def merge!(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-      # unless self.horizontally_overlaps?(other) or self.vertically_overlaps?(other)
-      #   raise ArgumentError, "won't merge TextElements that don't overlap"
-      # end
       if self.horizontally_overlaps?(other) and other.top < self.top
         self.text = other.text + self.text
       else
