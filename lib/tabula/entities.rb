@@ -1,33 +1,18 @@
+require_relative './core_ext'
+
 module Tabula
 
-  class ZoneEntity
-    attr_accessor :top, :left, :width, :height
+  class ZoneEntity < java.awt.geom.Rectangle2D::Float
 
     attr_accessor :texts
 
     def initialize(top, left, width, height)
-      self.top = top
-      self.left = left
-      self.width = width
-      self.height = height
+      super()
+      # super(left, top, width, height)
+      if left && top && width && height
+        self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], left, top, width, height
+      end
       self.texts = []
-    end
-
-    def bottom
-      self.top + self.height
-    end
-
-    def right
-      self.left + self.width
-    end
-
-    # [x, y]
-    def midpoint
-      [self.left + (self.width / 2), self.top + (self.height / 2)]
-    end
-
-    def area
-      self.width * self.height
     end
 
     def merge!(other)
@@ -35,63 +20,6 @@ module Tabula
       self.left   = [self.left, other.left].min
       self.width  = [self.right, other.right].max - left
       self.height = [self.bottom, other.bottom].max - top
-    end
-
-    def horizontal_distance(other)
-      (other.left - self.right).abs
-    end
-
-    def vertical_distance(other)
-      (other.bottom - self.bottom).abs
-    end
-
-    # Roughly, detects if self and other belong to the same line
-    def vertically_overlaps?(other)
-      vertical_overlap = [0, [self.bottom, other.bottom].min - [self.top, other.top].max].max
-      vertical_overlap > 0
-    end
-
-    # detects if self and other belong to the same column
-    def horizontally_overlaps?(other)
-      horizontal_overlap = [0, [self.right, other.right].min  - [self.left, other.left].max].max
-      horizontal_overlap > 0
-    end
-
-    def overlaps?(other, ratio_tolerance=0.00001)
-      self.overlap_ratio(other) > ratio_tolerance
-    end
-
-    def overlap_ratio(other)
-      intersection_width = [0, [self.right, other.right].min  - [self.left, other.left].max].max
-      intersection_height = [0, [self.bottom, other.bottom].min - [self.top, other.top].max].max
-      intersection_area = [0, intersection_height * intersection_width].max
-
-      union_area = self.area + other.area - intersection_area
-      intersection_area / union_area
-    end
-
-    # as defined by PDF-TREX paper
-    def horizontal_overlap_ratio(other)
-      delta = [self.bottom - self.top, other.bottom - other.top].min
-      if [other.top, self.top, other.bottom, self.bottom].sorted?
-        (other.bottom - self.top) / delta
-      elsif [self.top, other.top, self.bottom, other.bottom].sorted?
-        (self.bottom - other.top) / delta
-      elsif [self.top, other.top, other.bottom, self.bottom].sorted?
-        (other.bottom - other.top) / delta
-      elsif [other.top, self.top, self.bottom, other.bottom].sorted?
-        (self.bottom - self.top) / delta
-      else
-        0
-      end
-    end
-
-    def to_h
-      hash = {}
-      [:top, :left, :width, :height].each do |m|
-        hash[m] = self.send(m)
-      end
-      hash
     end
 
     def to_json(options={})

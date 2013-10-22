@@ -3,8 +3,6 @@ require 'json'
 require_relative './pdf_render'
 require_relative './core_ext'
 #CLASSPATH=:./target/javacpp.jar:./target/javacv.jar:./target/javacv-macosx-x86_64.jar:./target/PDFRenderer-0.9.1.jar
-java_import java.awt.geom.Rectangle2D::Double
-
 
 module Tabula
   module TableGuesser
@@ -61,7 +59,7 @@ module Tabula
       horizontal_lines = lines.select &:horizontal?
       vertical_lines = lines.select &:vertical?
       find_tables(vertical_lines, horizontal_lines).inject([]) do |memo, next_rect|
-        java.awt.geom.Rectangle2D::Double.unionize( memo, next_rect )
+        java.awt.geom.Rectangle2D::Float.unionize( memo, next_rect )
       end.compact.sort_by(&:area).reverse
     end
 
@@ -140,7 +138,7 @@ module Tabula
 
             y = [left_vertical_line.top, right_vertical_line.top].min
             width = horizontal_line.right - horizontal_line.left
-            r = java.awt.geom.Rectangle2D::Double.new( horizontal_line.left, y, width, height ) #x, y, w, h
+            r = java.awt.geom.Rectangle2D::Float.new( horizontal_line.left, y, width, height ) #x, y, w, h
             #rectangles.put(hashRectangle(r), r); #TODO: I dont' think I need this now that I'm in Rubyland
             rectangles << r
           end
@@ -188,7 +186,7 @@ module Tabula
             y = vertical_line.top
             width = [top_horizontal_line.right - top_horizontal_line.left, bottom_horizontal_line.right - bottom_horizontal_line.right].max
             height = vertical_line.bottom - vertical_line.top
-            r = java.awt.geom.Rectangle2D::Double.new( x, y, width, height ) #x, y, w, h
+            r = java.awt.geom.Rectangle2D::Float.new( x, y, width, height ) #x, y, w, h
             #rectangles.put(hashRectangle(r), r);
             rectangles << r
           end

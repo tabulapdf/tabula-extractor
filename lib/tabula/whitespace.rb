@@ -35,7 +35,7 @@ module Tabula
                         ]
         subrectangles.each do |sub_r|
           obs = obstacles.select { |s|
-            s.overlaps?(sub_r)
+            s.overlaps_with_ratio?(sub_r)
           }
           if obs.empty?
             rv << sub_r
