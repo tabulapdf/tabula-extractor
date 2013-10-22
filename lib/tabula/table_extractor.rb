@@ -146,12 +146,6 @@ module Tabula
     end
   end
 
-  ##
-  # Deprecated.
-  ##
-  def Tabula.get_columns(text_elements, merge_words=true)
-    TableExtractor.new(text_elements, :merge_words => merge_words).get_columns
-  end
 
   def Tabula.lines_to_csv(lines)
     CSV.generate do |csv|
@@ -179,7 +173,7 @@ module Tabula
 
   # Returns an array of Tabula::Line
   def Tabula.make_table(text_elements, options={})
-    default_options = {:separators => []}
+    default_options = {:separators => [], :vertical_rulings => []}
     options = default_options.merge(options)
 
     if text_elements.empty?
@@ -188,6 +182,7 @@ module Tabula
 
     extractor = TableExtractor.new(text_elements, options).text_elements
     lines = group_by_lines(text_elements)
+    #lines.sort_by(&:top) ????
     top = lines[0].text_elements.map(&:top).min
     right = 0
     columns = []
@@ -197,12 +192,17 @@ module Tabula
       if te.top >= top
         left = te.left
         if (left > right)
-          columns << right
+          columns << right if options[:vertical_rulings].empty?
           right = te.right
         elsif te.right > right
           right = te.right
         end
       end
+    end
+
+    unless options[:vertical_rulings].empty?
+      columns = options[:vertical_rulings].map &:left #pixel locations, not entities
+      puts "Jer:" + columns.inspect
     end
 
     separators = columns[1..-1].sort.reverse
@@ -221,93 +221,5 @@ module Tabula
       end
     end.sort_by { |l| l.map { |te| te.top or 0 }.max }
 
-  end
-
-
-  def Tabula.make_table_with_vertical_rulings(text_elements, options={})
-    extractor = TableExtractor.new(text_elements, options)
-
-    # group by lines
-    lines = []
-    line_boundaries = extractor.get_line_boundaries
-
-    # find all the text elements
-    # contained within each detected line (table row) boundary
-    line_boundaries.each do |lb|
-      line = Line.new
-
-      line_members = text_elements.find_all do |te|
-        te.vertically_overlaps?(lb)
-      end
-
-      text_elements -= line_members
-
-      line_members.sort_by(&:left).each do |te|
-        # skip text_elements that only contain spaces
-        next if te.text =~ ONLY_SPACES_RE
-        line << te
-      end
-
-      lines << line if line.text_elements.size > 0
-    end
-
-    lines.sort_by!(&:top)
-
-    vertical_rulings = options[:vertical_rulings]
-    columns = TableExtractor.new(lines.map(&:text_elements).flatten.compact.uniq, {:merge_words => options[:merge_words], :vertical_rulings => vertical_rulings}).group_by_columns.sort_by(&:left)
-
-    # insert an empty cell in a given column if there's no text elements within that column's boundaries
-    lines.each_with_index do |l, line_index|
-      next if l.text_elements.nil?
-      l.text_elements.compact! # TODO WHY do I have to do this?
-      l.text_elements.uniq!  # TODO WHY do I have to do this?
-      l.text_elements.sort_by!(&:left)
-
-      columns.each_with_index do |c, i|
-        if (l.text_elements.select{|te| te && te.left >= c.left && te.right <= (c.left + c.width)}.empty?)
-          l.text_elements.insert(i, TextElement.new(l.top, c.left, c.width, l.height, nil, 0, '', 0))
-        end
-      end
-    end
-
-    # merge elements that are in the same column
-    lines.each_with_index do |l, line_index|
-      next if l.text_elements.nil?
-
-      (0..l.text_elements.size-1).to_a.combination(2).each do |t1, t2|  #don't remove a string of empty cells
-        next if l.text_elements[t1].nil? or l.text_elements[t2].nil?  or l.text_elements[t1].text.empty? or l.text_elements[t2].text.empty?
-
-        # if same column...
-        if columns.detect { |c| c.text_elements.include? l.text_elements[t1] } \
-          == columns.detect { |c| c.text_elements.include? l.text_elements[t2] }
-          if l.text_elements[t1].bottom <= l.text_elements[t2].bottom
-            l.text_elements[t1].merge!(l.text_elements[t2])
-            l.text_elements[t2] = nil
-          else
-            l.text_elements[t2].merge!(l.text_elements[t1])
-            l.text_elements[t1] = nil
-          end
-        end
-      end
-
-      l.text_elements.compact!
-    end
-
-
-    # remove duplicate lines
-    # TODO this shouldn't have happened here, check why we have to do
-    # this (maybe duplication is happening in the column merging phase?)
-    (0..lines.size - 2).each do |i|
-      next if lines[i].nil?
-      # if any of the elements on the next line is duplicated, kill
-      # the next line
-      if (0..lines[i].text_elements.size-1).any? { |j| lines[i].text_elements[j] == lines[i+1].text_elements[j] }
-        lines[i+1] = nil
-      end
-    end
-
-    lines.compact.map do |line|
-      line.text_elements.sort_by(&:left)
-    end
   end
 end
