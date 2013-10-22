@@ -55,3 +55,47 @@ class java.awt.geom.Line2D::Float
   end
 
 end
+
+class java.awt.geom.Rectangle2D::Double
+  SIMILARITY_DIVISOR = 20
+
+  alias_method :top, :minY
+  alias_method :right, :maxX
+  alias_method :left, :minX
+  alias_method :bottom, :maxY
+
+  def self.unionize(non_overlapping_rectangles, next_rect)
+    #if next_rect doesn't overlap any of non_overlapping_rectangles
+    if (overlapping = non_overlapping_rectangles.compact.select{|r| next_rect.overlaps? r}) && !non_overlapping_rectangles.empty?
+      #remove all of those that it overlaps from non_overlapping_rectangles and
+      non_overlapping_rectangles -= overlapping
+      #add to non_overlapping_rectangles the bounding box of the overlapping rectangles.
+      non_overlapping_rectangles << overlapping.inject(next_rect) do |memo, overlap|
+        union(overlap, memo, memo)
+      end
+    else
+      non_overlapping_rectangles << next_rect
+    end
+  end
+
+  def area
+    self.width * self.height
+  end
+
+  def similarity_hash
+    [self.x.to_i / SIMILARITY_DIVISOR, self.y.to_i / SIMILARITY_DIVISOR, self.width.to_i / SIMILARITY_DIVISOR, self.height.to_i / SIMILARITY_DIVISOR].to_s
+  end
+
+  def overlaps?(other_rect)
+    self.intersects(*other_rect.dims(:x, :y, :width, :height))
+  end
+
+  def dims(*format)
+    if format
+      format.map{|method| self.send(method)}
+    else
+      [self.x, self.y, self.width, self.height]
+    end
+  end
+
+end
