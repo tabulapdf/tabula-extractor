@@ -130,7 +130,6 @@ module Tabula
       @lines = (0...line_count).inject([]) { |m| m << Line.new }
     end
 
-
     def add_text_element(text_element, i, j)
       if @lines.size <= i
         @lines[i] = Line.new
@@ -154,10 +153,33 @@ module Tabula
       t
     end
 
+    #for equality testing, return @lines stripped of leading columns of empty strings
+    #TODO: write a method to strip all totally-empty columns (or not?)
+    def lstrip_lines
+      return @lines if @lines.include?(nil)
+      min_leading_empty_strings = Float::INFINITY
+      @lines.each do |line|
+        empties = line.text_elements.map{|t| t.text.empty? }
+        min_leading_empty_strings = [min_leading_empty_strings, empties.index(false)].min
+      end
+      if min_leading_empty_strings == 0
+        @lines
+      else
+        @lines.each{|line| line.text_elements = line.text_elements[min_leading_empty_strings..-1]}
+        @lines
+      end
+    end
+
     #used for testing, ignores separator locations (they'll sometimes be nil/empty)
     def ==(other)
+      puts other.lines.inspect
+      self.instance_variable_set(:@lines, self.lstrip_lines)
+      other.instance_variable_set(:@lines, other.lstrip_lines)
+      puts other.lines.inspect
       self.instance_variable_set(:@lines, self.lines.rpad(nil, other.lines.size))
       other.instance_variable_set(:@lines, other.lines.rpad(nil, self.lines.size))
+      puts other.lines.inspect
+
       self.lines.zip(other.lines).inject(true) do |memo, my_yours|
         my, yours = my_yours
         memo && my == yours
@@ -206,7 +228,6 @@ module Tabula
         memo && my == yours
       end
     end
-
   end
 
   class Column < ZoneEntity

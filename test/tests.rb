@@ -63,6 +63,7 @@ class TestEntityComparability < Minitest::Test
   def test_table_comparability
     rows_base = [["a", "b", "c"], ['', 'd', '']]
     rows_equal = [["a", "b", "c"], ['', 'd']]
+    rows_equal_padded = [['', "a", "b", "c"], ['', '', 'd']]
     rows_unequal_one = [["a", "b", "c"], ['d']]
     rows_unequal_two = [["a", "b", "c"], ['d', '']]
     rows_unequal_three = [["a", "b", "c"], ['d'], ['a','b', 'd']]
@@ -70,12 +71,14 @@ class TestEntityComparability < Minitest::Test
 
     table_base = Tabula::Table.new_from_array(rows_base)
     table_equal = Tabula::Table.new_from_array(rows_equal)
+    table_equal_column_padded = Tabula::Table.new_from_array(rows_equal_padded)
     table_unequal_one = Tabula::Table.new_from_array(rows_unequal_one)
     table_unequal_two = Tabula::Table.new_from_array(rows_unequal_two)
     table_unequal_three = Tabula::Table.new_from_array(rows_unequal_three)
     table_unequal_four = Tabula::Table.new_from_array(rows_unequal_four)
 
     assert_equal table_base, table_equal
+    assert_equal table_base, table_equal_column_padded
     refute_equal table_base, table_unequal_one
     refute_equal table_base, table_unequal_two
     refute_equal table_base, table_unequal_three
