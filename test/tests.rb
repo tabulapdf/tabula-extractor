@@ -10,6 +10,79 @@ def lines_to_array(lines)
   }
 end
 
+class TestEntityComparability < Minitest::Test
+  def test_text_element_comparability
+    base = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, "Jeremy", nil)
+
+    two = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, " Jeremy  \n", nil)
+    three = Tabula::TextElement.new(7, 6, 8, 6, nil, 12, "Jeremy", 88)
+    four = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "Jeremy", 55)
+
+    five = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "jeremy b", 55)
+    six = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "jeremy    kj", 55)
+    seven = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, "jeremy    kj", nil)
+    assert_equal base, two
+    assert_equal base, three
+    assert_equal base, four
+
+    refute_equal base, five
+    refute_equal base, six
+    refute_equal base, seven
+  end
+
+  def test_line_comparability
+    text_base = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, "Jeremy", nil)
+
+    text_two = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, " Jeremy  \n", nil)
+    text_three = Tabula::TextElement.new(7, 6, 8, 6, nil, 12, "Jeremy", 88)
+    text_four = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "Jeremy", 55)
+
+    text_five = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "jeremy b", 55)
+    text_six = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "jeremy    kj", 55)
+    text_seven = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, "jeremy    kj", nil)
+    line_base = Tabula::Line.new
+    line_base.text_elements = [text_base, text_two, text_three]
+    line_equal = Tabula::Line.new
+    line_equal.text_elements = [text_base, text_two, text_three]
+    line_equal_but_longer = Tabula::Line.new
+    line_equal_but_longer.text_elements = [text_base, text_two, text_three, Tabula::TextElement::EMPTY, Tabula::TextElement::EMPTY]
+    line_unequal = Tabula::Line.new
+    line_unequal.text_elements = [text_base, text_two, text_three, text_five]
+    line_unequal_and_longer = Tabula::Line.new
+    line_unequal_and_longer.text_elements = [text_base, text_two, text_three, text_five, Tabula::TextElement::EMPTY, Tabula::TextElement::EMPTY]
+    line_unequal_and_longer_and_different = Tabula::Line.new
+    line_unequal_and_longer_and_different.text_elements = [text_base, text_two, text_three, text_five, Tabula::TextElement::EMPTY, 'whatever']
+
+    assert_equal line_base, line_equal
+    assert_equal line_base, line_equal_but_longer
+    refute_equal line_base, line_unequal
+    refute_equal line_base, line_unequal_and_longer
+    refute_equal line_base, line_unequal_and_longer_and_different
+  end
+
+  def test_table_comparability
+    rows_base = [["a", "b", "c"], ['', 'd', '']]
+    rows_equal = [["a", "b", "c"], ['', 'd']]
+    rows_unequal_one = [["a", "b", "c"], ['d']]
+    rows_unequal_two = [["a", "b", "c"], ['d', '']]
+    rows_unequal_three = [["a", "b", "c"], ['d'], ['a','b', 'd']]
+    rows_unequal_four = [["a", "b", "c"]]
+
+    table_base = Tabula::Table.new_from_array(rows_base)
+    table_equal = Tabula::Table.new_from_array(rows_equal)
+    table_unequal_one = Tabula::Table.new_from_array(rows_unequal_one)
+    table_unequal_two = Tabula::Table.new_from_array(rows_unequal_two)
+    table_unequal_three = Tabula::Table.new_from_array(rows_unequal_three)
+    table_unequal_four = Tabula::Table.new_from_array(rows_unequal_four)
+
+    assert_equal table_base, table_equal
+    refute_equal table_base, table_unequal_one
+    refute_equal table_base, table_unequal_two
+    refute_equal table_base, table_unequal_three
+    refute_equal table_base, table_unequal_four
+  end
+end
+
 class TestPagesInfoExtractor < Minitest::Test
   def test_pages_info_extractor
     extractor = Tabula::Extraction::PagesInfoExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
