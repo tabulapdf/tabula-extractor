@@ -149,29 +149,8 @@ module Tabula
   ##
   # Deprecated.
   ##
-  def Tabula.group_by_columns(text_elements, merge_words=false)
-    TableExtractor.new(text_elements, :merge_words => merge_words).group_by_columns
-  end
-
-  ##
-  # Deprecated.
-  ##
-  def Tabula.get_line_boundaries(text_elements)
-    TableExtractor.new(text_elements).get_line_boundaries
-  end
-
-  ##
-  # Deprecated.
-  ##
   def Tabula.get_columns(text_elements, merge_words=true)
     TableExtractor.new(text_elements, :merge_words => merge_words).get_columns
-  end
-
-  ##
-  # Deprecated.
-  ##
-  def Tabula.get_rows(text_elements, merge_words=true)
-    TableExtractor.new(text_elements, :merge_words => merge_words).get_rows
   end
 
   def Tabula.lines_to_csv(lines)
