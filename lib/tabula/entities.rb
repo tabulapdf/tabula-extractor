@@ -172,13 +172,10 @@ module Tabula
 
     #used for testing, ignores separator locations (they'll sometimes be nil/empty)
     def ==(other)
-      puts other.lines.inspect
       self.instance_variable_set(:@lines, self.lstrip_lines)
       other.instance_variable_set(:@lines, other.lstrip_lines)
-      puts other.lines.inspect
       self.instance_variable_set(:@lines, self.lines.rpad(nil, other.lines.size))
       other.instance_variable_set(:@lines, other.lines.rpad(nil, self.lines.size))
-      puts other.lines.inspect
 
       self.lines.zip(other.lines).inject(true) do |memo, my_yours|
         my, yours = my_yours
