@@ -146,15 +146,6 @@ module Tabula
     end
   end
 
-  ## Deprecated. 10/22/13 -JBM
-  def Tabula.lines_to_csv(lines)
-    CSV.generate do |csv|
-      lines.each do |l|
-        csv << l.map { |c| c.text.strip }
-      end
-    end
-  end
-
   ONLY_SPACES_RE = Regexp.new('^\s+$')
 
   def Tabula.group_by_lines(text_elements)
