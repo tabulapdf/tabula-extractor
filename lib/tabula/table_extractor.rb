@@ -134,8 +134,8 @@ module Tabula
         else
           # is there a space? is this within `CHARACTER_DISTANCE_THRESHOLD` points of previous char?
           if (char1.text != " ") and (char2.text != " ") and self.text_elements[current_word_index].should_add_space?(char2)
-            self.text_elements[current_word_index].text += " "
-            #self.text_elements[current_word_index].width += self.text_elements[current_word_index].width_of_space
+            self.text_elements[current_word_index].text  += " "
+            self.text_elements[current_word_index].width += self.text_elements[current_word_index].width_of_space
           end
           current_word_index = i+1
         end
