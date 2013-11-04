@@ -90,11 +90,8 @@ module Tabula
                                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
                                                      text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
 
-        if c =~ PRINTABLE_RE
-          int = java.awt.geom.Rectangle2D::Float.new
-          java.awt.geom.Rectangle2D.intersect(self.getGraphicsState.getCurrentClippingPath.getBounds2D, te, int)
-
-          self.characters << te if (int.getWidth * int.getHeight) / (te.getWidth * te.getHeight) > 0.5
+        if c =~ PRINTABLE_RE && self.getGraphicsState.getCurrentClippingPath.getBounds2D.intersects(te)
+          self.characters << te
         end
       end
 
