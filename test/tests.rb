@@ -14,6 +14,25 @@ def lines_to_table(lines)
   Tabula::Table.new_from_array(lines_to_array(lines))
 end
 
+
+# I don't want to pollute the "real" class with a funny inspect method. Just for testing comparisons.
+module Tabula
+  class Table
+    def inspect
+      "[" + lines.map(&:inspect).join(",") + "]"
+    end
+  end
+end
+
+module Tabula
+  class Line
+    def inspect
+      @text_elements.map(&:text).inspect
+    end
+  end
+end
+
+
 class TestEntityComparability < Minitest::Test
   def test_text_element_comparability
     base = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, "Jeremy", nil)
@@ -256,8 +275,6 @@ class TestExtractor < Minitest::Test
       ["ABRAHAMSON, TIMOTHY GARTH", "URBANDALE", "IA", "TIMOTHY GARTH", "", "", "$22.93", "", "", "$22.93"],
       ["", "", "", "ABRAHAMSON"]
      ])
-
-
 
     #N.B. it's "MORGANTOWN", "WV" that we're most interested in here (it used to show up as ["MORGANTOWNWV", "", ""])
 
