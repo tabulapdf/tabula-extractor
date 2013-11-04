@@ -1,5 +1,3 @@
-require 'observer'
-
 require_relative './entities.rb'
 
 require 'java'
@@ -26,76 +24,14 @@ module Tabula
 
     class TextExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
-      OPERATORS = {
-        "b" => org.apache.pdfbox.util.operator.pagedrawer.CloseFillNonZeroAndStrokePath.new,
-        "B" => org.apache.pdfbox.util.operator.pagedrawer.FillNonZeroAndStrokePath.new,
-        "b*" => org.apache.pdfbox.util.operator.pagedrawer.CloseFillEvenOddAndStrokePath.new,
-        "B*" => org.apache.pdfbox.util.operator.pagedrawer.FillEvenOddAndStrokePath.new,
-        "BI" => org.apache.pdfbox.util.operator.pagedrawer.BeginInlineImage.new,
-        "BT" => org.apache.pdfbox.util.operator.BeginText.new,
-        "c" => org.apache.pdfbox.util.operator.pagedrawer.CurveTo.new,
-        "cm" => org.apache.pdfbox.util.operator.Concatenate.new,
-        "CS" => org.apache.pdfbox.util.operator.SetStrokingColorSpace.new,
-        "cs" => org.apache.pdfbox.util.operator.SetNonStrokingColorSpace.new,
-        "d" => org.apache.pdfbox.util.operator.pagedrawer.SetLineDashPattern.new,
-        "Do" => org.apache.pdfbox.util.operator.pagedrawer.Invoke.new,
-        "ET" => org.apache.pdfbox.util.operator.EndText.new,
-        "f" => org.apache.pdfbox.util.operator.pagedrawer.FillNonZeroRule.new,
-        "F" => org.apache.pdfbox.util.operator.pagedrawer.FillNonZeroRule.new,
-        "f*" => org.apache.pdfbox.util.operator.pagedrawer.FillEvenOddRule.new,
-        "G" => org.apache.pdfbox.util.operator.SetStrokingGrayColor.new,
-        "g" => org.apache.pdfbox.util.operator.SetNonStrokingGrayColor.new,
-        "gs" => org.apache.pdfbox.util.operator.SetGraphicsStateParameters.new,
-        "h" => org.apache.pdfbox.util.operator.pagedrawer.ClosePath.new,
-        "j" => org.apache.pdfbox.util.operator.pagedrawer.SetLineJoinStyle.new,
-        "J" => org.apache.pdfbox.util.operator.pagedrawer.SetLineCapStyle.new,
-        "K" => org.apache.pdfbox.util.operator.SetStrokingCMYKColor.new,
-        "k" => org.apache.pdfbox.util.operator.SetNonStrokingCMYKColor.new,
-        "l" => org.apache.pdfbox.util.operator.pagedrawer.LineTo.new,
-        "m" => org.apache.pdfbox.util.operator.pagedrawer.MoveTo.new,
-        "M" => org.apache.pdfbox.util.operator.pagedrawer.SetLineMiterLimit.new,
-        "n" => org.apache.pdfbox.util.operator.pagedrawer.EndPath.new,
-        "q" => org.apache.pdfbox.util.operator.GSave.new,
-        "Q" => org.apache.pdfbox.util.operator.GRestore.new,
-        "re" => org.apache.pdfbox.util.operator.pagedrawer.AppendRectangleToPath.new,
-        "RG" => org.apache.pdfbox.util.operator.SetStrokingRGBColor.new,
-        "rg" => org.apache.pdfbox.util.operator.SetNonStrokingRGBColor.new,
-        "s" => org.apache.pdfbox.util.operator.CloseAndStrokePath.new,
-        "S" => org.apache.pdfbox.util.operator.pagedrawer.StrokePath.new,
-        "SC" => org.apache.pdfbox.util.operator.SetStrokingColor.new,
-        "sc" => org.apache.pdfbox.util.operator.SetNonStrokingColor.new,
-        "SCN" => org.apache.pdfbox.util.operator.SetStrokingColor.new,
-        "scn" => org.apache.pdfbox.util.operator.SetNonStrokingColor.new,
-        "sh" => org.apache.pdfbox.util.operator.pagedrawer.SHFill.new,
-        "T*" => org.apache.pdfbox.util.operator.NextLine.new,
-        "Tc" => org.apache.pdfbox.util.operator.SetCharSpacing.new,
-        "Td" => org.apache.pdfbox.util.operator.MoveText.new,
-        "TD" => org.apache.pdfbox.util.operator.MoveTextSetLeading.new,
-        "Tf" => org.apache.pdfbox.util.operator.SetTextFont.new,
-        "Tj" => org.apache.pdfbox.util.operator.ShowText.new,
-        "TJ" => org.apache.pdfbox.util.operator.ShowTextGlyph.new,
-        "TL" => org.apache.pdfbox.util.operator.SetTextLeading.new,
-        "Tm" => org.apache.pdfbox.util.operator.SetMatrix.new,
-        "Tr" => org.apache.pdfbox.util.operator.SetTextRenderingMode.new,
-        "Ts" => org.apache.pdfbox.util.operator.SetTextRise.new,
-        "Tw" => org.apache.pdfbox.util.operator.SetWordSpacing.new,
-        "Tz" => org.apache.pdfbox.util.operator.SetHorizontalTextScaling.new,
-        "v" => org.apache.pdfbox.util.operator.pagedrawer.CurveToReplicateInitialPoint.new,
-        "w" => org.apache.pdfbox.util.operator.pagedrawer.SetLineWidth.new,
-        "W" => org.apache.pdfbox.util.operator.pagedrawer.ClipNonZeroRule.new,
-        "W*" => org.apache.pdfbox.util.operator.pagedrawer.ClipEvenOddRule.new,
-        "y" => org.apache.pdfbox.util.operator.pagedrawer.CurveToReplicateFinalPoint.new,
-        "'" => org.apache.pdfbox.util.operator.MoveAndShow.new,
-        "\"" => org.apache.pdfbox.util.operator.SetMoveAndShow.new
-      }
-      attr_accessor :characters
+      attr_accessor :characters, :debug_text
       field_accessor :pageSize, :page, :graphics
+
 
       PRINTABLE_RE = /[[:print:]]/
 
       def initialize
         super
-        OPERATORS.each { |k,v| self.registerOperatorProcessor(k,v) }
         self.characters = []
         @graphics = java.awt.Graphics2D
       end
@@ -107,30 +43,18 @@ module Tabula
       def ensurePageSize!
         if self.pageSize.nil? && !self.page.nil?
           mediaBox = self.page.findMediaBox
-          self.pageSize = mediaBox == nil ? nil : mediaBox.createDimension
-          #(@pageSize = @pageSize).nil? ? DEFAULT_DIMENSION : pageSize;
+          self.pageSize = (mediaBox == nil ? nil : mediaBox.createDimension)
         end
       end
 
-      def drawPage(*args)
-        if args.size == 1
-          page = args.first
+      def drawPage(page)
+        self.page = page
+        if !self.page.getContents.nil?
           ensurePageSize!
-          self.page = page
-          if !page.getContents.nil?
-            resources = page.findResources
-            ensurePageSize!
-            self.processStream(page, page.findResources, page.getContents.getStream)
-          end
-        elsif args.size == 3
-          self.graphics = args[0]
-          self.page = args[1]
-          self.pageSize = args[2]
+          self.processStream(self.page,
+                             self.page.findResources,
+                             self.page.getContents.getStream)
         end
-      end
-
-      def extractText!(page)
-        drawPage page
       end
 
       def setStroke(stroke)
@@ -142,9 +66,11 @@ module Tabula
       end
 
       def strokePath
+        self.getLinePath.reset
       end
 
       def fillPath(windingRule)
+        self.getLinePath.reset
       end
 
       def drawImage(image, at)
@@ -164,8 +90,11 @@ module Tabula
                                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
                                                      text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
 
-        if c =~ PRINTABLE_RE && self.getGraphicsState.getCurrentClippingPath.intersects(te)
-          self.characters << te
+        if c =~ PRINTABLE_RE
+          int = java.awt.geom.Rectangle2D::Float.new
+          java.awt.geom.Rectangle2D.intersect(self.getGraphicsState.getCurrentClippingPath.getBounds2D, te, int)
+
+          self.characters << te if (int.getWidth * int.getHeight) / (te.getWidth * te.getHeight) > 0.5
         end
       end
 
@@ -184,12 +113,27 @@ module Tabula
         end
 
         spaceWidthText = font.getFontWidth([0x20].to_java(Java::byte), 0, 1)
-        # puts "fontSizeText: #{fontSizeText}"
-        # puts "spaceWidthText: #{spaceWidthText}"
-        # puts "horizontalScalingText: #{horizontalScalingText}"
-        # puts "textMatrix 0,0: #{self.textMatrix.getValue(0, 0)}"
-        # puts "ctm 0,0: #{gs.getCurrentTransformationMatrix.getValue(0, 0)}"
+
         return (spaceWidthText/1000.0) * fontSizeText * horizontalScalingText * gs.getCurrentTransformationMatrix.getValue(0, 0)
+      end
+
+      def debugPath(path)
+        iterator = path.getPathIterator(java.awt.geom.AffineTransform.new)
+        coords = Java::double[6].new
+        rv = ''
+        while !iterator.isDone do
+          segType = iterator.currentSegment(coords)
+          case segType
+          when java.awt.geom.PathIterator::SEG_MOVETO
+            rv += "MOVE: #{coords[0]} #{coords[1]}\n"
+          when java.awt.geom.PathIterator::SEG_LINETO
+            rv += "LINE: #{coords[0]} #{coords[1]}\n"
+          when java.awt.geom.PathIterator::SEG_CLOSE
+            rv += "CLOSE\n\n"
+          end
+          iterator.next
+        end
+        rv
       end
     end
 
@@ -220,8 +164,6 @@ module Tabula
 
 
     class CharacterExtractor
-      include Observable
-
       #N.B. pages can be :all, a list of pages or a range.
       def initialize(pdf_filename, pages=[1], password='')
         raise Errno::ENOENT unless File.exists?(pdf_filename)
@@ -239,8 +181,7 @@ module Tabula
               contents = page.getContents
               next if contents.nil?
               @extractor.clear!
-              #@extractor.processStream(page, page.findResources, contents.getStream)
-              @extractor.extractText! page
+              @extractor.drawPage page
               y.yield Tabula::Page.new(page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
