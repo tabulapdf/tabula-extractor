@@ -1,33 +1,18 @@
+require_relative './core_ext'
+
 module Tabula
 
-  class ZoneEntity
-    attr_accessor :top, :left, :width, :height
+  class ZoneEntity < java.awt.geom.Rectangle2D::Float
 
     attr_accessor :texts
 
     def initialize(top, left, width, height)
-      self.top = top
-      self.left = left
-      self.width = width
-      self.height = height
+      super()
+      # super(left, top, width, height)
+      if left && top && width && height
+        self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], left, top, width, height
+      end
       self.texts = []
-    end
-
-    def bottom
-      self.top + self.height
-    end
-
-    def right
-      self.left + self.width
-    end
-
-    # [x, y]
-    def midpoint
-      [self.left + (self.width / 2), self.top + (self.height / 2)]
-    end
-
-    def area
-      self.width * self.height
     end
 
     def merge!(other)
@@ -35,63 +20,6 @@ module Tabula
       self.left   = [self.left, other.left].min
       self.width  = [self.right, other.right].max - left
       self.height = [self.bottom, other.bottom].max - top
-    end
-
-    def horizontal_distance(other)
-      (other.left - self.right).abs
-    end
-
-    def vertical_distance(other)
-      (other.bottom - self.bottom).abs
-    end
-
-    # Roughly, detects if self and other belong to the same line
-    def vertically_overlaps?(other)
-      vertical_overlap = [0, [self.bottom, other.bottom].min - [self.top, other.top].max].max
-      vertical_overlap > 0
-    end
-
-    # detects if self and other belong to the same column
-    def horizontally_overlaps?(other)
-      horizontal_overlap = [0, [self.right, other.right].min  - [self.left, other.left].max].max
-      horizontal_overlap > 0
-    end
-
-    def overlaps?(other, ratio_tolerance=0.00001)
-      self.overlap_ratio(other) > ratio_tolerance
-    end
-
-    def overlap_ratio(other)
-      intersection_width = [0, [self.right, other.right].min  - [self.left, other.left].max].max
-      intersection_height = [0, [self.bottom, other.bottom].min - [self.top, other.top].max].max
-      intersection_area = [0, intersection_height * intersection_width].max
-
-      union_area = self.area + other.area - intersection_area
-      intersection_area / union_area
-    end
-
-    # as defined by PDF-TREX paper
-    def horizontal_overlap_ratio(other)
-      delta = [self.bottom - self.top, other.bottom - other.top].min
-      if [other.top, self.top, other.bottom, self.bottom].sorted?
-        (other.bottom - self.top) / delta
-      elsif [self.top, other.top, self.bottom, other.bottom].sorted?
-        (self.bottom - other.top) / delta
-      elsif [self.top, other.top, other.bottom, self.bottom].sorted?
-        (other.bottom - other.top) / delta
-      elsif [other.top, self.top, self.bottom, other.bottom].sorted?
-        (self.bottom - self.top) / delta
-      else
-        0
-      end
-    end
-
-    def to_h
-      hash = {}
-      [:top, :left, :width, :height].each do |m|
-        hash[m] = self.send(m)
-      end
-      hash
     end
 
     def to_json(options={})
@@ -136,7 +64,7 @@ module Tabula
     attr_accessor :font, :font_size, :text, :width_of_space
 
     CHARACTER_DISTANCE_THRESHOLD = 1.5
-    TOLERANCE_FACTOR = 0.25 #25
+    TOLERANCE_FACTOR = 0.3 #25
 
     def initialize(top, left, width, height, font, font_size, text, width_of_space)
       super(top, left, width, height)
@@ -146,38 +74,34 @@ module Tabula
       self.width_of_space = width_of_space
     end
 
+    EMPTY = TextElement.new(0, 0, 0, 0, nil, 0, '', 0)
+
+    # def self.empty
+    #   TextElement.new(0, 0, 0, 0, nil, 0, '', 0)
+    # end
+
     # more or less returns True if distance < tolerance
     def should_merge?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
       overlaps = self.vertically_overlaps?(other)
 
-      tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
+      tolerance = ((self.width + other.width) / 2) * TOLERANCE_FACTOR
 
-      overlaps or
-        (self.height == 0 and other.height != 0) or
-        (other.height == 0 and self.height != 0) and
-        self.horizontal_distance(other) < tolerance
+      overlaps && self.horizontal_distance(other) < tolerance && !self.should_add_space?(other)
     end
 
     # more or less returns True if (tolerance <= distance < CHARACTER_DISTANCE_THRESHOLD*tolerance)
     def should_add_space?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
+#      return false if other == ' '
       overlaps = self.vertically_overlaps?(other)
 
-      up_tolerance = ((self.font_size + other.font_size) / 2) * TOLERANCE_FACTOR
-      down_tolerance = 0.90 #90?
-
       dist = self.horizontal_distance(other).abs
-
-      rv = overlaps && (dist.between?(self.width_of_space * down_tolerance, self.width_of_space + up_tolerance))
-      rv
+      overlaps && dist.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))
     end
 
     def merge!(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-      # unless self.horizontally_overlaps?(other) or self.vertically_overlaps?(other)
-      #   raise ArgumentError, "won't merge TextElements that don't overlap"
-      # end
       if self.horizontally_overlaps?(other) and other.top < self.top
         self.text = other.text + self.text
       else
@@ -192,6 +116,10 @@ module Tabula
         hash[m] = self.send(m)
       end
       hash
+    end
+
+    def ==(other)
+      self.text.strip == other.text.strip
     end
   end
 
@@ -212,6 +140,49 @@ module Tabula
         @lines[i].text_elements[j] = text_element
       end
     end
+
+    #TODO: move to csv/tsv 'writer' methods here
+
+    # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
+    # probably only used for testing
+    def self.new_from_array(array_of_rows)
+      t = Table.new(array_of_rows.size, [])
+      array_of_rows.each_with_index do |row, index|
+        t.lines[index].text_elements = row.map{|cell| TextElement.new(nil, nil, nil, nil, nil, nil, cell, nil)}
+      end
+      t
+    end
+
+    #for equality testing, return @lines stripped of leading columns of empty strings
+    #TODO: write a method to strip all totally-empty columns (or not?)
+    def lstrip_lines
+      return @lines if @lines.include?(nil)
+      min_leading_empty_strings = Float::INFINITY
+      @lines.each do |line|
+        empties = line.text_elements.map{|t| t.text.empty? }
+        min_leading_empty_strings = [min_leading_empty_strings, empties.index(false)].min
+      end
+      if min_leading_empty_strings == 0
+        @lines
+      else
+        @lines.each{|line| line.text_elements = line.text_elements[min_leading_empty_strings..-1]}
+        @lines
+      end
+    end
+
+    #used for testing, ignores separator locations (they'll sometimes be nil/empty)
+    def ==(other)
+      self.instance_variable_set(:@lines, self.lstrip_lines)
+      other.instance_variable_set(:@lines, other.lstrip_lines)
+      self.instance_variable_set(:@lines, self.lines.rpad(nil, other.lines.size))
+      other.instance_variable_set(:@lines, other.lines.rpad(nil, self.lines.size))
+
+      self.lines.zip(other.lines).inject(true) do |memo, my_yours|
+        my, yours = my_yours
+        memo && my == yours
+      end
+
+    end
   end
 
   class Line < ZoneEntity
@@ -219,19 +190,19 @@ module Tabula
     attr_reader :index
 
     def initialize(index=nil)
-      self.text_elements = []
+      @text_elements = []
       @index = index
     end
 
     def <<(t)
-      if self.text_elements.size == 0
-        self.text_elements << t
+      if @text_elements.size == 0
+        @text_elements << t
         self.top = t.top
         self.left = t.left
         self.width = t.width
         self.height = t.height
       else
-        if in_same_column = self.text_elements.find { |te| te.horizontally_overlaps?(t) }
+        if in_same_column = @text_elements.find { |te| te.horizontally_overlaps?(t) }
           #sometimes a space needs to be added here
           unless in_same_column.vertically_overlaps?(t)
             t.text = " " + t.text
@@ -244,7 +215,16 @@ module Tabula
       end
     end
 
-
+    #used for testing, ignores text element stuff besides stripped text.
+    def ==(other)
+      return false if other.nil?
+      self.text_elements = self.text_elements.rpad(TextElement::EMPTY, other.text_elements.size)
+      other.text_elements = other.text_elements.rpad(TextElement::EMPTY, self.text_elements.size)
+      self.text_elements.zip(other.text_elements).inject(true) do |memo, my_yours|
+        my, yours = my_yours
+        memo && my == yours
+      end
+    end
   end
 
   class Column < ZoneEntity
@@ -290,6 +270,14 @@ module Tabula
   require_relative './core_ext'
 
   class Ruling < ZoneEntity
+
+    attr_accessor :stroking_color
+
+    def initialize(top, left, width, height, stroking_color=nil)
+      super(top, left, width, height)
+      self.stroking_color = stroking_color
+    end
+
     # 2D line intersection test taken from comp.graphics.algorithms FAQ
     def intersects?(other)
       r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
@@ -324,11 +312,6 @@ module Tabula
       [left, top, right, bottom].to_json
     end
 
-    def to_xml
-      "<ruling x1=\"%.2f\" y1=\"%.2f\" x2=\"%.2f\" y2=\"%.2f\" />" \
-      % [left, top, right, bottom]
-    end
-
     def self.clean_rulings(rulings, max_distance=4)
 
       # merge horizontal and vertical lines
@@ -336,7 +319,7 @@ module Tabula
 
       skip = false
 
-      horiz = rulings.select { |r| r.horizontal? && r.width > max_distance }
+      horiz = rulings.select { |r| r.horizontal? }
         .group_by(&:top)
         .values.reduce([]) do |memo, rs|
 
@@ -359,7 +342,7 @@ module Tabula
         end
         memo
       end
-      .sort_by(&:top)
+        .sort_by(&:top)
 
       h = []
       horiz.size.times do |i|
@@ -375,7 +358,7 @@ module Tabula
         end
         d = (horiz[i+1].top - horiz[i].top).abs
 
-        h << if d < 4 # THRESHOLD DISTANCE between horizontal lines
+        h << if d < max_distance # THRESHOLD DISTANCE between horizontal lines
                skip = true
                Tabula::Ruling.new(horiz[i].top + d / 2, [horiz[i].left, horiz[i+1].left].min, [horiz[i+1].width.abs, horiz[i].width.abs].max, 0)
              else
@@ -384,66 +367,32 @@ module Tabula
       end
       horiz = h
 
-      vert = rulings.select { |r| r.vertical? && r.height > max_distance }
+      vert = rulings.select { |r| r.vertical? }
         .group_by(&:left)
         .values
         .reduce([]) do |memo, rs|
 
-          rs = rs.sort_by(&:top)
+        rs = rs.sort_by(&:top)
 
-          if rs.size > 1
-            # Here be dragons:
-            # merge consecutive segments of lines that are close enough
-            memo +=
-              rs.each_cons(2)
-              .chunk { |p| p[1].top - p[0].bottom < 7 }
-              .select { |c| c[0] }
-              .map { |group|
-                group = group.last.flatten.uniq
-                Tabula::Ruling.new(group[0].top,
-                                   group[0].left,
-                                   0,
-                                   group[-1].bottom - group[0].top)
-              }
-         else
-           memo << rs.first
-         end
-         memo
+        if rs.size > 1
+          # Here be dragons:
+          # merge consecutive segments of lines that are close enough
+          memo +=
+            rs.each_cons(2)
+            .chunk { |p| p[1].top - p[0].bottom < 7 }
+            .select { |c| c[0] }
+            .map { |group|
+            group = group.last.flatten.uniq
+            Tabula::Ruling.new(group[0].top,
+                               group[0].left,
+                               0,
+                               group[-1].bottom - group[0].top)
+          }
+        else
+          memo << rs.first
+        end
+        memo
       end.sort_by(&:left)
-
-      # v = []
-
-      # vert.size.times do |i|
-      #   if i == vert.size - 1
-      #     v << vert[-1]
-      #     break
-      #   end
-
-      #   if skip
-      #     skip = false;
-      #     next
-      #   end
-      #   d = (vert[i+1].left - vert[i].left).abs
-
-      #   v << if d < 4 # THRESHOLD DISTANCE between vertical lines
-      #          skip = true
-      #          Tabula::Ruling.new([vert[i+1].top, vert[i].top].min, vert[i].left + d / 2, 0, [vert[i+1].height.abs, vert[i].height.abs].max)
-      #        else
-      #          vert[i]
-      #        end
-      # end
-      # vert = v
-
-
-      # - only keep horizontal rulings that intersect with at least one vertical ruling
-      # - only keep vertical rulings that intersect with at least one horizontal ruling
-      # yeah, it's a naive heuristic. but hey, it works.
-
-      # h_mean =  horiz.reduce(0) { |accum, i| accum + i.width } / horiz.size
-      # horiz.reject { |h| h.width < h_mean }
-
-      #vert.delete_if  { |v| !horiz.any? { |h| h.intersects?(v) } } unless horiz.empty?
-      #horiz.delete_if { |h| !vert.any?  { |v| v.intersects?(h) } } unless vert.empty?
 
       return horiz += vert
     end
