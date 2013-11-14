@@ -75,7 +75,7 @@ module Tabula
               y.yield Tabula::Page.new(page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
-                                       i+1)
+                                       i+1) #remember, these are one-indexed
             end
           ensure
             @pdf_file.close
@@ -89,6 +89,7 @@ module Tabula
       include Observable
 
       #N.B. pages can be :all, a list of pages or a range.
+      #     but if it's a list or a range, it's one-indexed
       def initialize(pdf_filename, pages=[1], password='')
         raise Errno::ENOENT unless File.exists?(pdf_filename)
         @pdf_file = Extraction.openPDF(pdf_filename, password)
@@ -110,7 +111,7 @@ module Tabula
               y.yield Tabula::Page.new(page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
-                                       i+1,
+                                       i, #one-indexed, just like `i` is.
                                        @extractor.characters.map { |char|
                                          Tabula::TextElement.new(char.getYDirAdj.round(2),
                                                                  char.getXDirAdj.round(2),
