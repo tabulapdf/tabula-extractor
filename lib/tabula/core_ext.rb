@@ -176,12 +176,15 @@ class Rectangle2D::Float
 
   def self.unionize(non_overlapping_rectangles, next_rect)
     #if next_rect doesn't overlap any of non_overlapping_rectangles
-    if (overlapping = non_overlapping_rectangles.compact.select{|r| next_rect.overlaps? r}) && !non_overlapping_rectangles.empty?
+    if !(overlapping = non_overlapping_rectangles.compact.select{|r| next_rect.overlaps? r}).empty? &&
+         !non_overlapping_rectangles.empty?
       #remove all of those that it overlaps from non_overlapping_rectangles and
       non_overlapping_rectangles -= overlapping
       #add to non_overlapping_rectangles the bounding box of the overlapping rectangles.
       non_overlapping_rectangles << overlapping.inject(next_rect) do |memo, overlap|
-        union(overlap, memo, memo)
+        #all we're doing is unioning `overlap` and `memo` and setting that result to `memo`
+        union(overlap, memo, memo) #I </3 Java.
+        memo
       end
     else
       non_overlapping_rectangles << next_rect
@@ -194,6 +197,10 @@ class Rectangle2D::Float
       hash[m] = self.send(m)
     end
     hash
+  end
+
+  def inspect
+    "#<Rectangle2D dims:[#{top}, #{left}, #{bottom}, #{right}]>"
   end
 
 end
