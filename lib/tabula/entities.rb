@@ -29,13 +29,24 @@ module Tabula
   end
 
   class Page < ZoneEntity
-    attr_reader :rotation, :number
+    attr_reader :rotation, :number_one_indexed
 
     def initialize(width, height, rotation, number, texts=[])
       super(0, 0, width, height)
       @rotation = rotation
-      @number = number
+      if number < 1
+        raise ArgumentError, "Tabula::Page numbers are one-indexed; numbers < 1 are invalid."
+      end
+      @number_one_indexed = number
       self.texts = texts
+    end
+
+    def number(indexing_base=:one_indexed)
+      if indexing_base == :zero_indexed
+        return @number_one_indexed - 1
+      else
+        return @number_one_indexed
+      end
     end
 
     # get text, optionally from a provided area in the page [top, left, bottom, right]

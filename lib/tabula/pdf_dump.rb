@@ -89,7 +89,6 @@ module Tabula
                                                      c,
                                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
                                                      text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
-
         if c =~ PRINTABLE_RE && self.getGraphicsState.getCurrentClippingPath.getBounds2D.intersects(te)
           self.characters << te
         end
@@ -145,12 +144,13 @@ module Tabula
         Enumerator.new do |y|
           begin
             @all_pages.each_with_index do |page, i|
+              puts "pages() Page num ##{i}"
               contents = page.getContents
 
               y.yield Tabula::Page.new(page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
-                                       i+1)
+                                       i+1) #remember, these are one-indexed
             end
           ensure
             @pdf_file.close
@@ -162,6 +162,7 @@ module Tabula
 
     class CharacterExtractor
       #N.B. pages can be :all, a list of pages or a range.
+      #     but if it's a list or a range, it's one-indexed
       def initialize(pdf_filename, pages=[1], password='')
         raise Errno::ENOENT unless File.exists?(pdf_filename)
         @pdf_file = Extraction.openPDF(pdf_filename, password)
@@ -182,7 +183,7 @@ module Tabula
               y.yield Tabula::Page.new(page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
-                                       i+1,
+                                       i, #one-indexed, just like `i` is.
                                        @extractor.characters)
             end
           ensure

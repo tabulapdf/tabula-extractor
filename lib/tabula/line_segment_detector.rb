@@ -55,6 +55,7 @@ module Tabula
       lines
     end
 
+    #zero-indexed page_number
     def LSD.detect_lines_in_pdf_page(pdf_path, page_number, options={})
       options = DETECT_LINES_DEFAULTS.merge(options)
 
