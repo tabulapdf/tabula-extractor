@@ -60,7 +60,7 @@ module Tabula
       vertical_lines = lines.select &:vertical?
       find_tables(vertical_lines, horizontal_lines).inject([]) do |memo, next_rect|
         java.awt.geom.Rectangle2D::Float.unionize( memo, next_rect )
-      end.compact.sort_by(&:area).reverse
+      end.compact.reject{|r| r.area == 0 }.sort_by(&:area).reverse
     end
 
 
@@ -137,8 +137,9 @@ module Tabula
             height = [left_vertical_line.bottom - left_vertical_line.top, right_vertical_line.bottom - right_vertical_line.top].max
 
             y = [left_vertical_line.top, right_vertical_line.top].min
-            width = [horizontal_line.right - horizontal_line.left, right_vertical_line.left - left_vertical_line.left].max
+            width = horizontal_line.right - horizontal_line.left
             r = java.awt.geom.Rectangle2D::Float.new( horizontal_line.left, y, width, height ) #x, y, w, h
+            #rectangles.put(hashRectangle(r), r); #TODO: I dont' think I need this now that I'm in Rubyland
             rectangles << r
           end
         end
@@ -186,6 +187,7 @@ module Tabula
             width = [top_horizontal_line.right - top_horizontal_line.left, bottom_horizontal_line.right - bottom_horizontal_line.right].max
             height = vertical_line.bottom - vertical_line.top
             r = java.awt.geom.Rectangle2D::Float.new( x, y, width, height ) #x, y, w, h
+            #rectangles.put(hashRectangle(r), r);
             rectangles << r
           end
         end
