@@ -137,9 +137,8 @@ module Tabula
             height = [left_vertical_line.bottom - left_vertical_line.top, right_vertical_line.bottom - right_vertical_line.top].max
 
             y = [left_vertical_line.top, right_vertical_line.top].min
-            width = horizontal_line.right - horizontal_line.left
+            width = [horizontal_line.right - horizontal_line.left, right_vertical_line.left - left_vertical_line.left].max
             r = java.awt.geom.Rectangle2D::Float.new( horizontal_line.left, y, width, height ) #x, y, w, h
-            #rectangles.put(hashRectangle(r), r); #TODO: I dont' think I need this now that I'm in Rubyland
             rectangles << r
           end
         end
@@ -187,7 +186,6 @@ module Tabula
             width = [top_horizontal_line.right - top_horizontal_line.left, bottom_horizontal_line.right - bottom_horizontal_line.right].max
             height = vertical_line.bottom - vertical_line.top
             r = java.awt.geom.Rectangle2D::Float.new( x, y, width, height ) #x, y, w, h
-            #rectangles.put(hashRectangle(r), r);
             rectangles << r
           end
         end
