@@ -110,7 +110,9 @@ module Tabula
 
         spaceWidthText = font.getFontWidth([0x20].to_java(Java::byte), 0, 1)
 
-        return (spaceWidthText/1000.0) * fontSizeText * horizontalScalingText * gs.getCurrentTransformationMatrix.getValue(0, 0)
+        ctm00 = gs.getCurrentTransformationMatrix.getValue(0, 0)
+
+        return (spaceWidthText/1000.0) * fontSizeText * horizontalScalingText * (ctm00 == 0 ? 1 : ctm00)
       end
 
       def debugPath(path)
