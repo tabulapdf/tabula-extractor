@@ -415,4 +415,84 @@ module Tabula
     end
   end
 
+  class Cell < ZoneEntity
+    attr_accessor :text_elements
+
+    def to_s
+      output = ""
+      text_elements #sort low to high, then tiebreak with left to right
+      text_elements.each do |el|
+        output << " " if !output[-1].nil? && output[-1] != " " && el.text[0] != " "
+        output << el.text
+      end
+    end
+  end
+
+  # a counterpart of Table, to be sure.
+  # not sure yet what their relationship ought to be.
+  class Spreadsheet < ZoneEntity
+    attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines
+
+    def initialize(top, left, width, height, lines)
+      super(top, left, width, height)
+
+      @vertical_ruling_lines = lines.select(&:vertical?).sort_by(&:left)
+      @horizontal_ruling_lines = lines.select(&:horizontal?).sort_by(&:top)
+      @cells = []
+
+      @vertical_ruling_lines.each_with_index do |right_ruling, i|
+        next if i == 0
+        left_ruling = @vertical_ruling_lines[i-1]
+        @horizontal_ruling_lines.each_with_index do |bottom_ruling, j|
+          next if j == 0
+
+          top_ruling = @horizontal_ruling_lines[j-1]
+          next unless top_ruling.to_line.intersectsLine(left_ruling.to_line) && \
+                      top_ruling.to_line.intersectsLine(right_ruling.to_line) && \
+                      bottom_ruling.to_line.intersectsLine(left_ruling.to_line) && \
+                      bottom_ruling.to_line.intersectsLine(right_ruling.to_line)
+
+          left = left_ruling.left
+          top = top_ruling.top
+          width = right_ruling.right - left
+          height = bottom_ruling.bottom - top
+
+          # puts "Line at #{top_ruling.left},#{top_ruling.top} (width #{top_ruling.width}) intersects #{left_ruling.left} (height; #{left_ruling.height})"
+          # puts "Line at #{top_ruling.left},#{top_ruling.top} (width #{top_ruling.width}) intersects #{right_ruling.left} (height; #{right_ruling.height})"
+          # puts "Line at #{bottom_ruling.left},#{bottom_ruling.top} (width #{bottom_ruling.width}) intersects #{left_ruling.left} (height; #{left_ruling.height})"
+          # puts "Line at #{bottom_ruling.left},#{bottom_ruling.top} (width #{bottom_ruling.width}) intersects #{right_ruling.left} (height; #{right_ruling.height})"
+          # puts "width: #{width}; height: #{height} "
+          # puts ""
+
+
+          c = Cell.new(top, left, width, height)
+
+          @cells << c
+        end
+      end
+      puts @cells.size
+      @cells.uniq!{|c| "#{c.top},#{c.left},#{c.width},#{c.height}"}
+    end
+
+    def rows
+      tops = cells.map(&:top).uniq.sort
+      tops.map do |top|
+        cells.select{|c| c.top == top }.sort_by(&:left)
+      end
+    end
+
+    def cols
+      lefts = cells.map(&:left).uniq.sort
+      lefts.map do |left|
+        cells.select{|c| c.left == left }.sort_by(&:top)
+      end
+    end
+
+    def to_s
+      "< Rows: #{horizontal_ruling_lines.size - 1}, Cols: #{vertical_ruling_lines.size - 1} \n" + rows.map do |row|
+        "#{row.first.top}:" +row.map{|cell| "[#{cell.left} -> #{cell.width}]"}.join(" ")
+      end.join("\n") + ">"
+    end
+  end
+
 end
