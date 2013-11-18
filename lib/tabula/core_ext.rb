@@ -62,7 +62,7 @@ class Line2D::Float
   end
 
   def horizontal?(threshold=0.00001)
-    (self.getY2 - self.getY2).abs < threshold
+    (self.getY2 - self.getY1).abs < threshold
   end
 
   def vertical?(threshold=0.00001)
