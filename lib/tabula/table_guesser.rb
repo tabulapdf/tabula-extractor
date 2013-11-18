@@ -48,7 +48,8 @@ module Tabula
     end
 
     def TableGuesser.find_lines_on_page(pdf, page_index)
-      Tabula::LSD.detect_lines_in_pdf_page(pdf, page_index)
+      #Tabula::LSD.detect_lines_in_pdf_page(pdf, page_index)
+      Tabula::Extraction::LineExtractor.lines_in_pdf_page(pdf, page_number_zero_indexed, options={:render_pdf => false})
     end
 
     def TableGuesser.find_rects_on_page(pdf, page_index)

@@ -205,6 +205,8 @@ module Tabula
       end
     end
 
+    table.lstrip_lines!
+
     table.lines.map do |l|
       l.text_elements.map! do |te|
         te.nil? ? TextElement.new(nil, nil, nil, nil, nil, nil, '', nil) : te

@@ -167,7 +167,7 @@ module Tabula
       return @lines if @lines.include?(nil)
       min_leading_empty_strings = Float::INFINITY
       @lines.each do |line|
-        empties = line.text_elements.map{|t| t.text.empty? }
+        empties = line.text_elements.map{|t| t.nil? || t.text.empty? }
         min_leading_empty_strings = [min_leading_empty_strings, empties.index(false)].min
       end
       if min_leading_empty_strings == 0
@@ -176,6 +176,9 @@ module Tabula
         @lines.each{|line| line.text_elements = line.text_elements[min_leading_empty_strings..-1]}
         @lines
       end
+    end
+    def lstrip_lines!
+      @lines = self.lstrip_lines
     end
 
     #used for testing, ignores separator locations (they'll sometimes be nil/empty)
@@ -296,6 +299,11 @@ module Tabula
             / ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
 
       r >= 0 and r < 1 and s >= 0 and s < 1
+    end
+
+    #for comparisons, deprecate when this inherits from Line2D
+    def to_line
+      java.awt.geom.Line2D::Float.new(left, top, right, bottom)
     end
 
     def length

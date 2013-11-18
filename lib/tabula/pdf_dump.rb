@@ -88,7 +88,7 @@ module Tabula
                                                      text.getFontSize.round(2),
                                                      c,
                                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
-                                                     text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
+                                                     (text.getWidthOfSpace == 0 || text.getWidthOfSpace.nan?) ? self.currentSpaceWidth : text.getWidthOfSpace)
         if c =~ PRINTABLE_RE && self.getGraphicsState.getCurrentClippingPath.getBounds2D.intersects(te)
           self.characters << te
         end

@@ -45,7 +45,9 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
       end
 
     else
-      Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options)
+      # only LSD rulings need to be "cleaned" with clean_rulings; might as well do this here
+      # since tehre's no reason want unclean lines
+      Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options))
     end
   end
 
