@@ -74,7 +74,10 @@ module Tabula
       # ze = ZoneEntity.new(area[0], area[1], area[3] - area[1], area[2] - area[0])
       # self.texts.select { |t| t.overlaps? ze }
       texts = self.texts.select do |t|
-        t.vertical_midpoint >= area.top && t.vertical_midpoint <= area.bottom && t.horizontal_midpoint >= area.left && t.horizontal_midpoint <= area.right
+        t.vertical_midpoint.between?(area.top, area.bottom) &&
+        #t.top >= area.top && t.vertical_midpoint <= area.bottom) && \
+        t.horizontal_midpoint.between?(area.left, area.right)
+        #t.horizontal_midpoint >= area.left && t.horizontal_midpoint <= area.right
       end
       texts
     end
@@ -432,17 +435,24 @@ module Tabula
   end
 
   class Cell < ZoneEntity
-    attr_accessor :text_elements
+    attr_accessor :text_elements, :placeholder, :merged
 
-    def text
+    def initialize(top, left, width, height)
+      super(top, left, width, height)
+      @placeholder = false
+      @merged = false
+    end
+
+    def text(debug=true) #TODO: change to false for production
+      return "placeholder" if @placeholder && debug
       output = ""
       text_elements.sort{|te1, te2| te1.top != te2.top ? te1.top <=> te2.top : te1.left <=> te2.left } #sort low to high, then tiebreak with left to right
       text_elements.each do |el|
         #output << " " if !output[-1].nil? && output[-1] != " " && el.text[0] != " "
         output << el.text
       end
-      if output.empty?
-        output = "w: #{width}, h: #{height}"
+      if output.empty? && debug
+        output = "empty"
       end
       output
     end
@@ -465,75 +475,73 @@ module Tabula
         next if i == (@vertical_ruling_lines.size - 1) #skip the last ruling
         prev_top_ruling = nil
         @horizontal_ruling_lines.each_with_index do |top_ruling, j|
+          if left_ruling.left == 582.0 && top_ruling.top == 76.0
+            puts "before next"
+          end
+
           next if j == (@horizontal_ruling_lines.size - 1)
           next unless top_ruling.to_line.intersectsLine(left_ruling.to_line)
-          next if cells.last && cells.last.top == top_ruling.top
+          #I'm not sure why I put this here. -Jeremy
+          # if cells.last && cells.last.top == top_ruling.top
+          #   next
+          # end
+          if left_ruling.left == 582.0 && top_ruling.top == 76.0
+            puts "survived next"
+          end
 
           #find the vertical line with (a) a left strictly greater than left_ruling's
           #                            (b) a top non-strictly smaller than top_ruling's
           #                            (c) the lowest left of all other vertical rulings that fit (a) and (b).
           #                            (d) if married and filing jointly, the subtract $6,100 (standard deduction) and amount from line 32 (adjusted gross income)
           candidate_right_rulings = @vertical_ruling_lines[i+1..-1].select{|l| l.left > left_ruling.left } # (a)
-          candidate_right_rulings.select!{|l| l.to_line.intersectsLine(top_ruling.to_line) } #l.top <= top_ruling.top && l.bottom > top_ruling.top } # (b)
+          candidate_right_rulings.select!{|l| l.to_line.intersectsLine(top_ruling.to_line) && l.bottom > top_ruling.top} #TODO make a better intersection function to check for this.
           right_ruling = candidate_right_rulings.sort_by{|l| l.left }[0] # (c)
 
           #find the horizontal line with (a) intersections with left_ruling and right_ruling
           #                              (b) the lowest top that is strictly greater than top_ruling's
           candidate_bottom_rulings = @horizontal_ruling_lines[j+1..-1].select{|l| l.top > top_ruling.top }
           candidate_bottom_rulings.select!{|l| l.to_line.intersectsLine(right_ruling.to_line) && l.to_line.intersectsLine(left_ruling.to_line)}
-          next if candidate_bottom_rulings.empty?
+          if candidate_bottom_rulings.empty?
+            puts [left_ruling.left, top_ruling.top, ":", left_ruling.top, left_ruling.bottom, "|", right_ruling.top, right_ruling.bottom].inspect
+            eighty = @horizontal_ruling_lines.select{|l| l.top == 80.0}[0]
+            puts [eighty.to_line.intersectsLine(left_ruling.to_line), eighty.to_line.intersectsLine(right_ruling.to_line)].inspect
+            puts @horizontal_ruling_lines.select{|l| l.top > top_ruling.top }.include?(eighty)
+            next
+          end
           bottom_ruling = candidate_bottom_rulings.sort_by{|l| l.top }[0]
 
-          left = left_ruling.left
-          top = top_ruling.top
-          width = right_ruling.right - left
-          height = bottom_ruling.bottom - top
+          cell_left = left_ruling.left
+          cell_top = top_ruling.top
+          cell_width = right_ruling.right - cell_left
+          cell_height = bottom_ruling.bottom - cell_top
 
-          c = Cell.new(top, left, width, height)
+          if left_ruling.left == 582.0 && top_ruling.top == 76.0
+            puts "created cell, width: #{cell_width}, height: #{cell_height}"
+          end
+
+          c = Cell.new(cell_top, cell_left, cell_width, cell_height)
           @cells << c
+
+          #if c is a "merged cell", that is
+          #              if there are N>0 vertical lines strictly between this cell's left and right
+          #insert N placeholder cells after it with zero size (but same top)
+          #TODO: support vertically merged cells
+          unless (merged_over = @vertical_ruling_lines.map(&:left).uniq.select{|l| l > c.left && l < c.right }).empty? #TODO remove this map, it's too inefficient
+            c.merged = true
+            merged_over.each do |merged_over_line_loc|
+              puts "Placeholder for line at #{merged_over_line_loc}"
+              placeholder = Cell.new(c.top, merged_over_line_loc, 0, c.height)
+              placeholder.placeholder = true
+              @cells << placeholder
+            end
+            puts ""
+          end
+
+
         end
       end
 
-
-=begin
-      # <old>
-      @vertical_ruling_lines.each_with_index do |right_ruling, i|
-        next if i == 0
-        left_ruling = @vertical_ruling_lines[i-1] #TODO: the previous ruling_line may not actually be the nearest to-the-left ruling line. It might have the same
-                                                  # instead, select a farther-left ruling line
-                                                  # for the entire length of this right ruling line, make an array of
-                                                  # farther-left ruling lines that are nearest on a straight-line basis for each pixel. ugh.
-        @horizontal_ruling_lines.each_with_index do |bottom_ruling, j|
-          next if j == 0
-
-          top_ruling = @horizontal_ruling_lines[j-1]
-          next unless top_ruling.to_line.intersectsLine(left_ruling.to_line) && \
-                      top_ruling.to_line.intersectsLine(right_ruling.to_line) && \
-                      bottom_ruling.to_line.intersectsLine(left_ruling.to_line) && \
-                      bottom_ruling.to_line.intersectsLine(right_ruling.to_line)
-
-          left = left_ruling.left
-          top = top_ruling.top
-          width = right_ruling.right - left
-          height = bottom_ruling.bottom - top
-
-          # puts "Line at #{top_ruling.left},#{top_ruling.top} (width #{top_ruling.width}) intersects #{left_ruling.left} (height; #{left_ruling.height})"
-          # puts "Line at #{top_ruling.left},#{top_ruling.top} (width #{top_ruling.width}) intersects #{right_ruling.left} (height; #{right_ruling.height})"
-          # puts "Line at #{bottom_ruling.left},#{bottom_ruling.top} (width #{bottom_ruling.width}) intersects #{left_ruling.left} (height; #{left_ruling.height})"
-          # puts "Line at #{bottom_ruling.left},#{bottom_ruling.top} (width #{bottom_ruling.width}) intersects #{right_ruling.left} (height; #{right_ruling.height})"
-          # puts "width: #{width}; height: #{height} "
-          # puts ""
-
-
-          c = Cell.new(top, left, width, height)
-
-          @cells << c
-        end
-      end
-      #</old>
-=end
       puts @cells.size
-      @cells.uniq!{|c| "#{c.top},#{c.left},#{c.width},#{c.height}"}
     end
 
     def rows
@@ -548,12 +556,6 @@ module Tabula
       lefts.map do |left|
         cells.select{|c| c.left == left }.sort_by(&:top)
       end
-    end
-
-    def to_s
-      "< Rows: #{horizontal_ruling_lines.size - 1}, Cols: #{vertical_ruling_lines.size - 1} \n" + rows.map do |row|
-        "#{row.first.top}:" +row.map{|cell| "[#{cell.left} -> #{cell.width} | #{cell.height}]"}.join(" ")
-      end.join("\n") + ">"
     end
 
     def to_csv
