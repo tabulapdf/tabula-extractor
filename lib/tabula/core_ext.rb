@@ -115,7 +115,15 @@ class Rectangle2D::Float
 
   # [x, y]
   def midpoint
-    [self.left + (self.width / 2), self.top + (self.height / 2)]
+    [horizontal_midpoint, vertical_midpoint]
+  end
+
+  def horizontal_midpoint
+    self.left + (self.width / 2)
+  end
+
+  def vertical_midpoint
+    self.top + (self.height / 2)
   end
 
   def horizontal_distance(other)

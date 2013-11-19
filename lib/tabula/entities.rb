@@ -1,4 +1,5 @@
 require_relative './core_ext'
+require 'csv'
 
 module Tabula
 
@@ -25,6 +26,10 @@ module Tabula
 
     def to_json(options={})
       self.to_h.to_json
+    end
+
+    def tlbr
+      [top, left, bottom, right]
     end
   end
 
@@ -60,7 +65,18 @@ module Tabula
         t.top > area[0] && t.top + t.height < area[2] && t.left > area[1] && t.left + t.width < area[3]
       end
       texts
+    end
 
+    def get_text_jeremy(area=nil)
+      area = Rectangle2D::Float.new(0, 0, width, height) if area.nil?
+
+      # spaces are not detected, b/c they have height == 0
+      # ze = ZoneEntity.new(area[0], area[1], area[3] - area[1], area[2] - area[0])
+      # self.texts.select { |t| t.overlaps? ze }
+      texts = self.texts.select do |t|
+        t.vertical_midpoint >= area.top && t.vertical_midpoint <= area.bottom && t.horizontal_midpoint >= area.left && t.horizontal_midpoint <= area.right
+      end
+      texts
     end
 
     def to_json(options={})
@@ -418,13 +434,17 @@ module Tabula
   class Cell < ZoneEntity
     attr_accessor :text_elements
 
-    def to_s
+    def text
       output = ""
-      text_elements #sort low to high, then tiebreak with left to right
+      text_elements.sort{|te1, te2| te1.top != te2.top ? te1.top <=> te2.top : te1.left <=> te2.left } #sort low to high, then tiebreak with left to right
       text_elements.each do |el|
-        output << " " if !output[-1].nil? && output[-1] != " " && el.text[0] != " "
+        #output << " " if !output[-1].nil? && output[-1] != " " && el.text[0] != " "
         output << el.text
       end
+      if output.empty?
+        output = "w: #{width}, h: #{height}"
+      end
+      output
     end
   end
 
@@ -440,9 +460,49 @@ module Tabula
       @horizontal_ruling_lines = lines.select(&:horizontal?).sort_by(&:top)
       @cells = []
 
+
+      @vertical_ruling_lines.each_with_index do |left_ruling, i|
+        next if i == (@vertical_ruling_lines.size - 1) #skip the last ruling
+        prev_top_ruling = nil
+        @horizontal_ruling_lines.each_with_index do |top_ruling, j|
+          next if j == (@horizontal_ruling_lines.size - 1)
+          next unless top_ruling.to_line.intersectsLine(left_ruling.to_line)
+          next if cells.last && cells.last.top == top_ruling.top
+
+          #find the vertical line with (a) a left strictly greater than left_ruling's
+          #                            (b) a top non-strictly smaller than top_ruling's
+          #                            (c) the lowest left of all other vertical rulings that fit (a) and (b).
+          #                            (d) if married and filing jointly, the subtract $6,100 (standard deduction) and amount from line 32 (adjusted gross income)
+          candidate_right_rulings = @vertical_ruling_lines[i+1..-1].select{|l| l.left > left_ruling.left } # (a)
+          candidate_right_rulings.select!{|l| l.to_line.intersectsLine(top_ruling.to_line) } #l.top <= top_ruling.top && l.bottom > top_ruling.top } # (b)
+          right_ruling = candidate_right_rulings.sort_by{|l| l.left }[0] # (c)
+
+          #find the horizontal line with (a) intersections with left_ruling and right_ruling
+          #                              (b) the lowest top that is strictly greater than top_ruling's
+          candidate_bottom_rulings = @horizontal_ruling_lines[j+1..-1].select{|l| l.top > top_ruling.top }
+          candidate_bottom_rulings.select!{|l| l.to_line.intersectsLine(right_ruling.to_line) && l.to_line.intersectsLine(left_ruling.to_line)}
+          next if candidate_bottom_rulings.empty?
+          bottom_ruling = candidate_bottom_rulings.sort_by{|l| l.top }[0]
+
+          left = left_ruling.left
+          top = top_ruling.top
+          width = right_ruling.right - left
+          height = bottom_ruling.bottom - top
+
+          c = Cell.new(top, left, width, height)
+          @cells << c
+        end
+      end
+
+
+=begin
+      # <old>
       @vertical_ruling_lines.each_with_index do |right_ruling, i|
         next if i == 0
-        left_ruling = @vertical_ruling_lines[i-1]
+        left_ruling = @vertical_ruling_lines[i-1] #TODO: the previous ruling_line may not actually be the nearest to-the-left ruling line. It might have the same
+                                                  # instead, select a farther-left ruling line
+                                                  # for the entire length of this right ruling line, make an array of
+                                                  # farther-left ruling lines that are nearest on a straight-line basis for each pixel. ugh.
         @horizontal_ruling_lines.each_with_index do |bottom_ruling, j|
           next if j == 0
 
@@ -470,6 +530,8 @@ module Tabula
           @cells << c
         end
       end
+      #</old>
+=end
       puts @cells.size
       @cells.uniq!{|c| "#{c.top},#{c.left},#{c.width},#{c.height}"}
     end
@@ -490,8 +552,19 @@ module Tabula
 
     def to_s
       "< Rows: #{horizontal_ruling_lines.size - 1}, Cols: #{vertical_ruling_lines.size - 1} \n" + rows.map do |row|
-        "#{row.first.top}:" +row.map{|cell| "[#{cell.left} -> #{cell.width}]"}.join(" ")
+        "#{row.first.top}:" +row.map{|cell| "[#{cell.left} -> #{cell.width} | #{cell.height}]"}.join(" ")
       end.join("\n") + ">"
+    end
+
+    def to_csv
+      rows.map do |row|
+        CSV.generate_line(row.map(&:text), row_sep: "\r\n")
+      end.join('')
+    end
+    def to_tsv
+      rows.map do |row|
+        row.map(&:text).join("\t") + "\n"
+      end.join('')
     end
   end
 
