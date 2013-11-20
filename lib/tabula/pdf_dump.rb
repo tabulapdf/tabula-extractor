@@ -89,6 +89,10 @@ module Tabula
                                                      c,
                                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
                                                      text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
+        # if !self.getGraphicsState.getCurrentClippingPath.getBounds2D.intersects(te)
+        #   puts debugPath(self.getGraphicsState.getCurrentClippingPath.getBounds2D)
+        #   puts te.inspect
+        # end
         if c =~ PRINTABLE_RE && self.getGraphicsState.getCurrentClippingPath.getBounds2D.intersects(te)
           self.characters << te
         end
