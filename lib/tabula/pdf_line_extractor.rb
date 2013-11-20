@@ -28,32 +28,6 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     :snapping_grid_cell_size => 2
   }
 
-  def self.collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
-    lines.sort!{|a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
-    lines.inject([]) do |memo, next_line|
-      if memo.last && next_line.left == memo.last.left && memo.last.to_line.intersectsLine(next_line.to_line)
-        memo.last.top = [next_line.top, memo.last.top].min
-        memo.last.bottom = [next_line.bottom, memo.last.bottom].max
-        memo
-      else
-        memo << next_line
-      end
-    end
-  end
-
-  def self.collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
-    lines.sort!{|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
-    lines.inject([]) do |memo, next_line|
-      if memo.last && next_line.top == memo.last.top && memo.last.to_line.intersectsLine(next_line.to_line)
-        memo.last.left = [next_line.left, memo.last.left].min
-        memo.last.right = [next_line.right, memo.last.right].max
-        memo
-      else
-        memo << next_line
-      end
-    end
-  end
-
   #page_number here is zero-indexed
   def self.lines_in_pdf_page(pdf_path, page_number, options={})
     options = options.merge!(DETECT_LINES_DEFAULTS)
@@ -64,17 +38,16 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
                 le.processStream(page, page.findResources, page.getContents.getStream)
                 pdf_file.close
                 le.rulings.map do |l|
-                  ::Tabula::Ruling.new(l.getP1.getY,
-                                       l.getP1.getX,
-                                       l.getP2.getX - l.getP1.getX,
-                                       l.getP2.getY - l.getP1.getY)
+                  top = [l.getP1.getY, l.getP2.getY].min
+                  left = [l.getP1.getX, l.getP1.getX].min
+                  ::Tabula::Ruling.new(top,
+                                       left,
+                                       (l.getP2.getX - l.getP1.getX).abs,
+                                       (l.getP2.getY - l.getP1.getY).abs)
                 end
               else
                 Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options)
               end
-
-    collapse_vertical_rulings(rulings.select(&:vertical?)) + collapse_horizontal_rulings(rulings.select(&:horizontal?))
-
   end
 
   class LineToOperator < OperatorProcessor
@@ -271,11 +244,11 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     ruling.snap!(options[:snapping_grid_cell_size])
 
     # merge lines, still not finished
-    close_rulings = self.rulings.find_all { |r|
-      (ruling.vertical? && r.vertical? || ruling.horizontal? && r.horizontal?) \
-      && (r.getP2.distance(ruling.getP1) <= options[:snapping_grid_cell_size] \
-          || r.getP1.distance(ruling.getP2) <= options[:snapping_grid_cell_size])
-    }
+    # close_rulings = self.rulings.find_all { |r|
+    #   (ruling.vertical? && r.vertical? || ruling.horizontal? && r.horizontal?) \
+    #   && (r.getP2.distance(ruling.getP1) <= options[:snapping_grid_cell_size] \
+    #       || r.getP1.distance(ruling.getP2) <= options[:snapping_grid_cell_size])
+    # }
 
     self.rulings << ruling
 
