@@ -479,7 +479,6 @@ module Tabula
       #TODO: replace this O(n^20) algo with the Bentley-Ottman Algorithm
       @vertical_ruling_lines.each_with_index do |left_ruling, i|
         next if left_ruling.left == vertical_uniq_locs.last #skip the last ruling
-                # i == (@vertical_ruling_lines.size - 1)
         prev_top_ruling = nil
         @horizontal_ruling_lines.each_with_index do |top_ruling, j|
 
