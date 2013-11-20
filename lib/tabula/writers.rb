@@ -5,9 +5,9 @@ module Tabula
   module Writers
 
     def Writers.CSV(lines, output=$stdout)
-      lines.each { |l|
+      lines.each do |l|
         output.write CSV.generate_line(l.map(&:text), row_sep: "\r\n")
-      }
+      end
     end
 
     def Writers.JSON(lines, output=$stdout)
@@ -15,9 +15,9 @@ module Tabula
     end
 
     def Writers.TSV(lines, output=$stdout)
-      lines.each { |l|
+      lines.each do |l|
         output.write(l.map(&:text).join("\t") + "\n")
-      }
+      end
     end
 
 

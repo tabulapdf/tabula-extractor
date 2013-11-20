@@ -69,16 +69,19 @@ module Tabula
 
     def get_text_jeremy(area=nil)
       area = Rectangle2D::Float.new(0, 0, width, height) if area.nil?
+      # puts ""
 
-      # spaces are not detected, b/c they have height == 0
-      # ze = ZoneEntity.new(area[0], area[1], area[3] - area[1], area[2] - area[0])
-      # self.texts.select { |t| t.overlaps? ze }
       texts = self.texts.select do |t|
-        t.vertical_midpoint.between?(area.top, area.bottom) &&
+        # if t.top >= 76.0 && t.bottom <= 84
+        #   puts [t.text, t.top, t.bottom].inspect
+        # end
+        t.top.between?(area.top, area.bottom) &&
         #t.top >= area.top && t.vertical_midpoint <= area.bottom) && \
         t.horizontal_midpoint.between?(area.left, area.right)
         #t.horizontal_midpoint >= area.left && t.horizontal_midpoint <= area.right
       end
+      # puts ""
+
       texts
     end
 
@@ -443,7 +446,7 @@ module Tabula
       @merged = false
     end
 
-    def text(debug=true) #TODO: change to false for production
+    def text(debug=false)
       return "placeholder" if @placeholder && debug
       output = ""
       text_elements.sort{|te1, te2| te1.top != te2.top ? te1.top <=> te2.top : te1.left <=> te2.left } #sort low to high, then tiebreak with left to right
@@ -452,7 +455,7 @@ module Tabula
         output << el.text
       end
       if output.empty? && debug
-        output = "empty"
+        output = "empty top: #{top} h: #{height}"
       end
       output
     end
@@ -470,24 +473,18 @@ module Tabula
       @horizontal_ruling_lines = lines.select(&:horizontal?).sort_by(&:top)
       @cells = []
 
+      vertical_ruling_locations = @vertical_ruling_lines.map(&:left).uniq    #already sorted
+      horizontal_ruling_locations = @horizontal_ruling_lines.map(&:top).uniq #already sorted
 
+      #TODO: replace this O(n^20) algo with the Bentley-Ottman Algorithm
       @vertical_ruling_lines.each_with_index do |left_ruling, i|
-        next if i == (@vertical_ruling_lines.size - 1) #skip the last ruling
+        next if left_ruling.left == vertical_ruling_locations.last #skip the last ruling
+                # i == (@vertical_ruling_lines.size - 1)
         prev_top_ruling = nil
         @horizontal_ruling_lines.each_with_index do |top_ruling, j|
-          if left_ruling.left == 582.0 && top_ruling.top == 76.0
-            puts "before next"
-          end
 
-          next if j == (@horizontal_ruling_lines.size - 1)
+          next if top_ruling.top == @horizontal_ruling_locations.last
           next unless top_ruling.to_line.intersectsLine(left_ruling.to_line)
-          #I'm not sure why I put this here. -Jeremy
-          # if cells.last && cells.last.top == top_ruling.top
-          #   next
-          # end
-          if left_ruling.left == 582.0 && top_ruling.top == 76.0
-            puts "survived next"
-          end
 
           #find the vertical line with (a) a left strictly greater than left_ruling's
           #                            (b) a top non-strictly smaller than top_ruling's
@@ -495,6 +492,12 @@ module Tabula
           #                            (d) if married and filing jointly, the subtract $6,100 (standard deduction) and amount from line 32 (adjusted gross income)
           candidate_right_rulings = @vertical_ruling_lines[i+1..-1].select{|l| l.left > left_ruling.left } # (a)
           candidate_right_rulings.select!{|l| l.to_line.intersectsLine(top_ruling.to_line) && l.bottom > top_ruling.top} #TODO make a better intersection function to check for this.
+          if candidate_right_rulings.empty?
+            # TODO: why does THIS ever happen?
+            # Oh, presumably because there's a broken line at the end?
+            # (But that doesn't make sense either.)
+            next
+          end
           right_ruling = candidate_right_rulings.sort_by{|l| l.left }[0] # (c)
 
           #find the horizontal line with (a) intersections with left_ruling and right_ruling
@@ -502,10 +505,6 @@ module Tabula
           candidate_bottom_rulings = @horizontal_ruling_lines[j+1..-1].select{|l| l.top > top_ruling.top }
           candidate_bottom_rulings.select!{|l| l.to_line.intersectsLine(right_ruling.to_line) && l.to_line.intersectsLine(left_ruling.to_line)}
           if candidate_bottom_rulings.empty?
-            puts [left_ruling.left, top_ruling.top, ":", left_ruling.top, left_ruling.bottom, "|", right_ruling.top, right_ruling.bottom].inspect
-            eighty = @horizontal_ruling_lines.select{|l| l.top == 80.0}[0]
-            puts [eighty.to_line.intersectsLine(left_ruling.to_line), eighty.to_line.intersectsLine(right_ruling.to_line)].inspect
-            puts @horizontal_ruling_lines.select{|l| l.top > top_ruling.top }.include?(eighty)
             next
           end
           bottom_ruling = candidate_bottom_rulings.sort_by{|l| l.top }[0]
@@ -515,10 +514,6 @@ module Tabula
           cell_width = right_ruling.right - cell_left
           cell_height = bottom_ruling.bottom - cell_top
 
-          if left_ruling.left == 582.0 && top_ruling.top == 76.0
-            puts "created cell, width: #{cell_width}, height: #{cell_height}"
-          end
-
           c = Cell.new(cell_top, cell_left, cell_width, cell_height)
           @cells << c
 
@@ -526,22 +521,50 @@ module Tabula
           #              if there are N>0 vertical lines strictly between this cell's left and right
           #insert N placeholder cells after it with zero size (but same top)
           #TODO: support vertically merged cells
-          unless (merged_over = @vertical_ruling_lines.map(&:left).uniq.select{|l| l > c.left && l < c.right }).empty? #TODO remove this map, it's too inefficient
+          vertical_rulings_merged_over = vertical_ruling_locations.select{|l| l > c.left && l < c.right }
+          horizontal_rulings_merged_over = horizontal_ruling_locations.select{|t| t > c.top && t < c.bottom }
+
+          unless vertical_rulings_merged_over.empty?
             c.merged = true
             merged_over.each do |merged_over_line_loc|
-              puts "Placeholder for line at #{merged_over_line_loc}"
               placeholder = Cell.new(c.top, merged_over_line_loc, 0, c.height)
               placeholder.placeholder = true
               @cells << placeholder
             end
-            puts ""
+          end
+          unless horizontal_rulings_merged_over.empty?
+            c.merged = true
+            merged_over.each do |merged_over_line_loc|
+              placeholder = Cell.new(merged_over_line_loc, c.left, c.width, 0)
+              placeholder.placeholder = true
+              @cells << placeholder
+            end
+          end
+
+          #if there's a merged cell that's been merged over both rows and columns, then it has "double placeholder" cells
+          # e.g. -------------------
+          #      | C |  C |  C | C |         (this is some pretty sweet ASCII art, eh?)
+          #      |-----------------|
+          #      | C |  C |  C | C |
+          #      |-----------------|
+          #      | C | MC    P | C |   where MC is the "merged cell" that holds all the text within its bounds
+          #      |----    +    ----|         P is a "placeholder" cell with either zero width or zero height
+          #      | C | P    DP | C |         DP is a "double placeholder" cell with zero width and zero height
+          #      |----    +    ----|         C is an ordinary cell.
+          #      | C | P    DP | C |
+          #      |-----------------|
+
+          unless (double_placeholders = vertical_rulings_merged_over.product(horizontal_rulings_merged_over)).empty?
+            double_placeholders.each do |vert_merged_over, horiz_merged_over|
+              placeholder = Cell.new(horiz_merged_over, vert_merged_over, 0, 0)
+              placeholder.placeholder = true
+              @cells << placeholder
+            end
           end
 
 
         end
       end
-
-      puts @cells.size
     end
 
     def rows
