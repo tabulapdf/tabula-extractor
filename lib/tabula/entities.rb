@@ -34,14 +34,15 @@ module Tabula
   end
 
   class Page < ZoneEntity
-    attr_reader :rotation, :number_one_indexed
+    attr_reader :rotation, :number_one_indexed, :file_path
 
-    def initialize(width, height, rotation, number, texts=[])
+    def initialize(file_path, width, height, rotation, number, texts=[])
       super(0, 0, width, height)
       @rotation = rotation
       if number < 1
         raise ArgumentError, "Tabula::Page numbers are one-indexed; numbers < 1 are invalid."
       end
+      @file_path = file_path
       @number_one_indexed = number
       self.texts = texts
     end
@@ -67,7 +68,7 @@ module Tabula
       texts
     end
 
-    def get_text_jeremy(area=nil)
+    def get_cell_text(area=nil)
       area = Rectangle2D::Float.new(0, 0, width, height) if area.nil?
       # puts ""
 
@@ -83,6 +84,11 @@ module Tabula
       # puts ""
 
       texts
+    end
+
+    def ruling_lines(options={})
+      options[:render_pdf] ||= false
+      Tabula::Extraction::LineExtractor.lines_in_pdf_page(file_path, number(:zero_indexed), options)
     end
 
     def to_json(options={})
