@@ -146,7 +146,6 @@ module Tabula
         Enumerator.new do |y|
           begin
             @all_pages.each_with_index do |page, i|
-              puts "pages() Page num ##{i}"
               contents = page.getContents
 
               y.yield Tabula::Page.new(page.findCropBox.width,
