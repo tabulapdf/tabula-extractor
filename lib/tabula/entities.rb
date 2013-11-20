@@ -312,15 +312,9 @@ module Tabula
       self.stroking_color = stroking_color
     end
 
-    # 2D line intersection test taken from comp.graphics.algorithms FAQ
-    def intersects?(other)
-      r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
-      / ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
-
-        s = ((self.top-other.top)*(self.right-self.left) - (self.left-other.left)*(self.bottom-self.top)) \
-            / ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
-
-      r >= 0 and r < 1 and s >= 0 and s < 1
+    #for comparisons, deprecate when this inherits from Line2D
+    def to_line
+      java.awt.geom.Line2D::Float.new(left, top, right, bottom)
     end
 
     #for comparisons, deprecate when this inherits from Line2D
@@ -343,6 +337,7 @@ module Tabula
     def right
       left + width
     end
+
     def bottom
       top + height
     end

@@ -44,7 +44,7 @@ module Tabula
       graphics.setBackground(TRANSPARENT_WHITE)
       graphics.clearRect(0, 0, retval.getWidth, retval.getHeight)
       if rotation != 0
-        graphics.translate(retval.getWidth, 0.0)
+        graphics.java_send :translate, [Java::int, Java::int], retval.getWidth, 0.0
         graphics.rotate(rotation)
       end
       graphics.scale(scaling, scaling)

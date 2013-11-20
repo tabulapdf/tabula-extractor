@@ -62,7 +62,7 @@ class Line2D::Float
   end
 
   def horizontal?(threshold=0.00001)
-    (self.getY2 - self.getY2).abs < threshold
+    (self.getY2 - self.getY1).abs < threshold
   end
 
   def vertical?(threshold=0.00001)
@@ -99,7 +99,6 @@ class Rectangle2D::Float
     self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], new_x, self.y, self.width, self.height
   end
 
-
   def bottom=(new_y2)
     self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, self.width, new_y2 - self.y
   end
@@ -107,7 +106,6 @@ class Rectangle2D::Float
   def right=(new_x2)
     self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, new_x2 - self.x, self.height
   end
-
 
   def area
     self.width * self.height
