@@ -114,10 +114,11 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
 
       # pretty lame, but i've never seen white lines
       # should be safe to discard
-      strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
-      if strokeColorComps.any? { |c| c < 0.9 }
+      # NOTE: temporarily disabled.
+      # strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
+      #if strokeColorComps.any? { |c| c < 0.9 }
         drawer.currentPath.each { |segment| drawer.addRuling(segment) }
-      end
+      #end
 
       drawer.currentPath = []
     end
@@ -126,10 +127,11 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   class CloseFillNonZeroAndStrokePathOperator < OperatorProcessor
     def process(operator, arguments)
       drawer = self.context
-      fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
-      if fillColorComps.any? { |c| c < 0.9 }
+      # NOTE: color check temporarily disabled
+      #fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
+#      if fillColorComps.any? { |c| c < 0.9 }
         drawer.currentPath.each { |segment| drawer.addRuling(segment) }
-      end
+#      end
       drawer.currentPath = []
     end
   end
@@ -237,8 +239,16 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
       ruling.transform!(scale)
     end
 
-    # snapping
+    # snapping to grid and joining lines that are close together
     ruling.snap!(options[:snapping_grid_cell_size])
+
+    # merge lines, still not finished
+    close_rulings = self.rulings.find_all { |r|
+      (ruling.vertical? && r.vertical? || ruling.horizontal? && r.horizontal?) \
+      && (r.getP2.distance(ruling.getP1) <= options[:snapping_grid_cell_size] \
+          || r.getP1.distance(ruling.getP2) <= options[:snapping_grid_cell_size])
+    }
+
     self.rulings << ruling
 
   end
