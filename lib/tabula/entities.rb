@@ -51,16 +51,12 @@ module Tabula
 
     # get text, optionally from a provided area in the page [top, left, bottom, right]
     def get_text(area=nil)
-      area = [0, 0, width, height] if area.nil?
+      top, left, bottom, right = area || [0, 0, width, height]
 
-      # spaces are not detected, b/c they have height == 0
-      # ze = ZoneEntity.new(area[0], area[1], area[3] - area[1], area[2] - area[0])
-      # self.texts.select { |t| t.overlaps? ze }
       texts = self.texts.select do |t|
-        t.top > area[0] && t.top + t.height < area[2] && t.left > area[1] && t.left + t.width < area[3]
+        t.top > top && t.top + t.height < bottom && t.left > left && t.left + t.width < right
       end
       texts
-
     end
 
     def to_json(options={})
