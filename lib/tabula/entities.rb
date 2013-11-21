@@ -45,6 +45,7 @@ module Tabula
       @file_path = file_path
       @number_one_indexed = number
       self.texts = texts
+      @ruling_lines = []
     end
 
     def number(indexing_base=:one_indexed)
@@ -87,6 +88,14 @@ module Tabula
     end
 
     def ruling_lines(options={})
+      if @ruling_lines.empty?
+        @ruling_lines = get_ruling_lines(options)
+      end
+      @ruling_lines
+    end
+
+    #memoize the ruling lines, since getting them can hypothetically be expensive
+    def get_ruling_lines(options={})
       options[:render_pdf] ||= false
       Tabula::Extraction::LineExtractor.lines_in_pdf_page(file_path, number(:zero_indexed), options)
     end
@@ -316,7 +325,25 @@ module Tabula
     def initialize(top, left, width, height, stroking_color=nil)
       super(top, left, width, height)
       self.stroking_color = stroking_color
+      normalize!
     end
+
+    def normalize!
+      # sometimes lines come out of LSD with top > bottom or left > right
+      #this is, of course, nonsense, so here we fix it.
+      if top > bottom
+        bukkit = top
+        self.top = bottom
+        self.bottom = bukkit
+      end
+      if left > right
+        bukkit = left
+        self.left = right
+        #right = wrong
+        self.right = bukkit
+      end
+    end
+
 
     #for comparisons, deprecate when this inherits from Line2D
     def to_line
@@ -456,7 +483,7 @@ module Tabula
         output << el.text
       end
       if output.empty? && debug
-        output = "empty top: #{top} h: #{height}"
+        output = "width: #{width} h: #{height}"
       end
       output
     end
