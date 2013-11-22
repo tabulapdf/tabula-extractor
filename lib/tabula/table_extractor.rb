@@ -18,12 +18,6 @@ module Tabula
       if self.options[:merge_words]
         merge_words!
       end
-
-    end
-
-    def get_rows
-      hg = self.get_line_boundaries
-      hg.sort_by(&:top).map { |r| {'top' => r.top, 'bottom' => r.bottom, 'text' => r.texts} }
     end
 
     # TODO finish writing this method
@@ -65,45 +59,6 @@ module Tabula
       TableExtractor.new(text_elements).group_by_columns.map do |c|
         {'left' => c.left, 'right' => c.right, 'width' => c.width}
       end
-    end
-
-    def get_line_boundaries
-      boundaries = []
-
-      if self.options[:horizontal_rulings].empty?
-        # we don't have rulings
-        # iteratively grow boundaries to construct lines
-        self.text_elements.each do |te|
-          row = boundaries.detect { |l| l.vertically_overlaps?(te) }
-          ze = ZoneEntity.new(te.top, te.left, te.width, te.height)
-          if row.nil?
-            boundaries << ze
-            ze.texts << te.text
-          else
-            row.merge!(ze)
-            row.texts << te.text
-          end
-        end
-      else
-        self.options[:horizontal_rulings].sort_by!(&:top)
-        1.upto(self.options[:horizontal_rulings].size - 1) do |i|
-          above = self.options[:horizontal_rulings][i - 1]
-          below = self.options[:horizontal_rulings][i]
-
-          # construct zone between a horizontal ruling and the next
-          ze = ZoneEntity.new(above.top,
-                              [above.left, below.left].min,
-                              [above.width, below.width].max,
-                              below.top - above.top)
-
-          # skip areas shorter than some threshold
-          # TODO: this should be the height of the shortest character, or something like that
-          next if ze.height < 2
-
-          boundaries << ze
-        end
-      end
-      boundaries
     end
 
     private
