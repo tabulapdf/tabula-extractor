@@ -77,11 +77,16 @@ module Tabula
 
         next if char2.nil? or char1.nil?
 
-
-        if self.text_elements[current_word_index].should_merge?(char2) && !(self.options[:vertical_rulings] && vertical_ruling_locations.map{|loc| self.text_elements[current_word_index].left < loc && char2.left > loc}.include?(true))
-            #should_merge? isn't aware of vertical rulings, so even if two text elements are close enough that they ought to be merged by that account
-            #we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
-            # Why are both of those `.left`?, you might ask. The intuition is that a letter that starts on the left of a vertical ruling ought to remain on the left of it.
+        # should_merge? isn't aware of vertical rulings, so even if two text elements are close enough
+        # that they ought to be merged by that account.
+        # we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
+        # Why are both of those `.left`?, you might ask. The intuition is that a letter
+        # that starts on the left of a vertical ruling ought to remain on the left of it.
+        if self.text_elements[current_word_index].should_merge?(char2) \
+          && !(self.options[:vertical_rulings] \
+               && vertical_ruling_locations.map{ |loc|
+                 self.text_elements[current_word_index].left < loc && char2.left > loc
+               }.include?(true))
             self.text_elements[current_word_index].merge!(char2)
 
             char1 = char2
