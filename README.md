@@ -35,6 +35,10 @@ where [options] are:
 
 Want to integrate `tabula-extractor` into your own application? We don't have docs yet, but [the tests](test/tests.rb) are a good source of information.
 
+## Scripting examples
+
+`tabula-extractor` is a RubyGem that you can use to programmatically extract tabular data, using the Tabula engine, in your scripts or applications.
+
 ## Notes
 
 `tabula-extractor` uses [LSD: a Line Segment Detector](http://www.ipol.im/pub/art/2012/gjmr-lsd/) by Rafael Grompone von Gioi, Jérémie Jakubowicz, Jean-Michel Morel and Gregory Randall.
