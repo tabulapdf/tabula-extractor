@@ -126,6 +126,10 @@ module Tabula
       hash
     end
 
+    def inspect
+      "#<TextElement: #{self.top.round(2)},#{self.left.round(2)},#{self.bottom.round(2)},#{right.round(2)} '#{self.text}'"
+    end
+
     def ==(other)
       self.text.strip == other.text.strip
     end
@@ -296,12 +300,12 @@ module Tabula
     # 2D line intersection test taken from comp.graphics.algorithms FAQ
     def intersects?(other)
       r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
-      / ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
+       ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
+      s = ((self.top-other.top)*(self.right-self.left) - (self.left-other.left)*(self.bottom-self.top)) \
+        ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
+      r >= 0 && r < 1 && s >= 0 && s < 1
+    end
 
-<<<<<<< Updated upstream
-        s = ((self.top-other.top)*(self.right-self.left) - (self.left-other.left)*(self.bottom-self.top)) \
-            / ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
-=======
     # ugh I can't come up with a good name for this
     # but what it does is expand each line outwards by EXPANSION_COEFFICIENT in each direction
     # then we can (in #nearlyIntersects?) check if lines nearly intersect -- i.e. if their blooped counterparts strictly intersect
@@ -325,10 +329,6 @@ module Tabula
         return result
       end
     end
->>>>>>> Stashed changes
-
-      r >= 0 and r < 1 and s >= 0 and s < 1
-    end
 
     #for comparisons, deprecate when this inherits from Line2D
     def to_line
@@ -350,6 +350,7 @@ module Tabula
     def right
       left + width
     end
+
     def bottom
       top + height
     end
