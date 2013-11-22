@@ -1,4 +1,5 @@
 require_relative './core_ext'
+require 'csv'
 
 module Tabula
 
@@ -29,16 +30,18 @@ module Tabula
   end
 
   class Page < ZoneEntity
-    attr_reader :rotation, :number_one_indexed
+    attr_reader :rotation, :number_one_indexed, :file_path
 
-    def initialize(width, height, rotation, number, texts=[])
+    def initialize(file_path, width, height, rotation, number, texts=[])
       super(0, 0, width, height)
       @rotation = rotation
       if number < 1
         raise ArgumentError, "Tabula::Page numbers are one-indexed; numbers < 1 are invalid."
       end
+      @file_path = file_path
       @number_one_indexed = number
       self.texts = texts
+      @ruling_lines = []
     end
 
     def number(indexing_base=:one_indexed)
@@ -47,6 +50,19 @@ module Tabula
       else
         return @number_one_indexed
       end
+    end
+
+    def ruling_lines(options={})
+      if @ruling_lines.empty?
+        @ruling_lines = get_ruling_lines(options)
+      end
+      @ruling_lines
+    end
+
+    #memoize the ruling lines, since getting them can hypothetically be expensive
+    def get_ruling_lines(options={})
+      options[:render_pdf] ||= false
+      Tabula::Extraction::LineExtractor.lines_in_pdf_page(file_path, number(:zero_indexed), options)
     end
 
     # get text, optionally from a provided area in the page [top, left, bottom, right]
@@ -61,6 +77,24 @@ module Tabula
       end
       texts
 
+    end
+
+    def get_cell_text(area=nil)
+      area = Rectangle2D::Float.new(0, 0, width, height) if area.nil?
+      # puts ""
+
+      texts = self.texts.select do |t|
+        # if t.top >= 76.0 && t.bottom <= 84
+        #   puts [t.text, t.top, t.bottom].inspect
+        # end
+        t.top.between?(area.top, area.bottom) &&
+        #t.top >= area.top && t.vertical_midpoint <= area.bottom) && \
+        t.horizontal_midpoint.between?(area.left, area.right)
+        #t.horizontal_midpoint >= area.left && t.horizontal_midpoint <= area.right
+      end
+      # puts ""
+
+      texts
     end
 
     def to_json(options={})
@@ -295,14 +329,31 @@ module Tabula
     def initialize(top, left, width, height, stroking_color=nil)
       super(top, left, width, height)
       self.stroking_color = stroking_color
+      normalize!
+    end
+
+    def normalize!
+      # sometimes lines come out of LSD with top > bottom or left > right
+      #this is, of course, nonsense, so here we fix it.
+      if top > bottom
+        bukkit = top
+        self.top = bottom
+        self.bottom = bukkit
+      end
+      if left > right
+        bukkit = left
+        self.left = right
+        #right = wrong
+        self.right = bukkit
+      end
     end
 
     # 2D line intersection test taken from comp.graphics.algorithms FAQ
     def intersects?(other)
       r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
-       ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
+        / ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
       s = ((self.top-other.top)*(self.right-self.left) - (self.left-other.left)*(self.bottom-self.top)) \
-        ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
+        / ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
       r >= 0 && r < 1 && s >= 0 && s < 1
     end
 

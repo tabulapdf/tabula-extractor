@@ -54,6 +54,9 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     end
   end
 
+  #N.B. for merge `spreadsheets` into `text-extractor-refactor` --
+  # only substantive change here is calling Tabula::Ruling::clean_rulings on LSD output in this method
+  # the rest is readability changes.
   #page_number here is zero-indexed
   def self.lines_in_pdf_page(pdf_path, page_number, options={})
     options = options.merge!(DETECT_LINES_DEFAULTS)

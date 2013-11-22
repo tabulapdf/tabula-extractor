@@ -142,6 +142,7 @@ module Tabula
 
     class PagesInfoExtractor
       def initialize(pdf_filename, password='')
+        @pdf_filename = pdf_filename
         @pdf_file = Extraction.openPDF(pdf_filename, password)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
       end
@@ -152,7 +153,8 @@ module Tabula
             @all_pages.each_with_index do |page, i|
               contents = page.getContents
 
-              y.yield Tabula::Page.new(page.findCropBox.width,
+              y.yield Tabula::Page.new(pdf_filename,
+                                       page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
                                        i+1) #remember, these are one-indexed
@@ -170,6 +172,7 @@ module Tabula
       #     but if it's a list or a range, it's one-indexed
       def initialize(pdf_filename, pages=[1], password='')
         raise Errno::ENOENT unless File.exists?(pdf_filename)
+        @pdf_filename = pdf_filename
         @pdf_file = Extraction.openPDF(pdf_filename, password)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
         @pages = pages == :all ?  (1..@all_pages.size) : pages
@@ -185,7 +188,8 @@ module Tabula
               next if contents.nil?
               @extractor.clear!
               @extractor.drawPage page
-              y.yield Tabula::Page.new(page.findCropBox.width,
+              y.yield Tabula::Page.new(@pdf_filename,
+                                       page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
                                        i, #one-indexed, just like `i` is.
