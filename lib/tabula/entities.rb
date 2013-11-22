@@ -23,6 +23,17 @@ module Tabula
       self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.left, self.top, self.width, self.height
     end
 
+    ##
+    # default sorting order for ZoneEntity objects
+    # is lexicographical (left to right, top to bottom)
+    def <=>(other)
+      return  1 if self.left > other.left
+      return -1 if self.left < other.left
+      return  1 if self.top  > other.top
+      return -1 if self.top  < other.top
+      return  0
+    end
+
     def to_json(options={})
       self.to_h.to_json
     end
