@@ -20,47 +20,6 @@ module Tabula
       end
     end
 
-    # TODO finish writing this method
-    # it should be analogous to get_line_boundaries
-    # (ie, take into account vertical ruling lines if available)
-    def group_by_columns
-      columns = []
-      tes = self.text_elements.sort_by &:left
-
-      # we don't have vertical rulings
-      if self.options[:vertical_rulings].empty?
-        tes.each do |te|
-          if column = columns.detect { |c| te.horizontally_overlaps?(c) }
-            column << te
-          else
-            columns << Column.new(te.left, te.width, [te])
-          end
-        end
-      else
-        self.options[:vertical_rulings].sort_by! &:left
-        1.upto(self.options[:vertical_rulings].size - 1) do |i|
-          left_ruling_line =  self.options[:vertical_rulings][i - 1]
-          right_ruling_line = self.options[:vertical_rulings][i]
-          columns << Column.new(left_ruling_line.left, right_ruling_line.left - left_ruling_line.left, []) if (right_ruling_line.left - left_ruling_line.left > 10)
-        end
-        tes.each do |te|
-          if column = columns.detect { |c| te.horizontally_overlaps?(c) }
-            column << te
-          else
-            #puts "couldn't find a place for #{te.inspect}"
-            #columns << Column.new(te.left, te.width, [te])
-          end
-        end
-      end
-      columns
-    end
-
-    def get_columns
-      TableExtractor.new(text_elements).group_by_columns.map do |c|
-        {'left' => c.left, 'right' => c.right, 'width' => c.width}
-      end
-    end
-
     private
 
     #this is where spaces come from!
