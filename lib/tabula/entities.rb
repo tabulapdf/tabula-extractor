@@ -643,11 +643,11 @@ module Tabula
       # like in 01001523B_China.pdf
       #TODO: support placeholders for "empty" cells in rows other than row 1
       zerozero =  array_of_rows[0]
-      puts array_of_rows[0].inspect
+      # puts array_of_rows[0].inspect
       if array_of_rows.size > 2
         if array_of_rows[0].map(&:left).uniq.size < array_of_rows[1].map(&:left).uniq.size
           missing_spots = array_of_rows[1].map(&:left) - array_of_rows[0].map(&:left)
-          puts missing_spots.inspect
+          # puts missing_spots.inspect
           missing_spots.each do |missing_spot|
             array_of_rows[0] << Cell.new(array_of_rows[0][0].top, missing_spot, 0, 0)
           end

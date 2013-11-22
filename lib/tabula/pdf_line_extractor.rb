@@ -59,24 +59,24 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   # the rest is readability changes.
   #page_number here is zero-indexed
   def self.lines_in_pdf_page(pdf_path, page_number, options={})
-    options = options.merge!(DETECT_LINES_DEFAULTS)
-    rulings = unless options[:render_pdf]
-                pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
-                page = pdf_file.getDocumentCatalog.getAllPages[page_number]
-                le = self.new(options)
-                le.processStream(page, page.findResources, page.getContents.getStream)
-                pdf_file.close
-                le.rulings.map do |l|
-                  top = [l.getP1.getY, l.getP2.getY].min
-                  left = [l.getP1.getX, l.getP1.getX].min
-                  ::Tabula::Ruling.new(top,
-                                       left,
-                                       (l.getP2.getX - l.getP1.getX).abs,
-                                       (l.getP2.getY - l.getP1.getY).abs)
-                end
-              else
-                Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options)
-              end
+    unless options[:render_pdf]
+      pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
+      page = pdf_file.getDocumentCatalog.getAllPages[page_number]
+      le = self.new(options)
+      le.processStream(page, page.findResources, page.getContents.getStream)
+      pdf_file.close
+      rulings = le.rulings.map do |l|
+        ::Tabula::Ruling.new(l.getP1.getY,
+                             l.getP1.getX,
+                             l.getP2.getX - l.getP1.getX,
+                             l.getP2.getY - l.getP1.getY)
+      end
+      collapse_vertical_rulings(rulings.select(&:vertical?)) + collapse_horizontal_rulings(rulings.select(&:horizontal?))
+    else
+      # only LSD rulings need to be "cleaned" with clean_rulings; might as well do this here
+      # since tehre's no reason want unclean lines
+      Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options))
+    end
   end
 
   class LineToOperator < OperatorProcessor
