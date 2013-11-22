@@ -235,46 +235,6 @@ module Tabula
     end
   end
 
-  class Column < ZoneEntity
-    attr_accessor :text_elements
-
-    def initialize(left, width, text_elements=[])
-      super(0, left, width, 0)
-      @text_elements = text_elements
-    end
-
-    def <<(te)
-      self.text_elements << te
-      self.update_boundaries!(te)
-      self.text_elements.sort_by! { |t| t.top }
-    end
-
-    def update_boundaries!(text_element)
-      self.merge!(text_element)
-    end
-
-    # this column can be merged with other_column?
-    def contains?(other_column)
-      self.horizontally_overlaps?(other_column)
-    end
-
-    def average_line_distance
-      # avg distance between lines
-      # this might help to MERGE lines that are shouldn't be split
-      # e.g. cells with > 1 lines of text
-      1.upto(self.text_elements.size - 1).map { |i|
-        self.text_elements[i].top - self.text_elements[i - 1].top
-      }.inject{ |sum, el| sum + el }.to_f / self.text_elements.size
-    end
-
-    def inspect
-      vars = (self.instance_variables - [:@text_elements]).map{ |v| "#{v}=#{instance_variable_get(v).inspect}" }
-      texts = self.text_elements.sort_by { |te| te.top }.map { |te| te.text }
-      "<#{self.class}: #{vars.join(', ')}, @text_elements=[#{texts.join('], [')}]>"
-    end
-
-  end
-
   require_relative './core_ext'
 
   # TODO make it a heir of java.awt.geom.Line2D::Float
