@@ -100,11 +100,6 @@ module Tabula
       return tc
     end
 
-    def initialize(top, left, width, height)
-      super(top, left, width, height)
-      self.text_elements = []
-    end
-
     ##
     # add a TextElement to this TextChunk
     def <<(text_element)
