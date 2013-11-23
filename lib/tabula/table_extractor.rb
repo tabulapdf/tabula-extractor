@@ -6,10 +6,10 @@ module Tabula
     default_options = {:vertical_rulings => []}
     options = default_options.merge(options)
 
-    text_chunks = [TextChunk.create_from_text_element(text_elements.first)]
+    text_chunks = [TextChunk.create_from_text_element(text_elements.shift)]
 
     vertical_ruling_locations = options[:vertical_rulings].map(&:left) if options[:vertical_rulings]
-    text_elements[1..-1].inject(text_chunks) do |chunks, char|
+    text_elements.inject(text_chunks) do |chunks, char|
       current_chunk = chunks.last
       prev_char = current_chunk.text_elements.last
 
