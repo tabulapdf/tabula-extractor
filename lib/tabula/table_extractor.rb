@@ -5,16 +5,24 @@ module Tabula
   def Tabula.merge_words(text_elements, options={})
     default_options = {:vertical_rulings => []}
     options = default_options.merge(options)
+    vertical_ruling_locations = options[:vertical_rulings].map(&:left) if options[:vertical_rulings]
 
     text_chunks = [TextChunk.create_from_text_element(text_elements.shift)]
 
-    vertical_ruling_locations = options[:vertical_rulings].map(&:left) if options[:vertical_rulings]
     text_elements.inject(text_chunks) do |chunks, char|
       current_chunk = chunks.last
       prev_char = current_chunk.text_elements.last
 
+      # any vertical ruling goes across current_chunk and char?
+      across_vertical_ruling = vertical_ruling_locations.any? { |loc|
+        current_chunk.left < loc && char.left > loc
+      }
+
       # should we add a space?
-      if (prev_char.text != " ") and (char.text != " ") and prev_char.should_add_space?(char)
+      if (prev_char.text != " ") && (char.text != " ") \
+        && !across_vertical_ruling \
+        && prev_char.should_add_space?(char)
+
         sp = TextElement.new(prev_char.top,
                              prev_char.right,
                              prev_char.width_of_space,
@@ -32,11 +40,7 @@ module Tabula
       # we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
       # Why are both of those `.left`?, you might ask. The intuition is that a letter
       # that starts on the left of a vertical ruling ought to remain on the left of it.
-      if prev_char.should_merge?(char) \
-        && !(options[:vertical_rulings] \
-             && vertical_ruling_locations.any? { |loc|
-               current_chunk.left < loc && char.left > loc
-             })
+      if prev_char.should_merge?(char) && !across_vertical_ruling
 
         chunks.last << char
       else
