@@ -125,6 +125,28 @@ module Tabula
       raise "Not Implemented"
     end
 
+    ##
+    # remove leading and trailing whitespace
+    # (changes geometry accordingly)
+    # TODO horrible implementation - fix.
+    def strip!
+      acc = 0
+      new_te = self.text_elements.drop_while { |te|
+        te.text == ' ' && acc += 1
+      }
+      self.left += self.text_elements.take(acc).inject(0) { |m, te| m += te.width }
+      self.text_elements = new_te
+
+      self.text_elements.reverse!
+      acc = 0
+      new_te = self.text_elements.drop_while { |te|
+        te.text == ' ' && acc += 1
+      }
+      self.right -= self.text_elements.take(acc).inject(0) { |m, te| m += te.width }
+      self.text_elements = new_te.reverse
+      self
+    end
+
     def text
       self.text_elements.map(&:text).join
     end
