@@ -160,8 +160,6 @@ module Tabula
       end
     end
 
-    #TODO: move to csv/tsv 'writer' methods here
-
     # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
     # probably only used for testing
     def self.new_from_array(array_of_rows)
