@@ -44,6 +44,21 @@ class Line2D::Float
     [self.getX1, self.getY1, self.getX2, self.getY2].to_json(*args)
   end
 
+  def rotate!(pointX, pointY, amount)
+    px1 = self.getX1 - pointX; px2 = self.getX2 - pointX
+    py1 = self.getY1 - pointY; py2 = self.getY2 - pointY
+
+    if amount == 90 || amount == -270
+      setLine(pointX - py2, pointY + px1,
+              pointX - py1, pointY + px2)
+    elsif amount == 270 || amount == -90
+      setLine(pointX + py1, pointY - px2,
+              pointX + py2, pointY - px1)
+
+    end
+
+  end
+
   def transform!(affine_transform)
     newP1, newP2 = Point2D::Float.new, Point2D::Float.new
     affine_transform.transform(self.getP1, newP1)
