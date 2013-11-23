@@ -300,4 +300,19 @@ class TestExtractor < Minitest::Test
       assert_equal other_expected, lines_to_table(tables.first)
     end
   end
+
+  def test_vertical_rulings_prevent_merging_of_columns
+    expected = [["SZARANGOWICZ", "GUSTAVO ALEJANDRO", "25.096.244", "20-25096244-5", "09/10/2013", "EFECTIVO", "$ 10.000,00"], ["TAILHADE", "LUIS RODOLFO", "21.386.299", "20-21386299-6", "09/10/2013", "EFECTIVO", "$ 10.000,00"], ["TEDESCHI", "ADRIÁN ALBERTO", "24.171.507", "20-24171507-9", "09/10/2013", "EFECTIVO", "$ 10.000,00"], ["URRIZA", "MARÍA TERESA", "18.135.604", "27-18135604-4", "09/10/2013", "EFECTIVO", "$ 10.000,00"], ["USTARROZ", "GERÓNIMO JAVIER", "24.912.947", "20-24912947-0", "09/10/2013", "EFECTIVO", "$ 10.000,00"], ["VALSANGIACOMO BLANC", "OFERNANDO JORGE", "26.800.203", "20-26800203-1", "09/10/2013", "EFECTIVO", "$ 10.000,00"], ["VICENTE", "PABLO ARIEL", "21.897.586", "20-21897586-1", "09/10/2013", "EFECTIVO", "$ 10.000,00"], ["AMBURI", "HUGO ALBERTO", "14.096.560", "20-14096560-0", "09/10/2013", "EFECTIVO", "$ 20.000,00"], ["BERRA", "CLAUDIA SUSANA", "14.433.112", "27-14433112-0", "09/10/2013", "EFECTIVO", "$ 10.000,00"]]
+
+    vertical_rulings = [47,147,256,310,375,431,504].map{|n| Tabula::Ruling.new(0, n, 0, 1000)}
+
+    table = lines_to_array Tabula.extract_table(File.expand_path('data/campaign_donors.pdf', File.dirname(__FILE__)),
+                                                1,
+                                                [255.57,40.43,398.76,557.35],
+                                                :vertical_rulings => vertical_rulings)
+
+    assert_equal expected, table
+  end
+
+
 end
