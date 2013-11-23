@@ -66,14 +66,14 @@ module Tabula
 
   # Returns an array of Tabula::Line
   def Tabula.make_table(text_elements, options={})
-    default_options = {:separators => [], :vertical_rulings => []}
+    default_options = {:vertical_rulings => []}
     options = default_options.merge(options)
 
     if text_elements.empty?
       return []
     end
 
-    text_chunks = merge_words(text_elements).sort
+    text_chunks = merge_words(text_elements, options).sort
 
     lines = group_by_lines(text_chunks)
 
