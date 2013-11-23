@@ -284,7 +284,6 @@ class TestExtractor < Minitest::Test
     extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path, 1...2) #:all ) # 1..2643
     extractor.extract.each_with_index do |pdf_page, page_index|
 
-      lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(pdf_file_path, page_index))
       page_areas = [[250, 0, 350, 1700]]
 
       scale_factor = pdf_page.width / 1700
