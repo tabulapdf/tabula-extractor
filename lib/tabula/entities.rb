@@ -60,14 +60,20 @@ module Tabula
       end
     end
 
-    # get text, optionally from a provided area in the page [top, left, bottom, right]
+    ##
+    # get text insidea area
+    # area can be an Array ([top, left, width, height])
+    # or a Rectangle2D
     def get_text(area=nil)
-      top, left, bottom, right = area || [0, 0, width, height]
-
-      texts = self.texts.select do |t|
-        t.top > top && t.top + t.height < bottom && t.left > left && t.left + t.width < right
+      if area.instance_of?(Array)
+        top, left, bottom, right = area
+        area = Tabula::ZoneEntity.new(top, left,
+                                      right - left, bottom - top)
       end
-      texts
+      area ||= self # if area not provided, use entire page
+      texts.find_all { |t|
+        area.contains(t)
+      }
     end
 
     def to_json(options={})
