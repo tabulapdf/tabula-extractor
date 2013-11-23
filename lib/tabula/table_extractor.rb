@@ -1,5 +1,3 @@
-require 'csv'
-
 module Tabula
 
   def Tabula.merge_words(text_elements, options={})
