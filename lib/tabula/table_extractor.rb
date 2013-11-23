@@ -81,21 +81,21 @@ module Tabula
     right = 0
     columns = []
 
-    text_chunks.each do |te|
-      next if te.text =~ ONLY_SPACES_RE
-      if te.top >= top
-        left = te.left
-        if (left > right)
-          columns << right if options[:vertical_rulings].empty?
-          right = te.right
-        elsif te.right > right
-          right = te.right
-        end
-      end
-    end
-
     unless options[:vertical_rulings].empty?
       columns = options[:vertical_rulings].map(&:left) #pixel locations, not entities
+    else
+      text_chunks.each do |te|
+        next if te.text =~ ONLY_SPACES_RE
+        if te.top >= top
+          left = te.left
+          if (left > right)
+            columns << right
+            right = te.right
+          elsif te.right > right
+            right = te.right
+          end
+        end
+      end
     end
 
     separators = columns[1..-1].sort.reverse
