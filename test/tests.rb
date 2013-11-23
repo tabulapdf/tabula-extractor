@@ -127,6 +127,8 @@ class TestTableGuesser < Minitest::Test
     filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     page_index = 0
     lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index))
+    # if vector is used instead of LSD, this fails. why, @jeremybmerrill?
+    # lines = Tabula::Ruling::clean_rulings(Tabula::Extraction::LineExtractor.lines_in_pdf_page(filename, page_index))
     page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
     page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
     expected_page_areas = [[54.38671875, 50.203125, 733.921875, 550.44140625], [734.220703125, 50.203125, 54.087890625, 550.44140625], [54.087890625, 550.44140625, 734.220703125, 50.203125]]
