@@ -80,6 +80,63 @@ module Tabula
     end
   end
 
+  ##
+  # a "collection" of TextElements
+  class TextChunk < ZoneEntity
+    attr_accessor :font, :font_size, :text_elements, :width_of_space
+
+    ##
+    # initialize a new TextChunk from a TextElement
+    def self.create_from_text_element(text_element)
+      raise TypeError, "argument is not a TextElement" unless text_element.instance_of?(TextElement)
+      tc = self.new(text_element.top, text_element.left, text_element.width, text_element.height)
+      tc.text_elements = [text_element]
+      return tc
+    end
+
+    def initialize(top, left, width, height)
+      super(top, left, width, height)
+      self.text_elements = []
+    end
+
+    ##
+    # add a TextElement to this TextChunk
+    def <<(text_element)
+      self.text_elements << text_element
+      self.merge!(text_element)
+    end
+
+    def merge!(other)
+      if other.instance_of?(TextChunk)
+        if self.horizontally_overlaps?(other) and other.top < self.top
+          self.text_elements = other.text_elements + self.text_elements
+        else
+          self.text_elements = self.text_elements + other.text_elements
+        end
+      end
+      super(other)
+    end
+
+    ##
+    # split this TextChunk vertically
+    # (in place, returns the remaining chunk)
+    def split_vertically!(y)
+      raise "Not Implemented"
+    end
+
+    def text
+      self.text_elements.map(&:text).join
+    end
+
+    def inspect
+      "#<TextChunk: #{self.top.round(2)},#{self.left.round(2)},#{self.bottom.round(2)},#{right.round(2)} '#{self.text}'>"
+    end
+
+    def to_h
+      super.merge(:text => self.text)
+    end
+  end
+
   class TextElement < ZoneEntity
     attr_accessor :font, :font_size, :text, :width_of_space
 
@@ -98,21 +155,16 @@ module Tabula
     # more or less returns True if distance < tolerance
     def should_merge?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-      overlaps = self.vertically_overlaps?(other)
 
-      tolerance = ((self.width + other.width) / 2) * TOLERANCE_FACTOR
-
-      overlaps && self.horizontal_distance(other) < width_of_space * 1.1 && !self.should_add_space?(other)
+      self.vertically_overlaps?(other) && self.horizontal_distance(other) < width_of_space * 1.1 && !self.should_add_space?(other)
     end
 
     # more or less returns True if (tolerance <= distance < CHARACTER_DISTANCE_THRESHOLD*tolerance)
     def should_add_space?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
 
-      overlaps = self.vertically_overlaps?(other)
-
-      dist = self.horizontal_distance(other).abs
-      overlaps && dist.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))
+      self.vertically_overlaps?(other) \
+        && self.horizontal_distance(other).abs.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))
     end
 
     def merge!(other)
@@ -134,7 +186,7 @@ module Tabula
     end
 
     def inspect
-      "#<TextElement: #{self.top.round(2)},#{self.left.round(2)},#{self.bottom.round(2)},#{right.round(2)} '#{self.text}'"
+      "#<TextElement: #{self.top.round(2)},#{self.left.round(2)},#{self.bottom.round(2)},#{right.round(2)} '#{self.text}'>"
     end
 
     def ==(other)

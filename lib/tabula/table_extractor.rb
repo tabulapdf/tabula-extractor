@@ -6,41 +6,46 @@ module Tabula
     default_options = {:vertical_rulings => []}
     options = default_options.merge(options)
 
-    current_word_index = i = 0
-    char1 = text_elements[i]
+    text_chunks = [TextChunk.create_from_text_element(text_elements.first)]
+
     vertical_ruling_locations = options[:vertical_rulings].map(&:left) if options[:vertical_rulings]
-    while i < text_elements.size-1 do
+    text_elements[1..-1].inject(text_chunks) do |chunks, char|
+      current_chunk = chunks.last
+      prev_char = current_chunk.text_elements.last
 
-      char2 = text_elements[i+1]
-
-      next if char2.nil? or char1.nil?
+      # should we add a space?
+      if (prev_char.text != " ") and (char.text != " ") and prev_char.should_add_space?(char)
+        sp = TextElement.new(prev_char.top,
+                             prev_char.right,
+                             prev_char.width_of_space,
+                             prev_char.width_of_space, # width == height for spaces
+                             prev_char.font,
+                             prev_char.font_size,
+                             ' ',
+                             prev_char.width_of_space)
+        chunks.last << sp
+        prev_char = sp
+      end
 
       # should_merge? isn't aware of vertical rulings, so even if two text elements are close enough
       # that they ought to be merged by that account.
       # we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
       # Why are both of those `.left`?, you might ask. The intuition is that a letter
       # that starts on the left of a vertical ruling ought to remain on the left of it.
-      if text_elements[current_word_index].should_merge?(char2) \
+      if prev_char.should_merge?(char) \
         && !(options[:vertical_rulings] \
-             && vertical_ruling_locations.map{ |loc|
-               text_elements[current_word_index].left < loc && char2.left > loc
-             }.include?(true))
-        text_elements[current_word_index].merge!(char2)
+             && vertical_ruling_locations.any? { |loc|
+               current_chunk.left < loc && char.left > loc
+             })
 
-        char1 = char2
-        text_elements[i+1] = nil
+        chunks.last << char
       else
-        # is there a space? is this within `CHARACTER_DISTANCE_THRESHOLD` points of previous char?
-        if (char1.text != " ") and (char2.text != " ") and text_elements[current_word_index].should_add_space?(char2)
-          text_elements[current_word_index].text  += " "
-          text_elements[current_word_index].width += text_elements[current_word_index].width_of_space
-        end
-        current_word_index = i+1
+        # create a new chunk
+        chunks << TextChunk.create_from_text_element(char)
       end
-      i += 1
+      chunks
     end
-    text_elements.compact!
-    return text_elements
+
   end
 
   ONLY_SPACES_RE = Regexp.new('^\s+$')
@@ -68,16 +73,15 @@ module Tabula
       return []
     end
 
-    text_elements = merge_words(text_elements).sort
+    text_chunks = merge_words(text_elements).sort
 
-    lines = group_by_lines(text_elements)
+    lines = group_by_lines(text_chunks)
 
     top = lines[0].text_elements.map(&:top).min
     right = 0
     columns = []
 
-    #text_elements.sort_by(&:left).each do |te|
-    text_elements.each do |te|
+    text_chunks.each do |te|
       next if te.text =~ ONLY_SPACES_RE
       if te.top >= top
         left = te.left
