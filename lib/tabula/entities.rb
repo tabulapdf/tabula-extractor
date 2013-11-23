@@ -184,11 +184,7 @@ module Tabula
     end
 
     def to_h
-      hash = super
-      [:font, :text].each do |m|
-        hash[m] = self.send(m)
-      end
-      hash
+      super.merge({:font => self.font, :text => self.text })
     end
 
     def inspect
