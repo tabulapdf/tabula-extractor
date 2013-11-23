@@ -160,6 +160,8 @@ module Tabula
     end
   end
 
+  ##
+  # a Glyph
   class TextElement < ZoneEntity
     attr_accessor :font, :font_size, :text, :width_of_space
 
@@ -325,6 +327,15 @@ module Tabula
       self.stroking_color = stroking_color
     end
 
+    def intersect(area)
+      i = self.createIntersection(area)
+      self.top    = i.top
+      self.left   = i.left
+      self.bottom = i.bottom
+      self.right  = i.right
+      self
+    end
+
     #for comparisons, deprecate when this inherits from Line2D
     def to_line
       java.awt.geom.Line2D::Float.new(left, top, right, bottom)
@@ -352,6 +363,17 @@ module Tabula
 
     def to_json(arg)
       [left, top, right, bottom].to_json
+    end
+
+    # crop an enumerable of +Ruling+ to an +area+
+    def self.crop_rulings_to_area(rulings, area)
+      rulings.reduce([]) do |memo, r|
+        if r.to_line.intersects(area)
+          i = r.createIntersection(area)
+          memo << self.new(i.getY, i.getX, i.getWidth, i.getHeight)
+        end
+        memo
+      end
     end
 
     def self.clean_rulings(rulings, max_distance=4)
