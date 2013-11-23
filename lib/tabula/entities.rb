@@ -248,10 +248,7 @@ module Tabula
       self.instance_variable_set(:@lines, self.lines.rpad(nil, other.lines.size))
       other.instance_variable_set(:@lines, other.lines.rpad(nil, self.lines.size))
 
-      self.lines.zip(other.lines).inject(true) do |memo, my_yours|
-        my, yours = my_yours
-        memo && my == yours
-      end
+      self.lines.zip(other.lines).all? { |my, yours| my == yours }
 
     end
   end
