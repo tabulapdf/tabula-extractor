@@ -13,9 +13,9 @@ module Tabula
       current_chunk = chunks.last
       prev_char = current_chunk.text_elements.last
 
-      # any vertical ruling goes across current_chunk and char?
+      # any vertical ruling goes across prev_char and char?
       across_vertical_ruling = vertical_ruling_locations.any? { |loc|
-        current_chunk.left < loc && char.left > loc
+        prev_char.left < loc && char.left > loc
       }
 
       # should we add a space?
@@ -41,7 +41,6 @@ module Tabula
       # Why are both of those `.left`?, you might ask. The intuition is that a letter
       # that starts on the left of a vertical ruling ought to remain on the left of it.
       if prev_char.should_merge?(char) && !across_vertical_ruling
-
         chunks.last << char
       else
         # create a new chunk
@@ -114,9 +113,54 @@ module Tabula
 
     table.lines.map do |l|
       l.text_elements.map! do |te|
-        te.nil? ? TextElement.new(nil, nil, nil, nil, nil, nil, '', nil) : te
+        te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
       end
     end.sort_by { |l| l.map { |te| te.top or 0 }.max }
+  end
+
+  # extract a table from file +pdf_path+, +page+ and +area+
+  #
+  # ==== Options
+  # +:password+ - Password if encrypted PDF (default: empty)
+  # +:detect_ruling_lines+ - Try to detect vertical (default: true)
+  # +:vertical_rulings+ - List of positions for vertical rulings. Overrides +:detect_ruling_lines+. (default: [])
+  def Tabula.extract_table(pdf_path, page, area, options={})
+    options = {
+      :password => '',
+      :detect_ruling_lines => true,
+      :vertical_rulings => []
+    }.merge(options)
+
+    if area.instance_of?(Array)
+      top, left, bottom, right = area
+      area = Tabula::ZoneEntity.new(top, left,
+                                    right - left, bottom - top)
+    end
+
+    text_elements = Extraction::CharacterExtractor.new(pdf_path,
+                                                       [page],
+                                                       options[:password]) \
+      .extract.next.get_text(area)
+
+    use_detected_lines = false
+    if options[:detect_ruling_lines] && options[:vertical_rulings].empty?
+      detected_vertical_rulings = Ruling.clean_rulings(Extraction::LineExtractor.lines_in_pdf_page(pdf_path,
+                                                                                          page-1)) \
+        .find_all(&:vertical?)
+
+      # crop lines to area of interest
+      detected_vertical_rulings = Ruling.crop_rulings_to_area(detected_vertical_rulings, area)
+
+      # only use lines if they all cover at least 90%
+      # of the height of area of interest
+      use_detected_lines = detected_vertical_rulings.size > 2 && detected_vertical_rulings.all? { |vl|
+        vl.height / area.height > 0.9
+      }
+    end
+
+    make_table(text_elements,
+               :vertical_rulings => use_detected_lines ? detected_vertical_rulings : options[:vertical_rulings])
+
 
   end
 end
