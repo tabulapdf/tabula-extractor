@@ -78,23 +78,24 @@ module Tabula
 
       def processTextPosition(text)
         c = text.getCharacter
-        te = Tabula::TextElement.new(text.getYDirAdj.round(2),
-                                                     text.getXDirAdj.round(2),
-                                                     text.getWidthDirAdj.round(2),
-                                                     # ugly hack follows: we need spaces to have a height, so we can
-                                                     # test for vertical overlap. height == width seems a safe bet.
-                                                     c == ' ' ? text.getWidthDirAdj.round(2) : text.getHeightDir.round(2),
-                                                     text.getFont,
-                                                     text.getFontSize.round(2),
-                                                     c,
-                                                     # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
-                                                     text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
+        h = c == ' ' ? text.getWidthDirAdj.round(2) : text.getHeightDir.round(2)
+        te = Tabula::TextElement.new(text.getYDirAdj.round(2) - h,
+                                     text.getXDirAdj.round(2),
+                                     text.getWidthDirAdj.round(2),
+                                     # ugly hack follows: we need spaces to have a height, so we can
+                                     # test for vertical overlap. height == width seems a safe bet.
+                                     h,
+                                     text.getFont,
+                                     text.getFontSize.round(2),
+                                     c,
+                                     # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
+                                     text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
         # if !self.getGraphicsState.getCurrentClippingPath.getBounds2D.intersects(te)
         #   puts debugPath(self.getGraphicsState.getCurrentClippingPath.getBounds2D)
         #   puts te.inspect
         # end
         if c =~ PRINTABLE_RE && self.getGraphicsState.getCurrentClippingPath.getBounds2D.intersects(te)
-          self.characters << te
+            self.characters << te
         end
       end
 
