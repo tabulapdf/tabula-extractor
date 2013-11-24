@@ -149,11 +149,13 @@ module Tabula
       # crop lines to area of interest
       detected_vertical_rulings = Ruling.crop_rulings_to_area(detected_vertical_rulings, area)
 
-      # only use lines if they all cover at least 90%
+      # only use lines if at least 80% of them cover at least 90%
       # of the height of area of interest
-      use_detected_lines = detected_vertical_rulings.size > 2 && detected_vertical_rulings.all? { |vl|
-        vl.height / area.height > 0.9
-      }
+      use_detected_lines = detected_vertical_rulings.size > 2 \
+      && (detected_vertical_rulings.count { |vl|
+            vl.height / area.height > 0.9
+          } / detected_vertical_rulings.size.to_f) >= 0.8
+
     end
 
     make_table(text_elements,
