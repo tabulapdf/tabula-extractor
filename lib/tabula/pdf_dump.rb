@@ -77,25 +77,21 @@ module Tabula
       end
 
       def transformClippingPath(cp)
-        if !self.page.getRotation.nil? \
-          && [90, -270, -90, 270].include?(self.page.getRotation)
+        return cp if self.page.getRotation.nil? || !([90, -270, -90, 270].include?(self.page.getRotation))
 
-          mb = self.page.getMediaBox
+        mb = self.page.getMediaBox
 
-          rotate = AffineTransform.getRotateInstance(self.page.getRotation * (Math::PI/180.0),
-                                                     mb.getLowerLeftX, mb.getLowerLeftY)
+        rotate = AffineTransform.getRotateInstance(self.page.getRotation * (Math::PI/180.0),
+                                                   mb.getLowerLeftX, mb.getLowerLeftY)
 
 
-          trans = if page.getRotation == 90 || page.getRotation == -270
-                     AffineTransform.getTranslateInstance(mb.getHeight, 0)
-                   else
-                     AffineTransform.getTranslateInstance(0, mb.getWidth)
-                   end
-          trans.concatenate(rotate)
-          return cp.createTransformedShape(trans)
-        else
-          cp
-        end
+        trans = if page.getRotation == 90 || page.getRotation == -270
+                  AffineTransform.getTranslateInstance(mb.getHeight, 0)
+                else
+                  AffineTransform.getTranslateInstance(0, mb.getWidth)
+                end
+        trans.concatenate(rotate)
+        return cp.createTransformedShape(trans)
       end
 
       def processTextPosition(text)
