@@ -1,5 +1,7 @@
 module Tabula
 
+  $FOO = false
+
   def Tabula.merge_words(text_elements, options={})
     default_options = {:vertical_rulings => []}
     options = default_options.merge(options)
@@ -15,6 +17,17 @@ module Tabula
       across_vertical_ruling = vertical_ruling_locations.any? { |loc|
         prev_char.left < loc && char.left > loc
       }
+
+      # if current_chunk.text =~ /500$/
+      #   $FOO = true
+      # end
+      # if $FOO
+      #   puts '--------'
+      #   puts "vertical_ruling_locations: #{vertical_ruling_locations.inspect}"
+      #   puts "prev_char: #{prev_char.text} - left: #{prev_char.left}"
+      #   puts "char: #{char.text} - left: #{char.left}"
+      #   puts "current_chunk: #{current_chunk.text} - left: #{current_chunk.left}"
+      # end
 
       # should we add a space?
       if (prev_char.text != " ") && (char.text != " ") \
