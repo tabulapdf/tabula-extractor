@@ -28,24 +28,26 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     :snapping_grid_cell_size => 2
   }
 
+  #page_number here is zero-indexed
   def self.lines_in_pdf_page(pdf_path, page_number, options={})
     options = options.merge!(DETECT_LINES_DEFAULTS)
-    unless options[:render_pdf]
-      pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
-      page = pdf_file.getDocumentCatalog.getAllPages[page_number]
-      le = self.new(options)
-      le.processStream(page, page.findResources, page.getContents.getStream)
-      pdf_file.close
-      le.rulings.map do |l|
-        ::Tabula::Ruling.new(l.getP1.getY,
-                             l.getP1.getX,
-                             l.getP2.getX - l.getP1.getX,
-                             l.getP2.getY - l.getP1.getY)
-      end
-
-    else
-      Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options)
-    end
+    rulings = unless options[:render_pdf]
+                pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
+                page = pdf_file.getDocumentCatalog.getAllPages[page_number]
+                le = self.new(options)
+                le.processStream(page, page.findResources, page.getContents.getStream)
+                pdf_file.close
+                le.rulings.map do |l|
+                  top = [l.getP1.getY, l.getP2.getY].min
+                  left = [l.getP1.getX, l.getP1.getX].min
+                  ::Tabula::Ruling.new(top,
+                                       left,
+                                       (l.getP2.getX - l.getP1.getX).abs,
+                                       (l.getP2.getY - l.getP1.getY).abs)
+                end
+              else
+                Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options)
+              end
   end
 
   class LineToOperator < OperatorProcessor
@@ -87,11 +89,21 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
         finalY = 0
       end
 
-      # add every edge of the rectangle to drawer.rulings
-      lines = [java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX + psize.getX, finalY),
-               java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX, finalY + psize.getY),
-               java.awt.geom.Line2D::Float.new(ppos.getX+psize.getX, finalY, ppos.getX + psize.getX, finalY + psize.getY),
-               java.awt.geom.Line2D::Float.new(ppos.getX, finalY+psize.getY, ppos.getX + psize.getX, finalY + psize.getY)]
+      width = psize.getX.abs
+      height = psize.getY.abs
+
+      lines = if width > height && height < 2 # horizontal line, "thin" rectangle.
+                [java.awt.geom.Line2D::Float.new(ppos.getX, finalY + psize.getY/2, ppos.getX + psize.getX, finalY + psize.getY/2)]
+              elsif width < height && width < 2 # vertical line, "thin" rectangle
+                [java.awt.geom.Line2D::Float.new(ppos.getX + psize.getX/2, finalY, ppos.getX + psize.getX/2, finalY + psize.getY)]
+              else
+                # add every edge of the rectangle to drawer.rulings
+                [java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX + psize.getX, finalY),
+                 java.awt.geom.Line2D::Float.new(ppos.getX, finalY, ppos.getX, finalY + psize.getY),
+                 java.awt.geom.Line2D::Float.new(ppos.getX+psize.getX, finalY, ppos.getX + psize.getX, finalY + psize.getY),
+                 java.awt.geom.Line2D::Float.new(ppos.getX, finalY+psize.getY, ppos.getX + psize.getX, finalY + psize.getY)]
+              end
+
       drawer.currentPath += lines.select { |l| l.horizontal? or l.vertical? }
 
     end
@@ -103,10 +115,11 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
 
       # pretty lame, but i've never seen white lines
       # should be safe to discard
-      strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
-      if strokeColorComps.any? { |c| c < 0.9 }
+      # NOTE: temporarily disabled.
+      # strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
+      #if strokeColorComps.any? { |c| c < 0.9 }
         drawer.currentPath.each { |segment| drawer.addRuling(segment) }
-      end
+      #end
 
       drawer.currentPath = []
     end
@@ -115,10 +128,11 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   class CloseFillNonZeroAndStrokePathOperator < OperatorProcessor
     def process(operator, arguments)
       drawer = self.context
-      fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
-      if fillColorComps.any? { |c| c < 0.9 }
+      # NOTE: color check temporarily disabled
+      #fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
+#      if fillColorComps.any? { |c| c < 0.9 }
         drawer.currentPath.each { |segment| drawer.addRuling(segment) }
-      end
+#      end
       drawer.currentPath = []
     end
   end
@@ -209,10 +223,11 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   end
 
   def addRuling(ruling)
-    if !page.getRotation.nil? and [90, -270, -90, 270].include?(page.getRotation)
+    if !page.getRotation.nil? && [90, -270, -90, 270].include?(page.getRotation)
 
-      mb = page.getMediaBox
-      affine_transform = AffineTransform.getQuadrantRotateInstance(self.page.getRotation / 90, mb.getLowerLeftX, mb.getLowerLeftY)
+      mb = page.findMediaBox
+
+      ruling.rotate!(mb.getLowerLeftX, mb.getLowerLeftY, page.getRotation)
 
       trans = if page.getRotation == 90 || page.getRotation == -270
                 AffineTransform.getTranslateInstance(mb.getHeight, 0)
@@ -220,14 +235,22 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
                 AffineTransform.getTranslateInstance(0, mb.getWidth)
               end
       scale = AffineTransform.getScaleInstance(mb.getWidth / mb.getHeight,
-                                               mb.getWidth / mb.getHeight)
-      trans.concatenate(affine_transform)
+
+                                             mb.getWidth / mb.getHeight)
       scale.concatenate(trans)
       ruling.transform!(scale)
     end
 
-    # snapping
+    # snapping to grid and joining lines that are close together
     ruling.snap!(options[:snapping_grid_cell_size])
+
+    # merge lines, still not finished
+    # close_rulings = self.rulings.find_all { |r|
+    #   (ruling.vertical? && r.vertical? || ruling.horizontal? && r.horizontal?) \
+    #   && (r.getP2.distance(ruling.getP1) <= options[:snapping_grid_cell_size] \
+    #       || r.getP1.distance(ruling.getP2) <= options[:snapping_grid_cell_size])
+    # }
+
     self.rulings << ruling
 
   end

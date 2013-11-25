@@ -55,6 +55,7 @@ module Tabula
       lines
     end
 
+    #zero-indexed page_number
     def LSD.detect_lines_in_pdf_page(pdf_path, page_number, options={})
       options = DETECT_LINES_DEFAULTS.merge(options)
 
@@ -109,16 +110,6 @@ module Tabula
     end
 
     private
-    # def LSD.image_to_image_double(buffered_image)
-    #   width = buffered_image.getWidth; height = buffered_image.getHeight
-    #   raster_size = width * height
-
-    #   image_double = FFI::MemoryPointer.new(:double, raster_size)
-    #   pixels = Java::int[width * height].new
-    #   buffered_image.getRGB(0, 0, width, height, pixels, 0, width)
-
-    #   image_double.put_array_of_double 0, pixels.to_a
-    # end
 
     def LSD.image_to_image_float(buffered_image)
       width = buffered_image.getWidth; height = buffered_image.getHeight

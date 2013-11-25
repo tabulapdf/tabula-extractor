@@ -34,11 +34,17 @@ EOS
 
     opt :pages, 'Comma separated list of ranges. Examples: --pages 1-3,5-7 or --pages 3. Default is --pages 1', :default => '1', :type => String
     opt :area, 'Portion of the page to analyze (top,left,bottom,right). Example: --area 269.875,12.75,790.5,561. Default is entire page', :type => String, :default => nil
+    opt :columns, 'X coordinates of column boundaries. Example --columns 10.1,20.2,30.3', :default => nil, :type => String
     opt :password, 'Password to decrypt document. Default is empty', :default => ''
     opt :guess, 'Guess the portion of the page to analyze per page. Slow.'
     opt :debug, 'Print detected table areas instead of processing.'
     opt :format, "Output format (#{FORMATS.join(",")})", :default => 'CSV'
     opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
+  end
+
+  if !opts[:columns].nil?
+    c = opts[:columns].split(',')
+    Trollop::die :columns, "is invalid" unless c.all? { |x| x.strip =~  /(\d+\.?\d*)/ }
   end
 
   if !opts[:area].nil?
@@ -56,10 +62,18 @@ EOS
   return opts, pdf_filename
 end
 
+def rulings_from_columns(page, area, vertical_rulings)
+  area = [page.top, page.left, page.bottom, page.right ] if area.nil?
+  vertical_rulings.map { |vr|
+    Tabula::Ruling.new(area[0], vr, 0, page.height)
+  }
+end
+
 def main
   opts, filename = parse_command_line
 
   area = opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)
+  vertical_rulings = opts[:columns].nil? ? nil : opts[:columns].split(',').map(&:to_f)
   out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'wb')
   extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
   extractor.extract.each_with_index do |page, page_index|
@@ -76,8 +90,9 @@ def main
         puts (page_index + 1).to_s + ', ' + page_area.to_s
       else
         text = page.get_text( page_area )
+        table = Tabula.make_table(text, vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(page, area, vertical_rulings) })
         Tabula::Writers.send(opts[:format].to_sym,
-                            Tabula.make_table(text),
+                            table,
                             out)
       end
 

@@ -1,11 +1,7 @@
 require 'java'
 require 'json'
-require_relative '../geom/point'
-require_relative '../geom/segment'
-require_relative '../geom/rectangle'
 require_relative './pdf_render'
-#CLASSPATH=:./target/javacpp.jar:./target/javacv.jar:./target/javacv-macosx-x86_64.jar:./target/PDFRenderer-0.9.1.jar
-
+require_relative './core_ext'
 
 module Tabula
   module TableGuesser
@@ -59,9 +55,11 @@ module Tabula
     end
 
     def TableGuesser.find_rects_from_lines(lines)
-      horizontal_lines = lines.select &:horizontal?
-      vertical_lines = lines.select &:vertical?
-      find_tables(vertical_lines, horizontal_lines).inject([]){|memo, next_rect| Geometry::Rectangle.unionize(memo, next_rect )}.sort_by(&:area).reverse
+      horizontal_lines = lines.select(&:horizontal?)
+      vertical_lines = lines.select(&:vertical?)
+      find_tables(vertical_lines, horizontal_lines).inject([]) do |memo, next_rect|
+        java.awt.geom.Rectangle2D::Float.unionize( memo, next_rect )
+      end.compact.reject{|r| r.area == 0 }.sort_by(&:area).reverse
     end
 
 
@@ -75,13 +73,13 @@ module Tabula
     end
 
     def TableGuesser.find_tables(verticals, horizontals)
-      # /*
-      #  * Find all the rectangles in the vertical and horizontal lines given.
-      #  *
-      #  * Rectangles are deduped with hashRectangle, which considers two rectangles identical if each point rounds to the same tens place as the other.
-      #  *
-      #  * TODO: generalize this.
-      #  */
+      #
+      # Find all the rectangles in the vertical and horizontal lines given.
+      #
+      # Rectangles are deduped with hashRectangle, which considers two rectangles identical if each point rounds to the same tens place as the other.
+      #
+      # TODO: generalize this.
+      #
       corner_proximity_threshold = 0.10;
 
       rectangles = []
@@ -139,7 +137,7 @@ module Tabula
 
             y = [left_vertical_line.top, right_vertical_line.top].min
             width = horizontal_line.right - horizontal_line.left
-            r = Geometry::Rectangle.new_by_x_y_dims(horizontal_line.left, y, width, height ) #x, y, w, h
+            r = java.awt.geom.Rectangle2D::Float.new( horizontal_line.left, y, width, height ) #x, y, w, h
             #rectangles.put(hashRectangle(r), r); #TODO: I dont' think I need this now that I'm in Rubyland
             rectangles << r
           end
@@ -187,7 +185,7 @@ module Tabula
             y = vertical_line.top
             width = [top_horizontal_line.right - top_horizontal_line.left, bottom_horizontal_line.right - bottom_horizontal_line.right].max
             height = vertical_line.bottom - vertical_line.top
-            r = Geometry::Rectangle.new_by_x_y_dims(x, y, width, height); #x, y, w, h
+            r = java.awt.geom.Rectangle2D::Float.new( x, y, width, height ) #x, y, w, h
             #rectangles.put(hashRectangle(r), r);
             rectangles << r
           end

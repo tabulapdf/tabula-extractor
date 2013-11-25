@@ -1,10 +1,9 @@
-require 'observer'
-
 require_relative './entities.rb'
 
 require 'java'
 require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
 java_import org.apache.pdfbox.pdfparser.PDFParser
+java_import org.apache.pdfbox.util.TextPosition
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.util.PDFTextStripper
 java_import org.apache.pdfbox.pdmodel.encryption.StandardDecryptionMaterial
@@ -23,42 +22,140 @@ module Tabula
       document
     end
 
-    class TextExtractor < org.apache.pdfbox.util.PDFTextStripper
+    class TextExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
-      attr_accessor :characters, :fonts
+      attr_accessor :characters, :debug_text
+      field_accessor :pageSize, :page, :graphics
+
 
       PRINTABLE_RE = /[[:print:]]/
 
       def initialize
         super
-        self.fonts = {}
         self.characters = []
-        self.setSortByPosition(true)
+        @graphics = java.awt.Graphics2D
       end
 
       def clear!
-        self.characters = []; self.fonts = {}
+        self.characters = []
+      end
+
+      def ensurePageSize!
+        if self.pageSize.nil? && !self.page.nil?
+          mediaBox = self.page.findMediaBox
+          self.pageSize = (mediaBox == nil ? nil : mediaBox.createDimension)
+        end
+      end
+
+      def drawPage(page)
+        self.page = page
+        if !self.page.getContents.nil?
+          ensurePageSize!
+          self.processStream(self.page,
+                             self.page.findResources,
+                             self.page.getContents.getStream)
+        end
+      end
+
+      def setStroke(stroke)
+        @basicStroke = stroke
+      end
+
+      def getStroke
+        @basicStroke
+      end
+
+      def strokePath
+        self.getLinePath.reset
+      end
+
+      def fillPath(windingRule)
+        self.getLinePath.reset
+      end
+
+      def drawImage(image, at)
+      end
+
+      def transformClippingPath(cp)
+        return cp if self.page.getRotation.nil? || !([90, -270, -90, 270].include?(self.page.getRotation))
+
+        mb = self.page.getMediaBox
+
+        rotate = AffineTransform.getRotateInstance(self.page.getRotation * (Math::PI/180.0),
+                                                   mb.getLowerLeftX, mb.getLowerLeftY)
+
+
+        trans = if page.getRotation == 90 || page.getRotation == -270
+                  AffineTransform.getTranslateInstance(mb.getHeight, 0)
+                else
+                  AffineTransform.getTranslateInstance(0, mb.getWidth)
+                end
+        trans.concatenate(rotate)
+        return cp.createTransformedShape(trans)
       end
 
       def processTextPosition(text)
-        # return if text.getCharacter == ' '
-
-        # text_font = text.getFont
-        # text_size = text.getFontSize
-        # font_plus_size = self.fonts.select { |k, v| v == text_font }.first.first + "-" + text_size.to_i.to_s
-
-        # $fonts[$current_page].merge!({
-        #   font_plus_size => { :family => text_font.getBaseFont, :size => text_size }
-        # })
-
-        #    $page_contents[$current_page] += "  <text top=\"%.2f\" left=\"%.2f\" width=\"%.2f\" height=\"%.2f\" font=\"#{font_plus_size}\" dir=\"#{text.getDir}\">#{text.getCharacter}</text>\n" % [text.getYDirAdj - text.getHeightDir, text.getXDirAdj, text.getWidthDirAdj, text.getHeightDir]
-
         c = text.getCharacter
-        # probably not the fastest way of detecting printable chars
-        self.characters << text  if c =~ PRINTABLE_RE
+        h = c == ' ' ? text.getWidthDirAdj.round(2) : text.getHeightDir.round(2)
 
+        te = Tabula::TextElement.new(text.getYDirAdj.round(2) - h,
+                                     text.getXDirAdj.round(2),
+                                     text.getWidthDirAdj.round(2),
+                                     # ugly hack follows: we need spaces to have a height, so we can
+                                     # test for vertical overlap. height == width seems a safe bet.
+                                     h,
+                                     text.getFont,
+                                     text.getFontSize.round(2),
+                                     c,
+                                     # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
+                                     text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
+        ccp = self.getGraphicsState.getCurrentClippingPath
+        if c =~ PRINTABLE_RE && self.transformClippingPath(ccp).getBounds2D.intersects(te)
+            self.characters << te
+        end
+      end
+
+      protected
+
+      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
+      def currentSpaceWidth
+        gs = self.getGraphicsState
+        font = gs.getTextState.getFont
+
+        fontSizeText = gs.getTextState.getFontSize
+        horizontalScalingText = gs.getTextState.getHorizontalScalingPercent / 100.0
+
+        if font.java_kind_of?(org.apache.pdfbox.pdmodel.font.PDType3Font)
+          puts "TYPE3"
+        end
+
+        spaceWidthText = font.getFontWidth([0x20].to_java(Java::byte), 0, 1)
+
+        ctm00 = gs.getCurrentTransformationMatrix.getValue(0, 0)
+
+        return (spaceWidthText/1000.0) * fontSizeText * horizontalScalingText * (ctm00 == 0 ? 1 : ctm00)
+      end
+
+      def debugPath(path)
+        iterator = path.getPathIterator(java.awt.geom.AffineTransform.new)
+        coords = Java::double[6].new
+        rv = ''
+        while !iterator.isDone do
+          segType = iterator.currentSegment(coords)
+          case segType
+          when java.awt.geom.PathIterator::SEG_MOVETO
+            rv += "MOVE: #{coords[0]} #{coords[1]}\n"
+          when java.awt.geom.PathIterator::SEG_LINETO
+            rv += "LINE: #{coords[0]} #{coords[1]}\n"
+          when java.awt.geom.PathIterator::SEG_CLOSE
+            rv += "CLOSE\n\n"
+          end
+          iterator.next
+        end
+        rv
       end
     end
+
 
     class PagesInfoExtractor
       def initialize(pdf_filename, password='')
@@ -71,11 +168,11 @@ module Tabula
           begin
             @all_pages.each_with_index do |page, i|
               contents = page.getContents
-#              next if contents.nil?
+
               y.yield Tabula::Page.new(page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
-                                       i+1)
+                                       i+1) #remember, these are one-indexed
             end
           ensure
             @pdf_file.close
@@ -86,9 +183,8 @@ module Tabula
 
 
     class CharacterExtractor
-      include Observable
-
       #N.B. pages can be :all, a list of pages or a range.
+      #     but if it's a list or a range, it's one-indexed
       def initialize(pdf_filename, pages=[1], password='')
         raise Errno::ENOENT unless File.exists?(pdf_filename)
         @pdf_file = Extraction.openPDF(pdf_filename, password)
@@ -105,22 +201,12 @@ module Tabula
               contents = page.getContents
               next if contents.nil?
               @extractor.clear!
-              @extractor.processStream(page, page.findResources, contents.getStream)
-
+              @extractor.drawPage page
               y.yield Tabula::Page.new(page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
-                                       i+1,
-                                       @extractor.characters.map { |char|
-                                         Tabula::TextElement.new(char.getYDirAdj.round(2),
-                                                                 char.getXDirAdj.round(2),
-                                                                 char.getWidthDirAdj.round(2),
-                                                                 char.getHeightDir.round(2),
-                                                                 char.getFont,
-                                                                 char.getFontSize.round(2),
-                                                                 char.getCharacter,
-                                                                 char.getWidthOfSpace)
-                                       })
+                                       i, #one-indexed, just like `i` is.
+                                       @extractor.characters)
             end
           ensure
             @pdf_file.close
