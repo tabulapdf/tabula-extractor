@@ -225,9 +225,8 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   def addRuling(ruling)
     if !page.getRotation.nil? && [90, -270, -90, 270].include?(page.getRotation)
 
-      mb = page.getMediaBox
+      mb = page.findMediaBox
 
-      # rotate = AffineTransform.getQuadrantRotateInstance(self.page.getRotation / 90, mb.getLowerLeftX, mb.getLowerLeftY)
       ruling.rotate!(mb.getLowerLeftX, mb.getLowerLeftY, page.getRotation)
 
       trans = if page.getRotation == 90 || page.getRotation == -270
@@ -236,7 +235,8 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
                 AffineTransform.getTranslateInstance(0, mb.getWidth)
               end
       scale = AffineTransform.getScaleInstance(mb.getWidth / mb.getHeight,
-                                               mb.getWidth / mb.getHeight)
+
+                                             mb.getWidth / mb.getHeight)
       scale.concatenate(trans)
       ruling.transform!(scale)
     end
