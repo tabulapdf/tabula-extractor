@@ -43,6 +43,10 @@ class Point2D::Float
   def inspect
     toString
   end
+
+  def to_json(*args)
+    [self.getX, self.getY].to_json(*args)
+  end
 end
 
 class Line2D::Float
