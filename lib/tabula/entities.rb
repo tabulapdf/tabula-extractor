@@ -392,9 +392,6 @@ module Tabula
 
     attr_accessor :stroking_color
     EXPANSION_COEFFICIENT = 0.01
-    PIXEL_BLOOP_AMOUNT = 2
-
-
     def initialize(top, left, width, height, stroking_color=nil)
       super(top, left, width, height)
       self.stroking_color = stroking_color
@@ -426,26 +423,34 @@ module Tabula
       r >= 0 && r < 1 && s >= 0 && s < 1
     end
 
-    # ugh I can't come up with a good name for this
-    # but what it does is expand each line outwards by EXPANSION_COEFFICIENT in each direction
-    # then we can (in #nearlyIntersects?) check if lines nearly intersect -- i.e. if their blooped counterparts strictly intersect
-    def bloop
-      r = Ruling.new(self.top, self.left, self.width, self.height)
-      if r.horizontal?
-        r.left = r.left - PIXEL_BLOOP_AMOUNT #* (1 - EXPANSION_COEFFICIENT)
-        r.right = (r.right + PIXEL_BLOOP_AMOUNT) #* (1 + EXPANSION_COEFFICIENT)
-      elsif r.vertical?
-        r.top = r.top - PIXEL_BLOOP_AMOUNT #* (1 - EXPANSION_COEFFICIENT)
-        r.bottom = r.bottom + PIXEL_BLOOP_AMOUNT #* (1 + EXPANSION_COEFFICIENT)
-      end
-      r
-    end
+
+    #ok wtf are you doing, Jeremy?
+    # some PDFs (garment factory audits, precise link TK) make tables by drawing lines that
+    # very nearly intersect each other, but not quite. E.g. a horizontal line spans the table at a Y val of 100
+    # and each vertical line (i.e. column separating ruling line) starts at 101 or 102.
+    # this is very annoying. so we check if those lines nearly overlap by expanding each pair
+    # by 2 pixels in each direction (so the vertical lines' top becomes 99 or 100, and then the expanded versions overlap)
+
+    PERPENDICULAR_PIXEL_EXPAND_AMOUNT = 2
+    COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT = 1
+
+    # if the lines we're comparing are colinear or parallel, we expand them by a only 1 pixel,
+    # because the expansions are additive
+    # (e.g. two vertical lines, at x = 100, with one having y2 of 98 and the other having y1 of 102 would
+    # erroneously be said to nearlyIntersect if they were each expanded by 2 (since they'd both terminate at 100).
+    # The COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT is only 1 so the total expansion is 2.
+    # A total expansion amount of 2 is empirically verified to work sometime. It's not a magic number from any
+    # source other than a little bit of experience.)
 
     def nearlyIntersects?(another)
       if self.to_line.intersectsLine(another.to_line)
         return true
       else
-        result = self.bloop.to_line.intersectsLine(another.bloop.to_line)
+        if self.perpendicular_to?(another)
+          result = self.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line.intersectsLine(another.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line)
+        else
+          result = self.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT).to_line.intersectsLine(another.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT).to_line)
+        end
         return result
       end
     end
@@ -457,6 +462,18 @@ module Tabula
       self.bottom = i.bottom
       self.right  = i.right
       self
+    end
+
+    def expand(amt)
+      r = Ruling.new(self.top, self.left, self.width, self.height)
+      if r.horizontal?
+        r.left = r.left - amt
+        r.right = (r.right + amt)
+      elsif r.vertical?
+        r.top = r.top - amt
+        r.bottom = r.bottom + amt
+      end
+      r
     end
 
     #for comparisons, deprecate when this inherits from Line2D
@@ -474,6 +491,10 @@ module Tabula
 
     def horizontal?
       top == bottom
+    end
+
+    def perpendicular_to?(other)
+      return self.vertical? == other.horizontal?
     end
 
     def right
