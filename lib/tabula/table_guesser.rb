@@ -81,7 +81,7 @@ module Tabula
       #
       # TODO: generalize this.
       #
-      corner_proximity_threshold = 0.10;
+      corner_proximity_threshold = 0.005;
 
       rectangles = []
       #find rectangles with one horizontal line and two vertical lines that end within $threshold to the ends of the horizontal line.
@@ -136,9 +136,10 @@ module Tabula
             #in case we eventually tolerate not-quite-vertical lines, this computers the distance in Y directly, rather than depending on the vertical lines' lengths.
             height = [left_vertical_line.bottom - left_vertical_line.top, right_vertical_line.bottom - right_vertical_line.top].max
 
-            y = [left_vertical_line.top, right_vertical_line.top].min
+            top = [left_vertical_line.top, right_vertical_line.top].min
             width = horizontal_line.right - horizontal_line.left
-            r = java.awt.geom.Rectangle2D::Float.new( horizontal_line.left, y, width, height ) #x, y, w, h
+            left = horizontal_line.left
+            r = java.awt.geom.Rectangle2D::Float.new( left, top, width, height ) #x, y, w, h
             #rectangles.put(hashRectangle(r), r); #TODO: I dont' think I need this now that I'm in Rubyland
             rectangles << r
           end
