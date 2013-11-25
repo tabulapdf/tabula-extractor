@@ -290,11 +290,6 @@ module Tabula
         self.height = t.height
       else
         if in_same_column = @text_elements.find { |te| te.horizontally_overlaps?(t) }
-          #sometimes a space needs to be added here
-          # TODO: @jeremybmerill why? Commenting this out for now
-#          unless in_same_column.vertically_overlaps?(t)
-#            t.text = " " + t.text
-#          end
           in_same_column.merge!(t)
         else
           self.text_elements << t
