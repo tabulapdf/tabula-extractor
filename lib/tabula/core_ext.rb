@@ -39,9 +39,19 @@ module Enumerable
 
 end
 
+class Point2D::Float
+  def inspect
+    toString
+  end
+end
+
 class Line2D::Float
   def to_json(*args)
     [self.getX1, self.getY1, self.getX2, self.getY2].to_json(*args)
+  end
+
+  def inspect
+    "<Line2D::Float[(#{self.getX1},#{self.getY1}),(#{self.getX2},#{self.getY2})]>"
   end
 
   def rotate!(pointX, pointY, amount)
