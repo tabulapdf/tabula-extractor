@@ -381,6 +381,8 @@ module Tabula
                        det.call(x3, y3, x4, y4), y3 - y4) /
         det.call(x1 - x2, y1 - y2, x3 - x4, y3 - y4)
 
+      return nil if int_x.nan? || int_y.nan? # TODO is this right?
+
       java.awt.geom.Point2D::Float.new(int_x, int_y)
     end
 
@@ -391,7 +393,8 @@ module Tabula
       horizontals.product(verticals).inject({}) { |memo, (h, v)|
         ip = h.intersection_point(v)
         unless ip.nil?
-          memo[ip] = [h, v]
+          memo[ip] ||= []
+          memo[ip] << [h, v]
         end
         memo
       }
