@@ -24,6 +24,17 @@ module Tabula
       self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.left, self.top, self.width, self.height
     end
 
+    ##
+    # default sorting order for ZoneEntity objects
+    # is lexicographical (left to right, top to bottom)
+    def <=>(other)
+      return  1 if self.left > other.left
+      return -1 if self.left < other.left
+      return  1 if self.top  > other.top
+      return -1 if self.top  < other.top
+      return  0
+    end
+
     def to_json(options={})
       self.to_h.to_json
     end
@@ -70,16 +81,17 @@ module Tabula
     end
 
     # get text, optionally from a provided area in the page [top, left, bottom, right]
+    ##
+    # get text insidea area
+    # area can be an Array ([top, left, width, height])
+    # or a Rectangle2D
     def get_text(area=nil)
-      area = [0, 0, width, height] if area.nil?
-
       # spaces are not detected, b/c they have height == 0
       # ze = ZoneEntity.new(area[0], area[1], area[3] - area[1], area[2] - area[0])
       # self.texts.select { |t| t.overlaps? ze }
-      texts = self.texts.select do |t|
+      self.texts.select do |t|
         t.top > area[0] && t.top + t.height < area[2] && t.left > area[1] && t.left + t.width < area[3]
       end
-      texts
     end
 
     def get_cell_text(area=nil)
@@ -141,6 +153,82 @@ module Tabula
     end
   end
 
+  ##
+  # a "collection" of TextElements
+  class TextChunk < ZoneEntity
+    attr_accessor :font, :font_size, :text_elements, :width_of_space
+
+    ##
+    # initialize a new TextChunk from a TextElement
+    def self.create_from_text_element(text_element)
+      raise TypeError, "argument is not a TextElement" unless text_element.instance_of?(TextElement)
+      tc = self.new(text_element.top, text_element.left, text_element.width, text_element.height)
+      tc.text_elements = [text_element]
+      return tc
+    end
+
+    ##
+    # add a TextElement to this TextChunk
+    def <<(text_element)
+      self.text_elements << text_element
+      self.merge!(text_element)
+    end
+
+    def merge!(other)
+      if other.instance_of?(TextChunk)
+        if self.horizontally_overlaps?(other) and other.top < self.top
+          self.text_elements = other.text_elements + self.text_elements
+        else
+          self.text_elements = self.text_elements + other.text_elements
+        end
+      end
+      super(other)
+    end
+
+    ##
+    # split this TextChunk vertically
+    # (in place, returns the remaining chunk)
+    def split_vertically!(y)
+      raise "Not Implemented"
+    end
+
+    ##
+    # remove leading and trailing whitespace
+    # (changes geometry accordingly)
+    # TODO horrible implementation - fix.
+    def strip!
+      acc = 0
+      new_te = self.text_elements.drop_while { |te|
+        te.text == ' ' && acc += 1
+      }
+      self.left += self.text_elements.take(acc).inject(0) { |m, te| m += te.width }
+      self.text_elements = new_te
+
+      self.text_elements.reverse!
+      acc = 0
+      new_te = self.text_elements.drop_while { |te|
+        te.text == ' ' && acc += 1
+      }
+      self.right -= self.text_elements.take(acc).inject(0) { |m, te| m += te.width }
+      self.text_elements = new_te.reverse
+      self
+    end
+
+    def text
+      self.text_elements.map(&:text).join
+    end
+
+    def inspect
+      "#<TextChunk: #{self.top.round(2)},#{self.left.round(2)},#{self.bottom.round(2)},#{right.round(2)} '#{self.text}'>"
+    end
+
+    def to_h
+      super.merge(:text => self.text)
+    end
+  end
+
+  ##
+  # a Glyph
   class TextElement < ZoneEntity
     attr_accessor :font, :font_size, :text, :width_of_space
 
@@ -159,21 +247,16 @@ module Tabula
     # more or less returns True if distance < tolerance
     def should_merge?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-      overlaps = self.vertically_overlaps?(other)
 
-      tolerance = ((self.width + other.width) / 2) * TOLERANCE_FACTOR
-
-      overlaps && self.horizontal_distance(other) < width_of_space * 1.1 && !self.should_add_space?(other)
+      self.vertically_overlaps?(other) && self.horizontal_distance(other) < width_of_space * 1.1 && !self.should_add_space?(other)
     end
 
     # more or less returns True if (tolerance <= distance < CHARACTER_DISTANCE_THRESHOLD*tolerance)
     def should_add_space?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
 
-      overlaps = self.vertically_overlaps?(other)
-
-      dist = self.horizontal_distance(other).abs
-      overlaps && dist.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))
+      self.vertically_overlaps?(other) \
+        && self.horizontal_distance(other).abs.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))
     end
 
     def merge!(other)
@@ -187,15 +270,11 @@ module Tabula
     end
 
     def to_h
-      hash = super
-      [:font, :text].each do |m|
-        hash[m] = self.send(m)
-      end
-      hash
+      super.merge({:font => self.font, :text => self.text })
     end
 
     def inspect
-      "#<TextElement: #{self.top.round(2)},#{self.left.round(2)},#{self.bottom.round(2)},#{right.round(2)} '#{self.text}'"
+      "#<TextElement: #{self.top.round(2)},#{self.left.round(2)},#{self.bottom.round(2)},#{right.round(2)} '#{self.text}'>"
     end
 
     def ==(other)
@@ -220,8 +299,6 @@ module Tabula
         @lines[i].text_elements[j] = text_element
       end
     end
-
-    #TODO: move to csv/tsv 'writer' methods here
 
     # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
     # probably only used for testing
@@ -260,10 +337,7 @@ module Tabula
       self.instance_variable_set(:@lines, self.lines.rpad(nil, other.lines.size))
       other.instance_variable_set(:@lines, other.lines.rpad(nil, self.lines.size))
 
-      self.lines.zip(other.lines).inject(true) do |memo, my_yours|
-        my, yours = my_yours
-        memo && my == yours
-      end
+      self.lines.zip(other.lines).all? { |my, yours| my == yours }
 
     end
   end
@@ -287,9 +361,10 @@ module Tabula
       else
         if in_same_column = @text_elements.find { |te| te.horizontally_overlaps?(t) }
           #sometimes a space needs to be added here
-          unless in_same_column.vertically_overlaps?(t)
-            t.text = " " + t.text
-          end
+          # TODO: @jeremybmerill why? Commenting this out for now
+#          unless in_same_column.vertically_overlaps?(t)
+#            t.text = " " + t.text
+#          end
           in_same_column.merge!(t)
         else
           self.text_elements << t
@@ -308,46 +383,6 @@ module Tabula
         memo && my == yours
       end
     end
-  end
-
-  class Column < ZoneEntity
-    attr_accessor :text_elements
-
-    def initialize(left, width, text_elements=[])
-      super(0, left, width, 0)
-      @text_elements = text_elements
-    end
-
-    def <<(te)
-      self.text_elements << te
-      self.update_boundaries!(te)
-      self.text_elements.sort_by! { |t| t.top }
-    end
-
-    def update_boundaries!(text_element)
-      self.merge!(text_element)
-    end
-
-    # this column can be merged with other_column?
-    def contains?(other_column)
-      self.horizontally_overlaps?(other_column)
-    end
-
-    def average_line_distance
-      # avg distance between lines
-      # this might help to MERGE lines that are shouldn't be split
-      # e.g. cells with > 1 lines of text
-      1.upto(self.text_elements.size - 1).map { |i|
-        self.text_elements[i].top - self.text_elements[i - 1].top
-      }.inject{ |sum, el| sum + el }.to_f / self.text_elements.size
-    end
-
-    def inspect
-      vars = (self.instance_variables - [:@text_elements]).map{ |v| "#{v}=#{instance_variable_get(v).inspect}" }
-      texts = self.text_elements.sort_by { |te| te.top }.map { |te| te.text }
-      "<#{self.class}: #{vars.join(', ')}, @text_elements=[#{texts.join('], [')}]>"
-    end
-
   end
 
   require_relative './core_ext'
@@ -415,6 +450,15 @@ module Tabula
       end
     end
 
+    def intersect(area)
+      i = self.createIntersection(area)
+      self.top    = i.top
+      self.left   = i.left
+      self.bottom = i.bottom
+      self.right  = i.right
+      self
+    end
+
     #for comparisons, deprecate when this inherits from Line2D
     def to_line
       java.awt.geom.Line2D::Float.new(left, top, right, bottom)
@@ -442,6 +486,17 @@ module Tabula
 
     def to_json(arg)
       [left, top, right, bottom].to_json
+    end
+
+    # crop an enumerable of +Ruling+ to an +area+
+    def self.crop_rulings_to_area(rulings, area)
+      rulings.reduce([]) do |memo, r|
+        if r.to_line.intersects(area)
+          i = r.createIntersection(area)
+          memo << self.new(i.getY, i.getX, i.getWidth, i.getHeight)
+        end
+        memo
+      end
     end
 
     def self.clean_rulings(rulings, max_distance=4)
@@ -537,10 +592,7 @@ module Tabula
       super(top, left, width, height)
       @placeholder = false
       @merged = false
-<<<<<<< HEAD
-=======
       @text_elements = []
->>>>>>> garments
     end
 
     def text(debug=false)
@@ -580,22 +632,14 @@ module Tabula
         @horizontal_ruling_lines.each_with_index do |top_ruling, j|
 
           next if top_ruling.top == horizontal_uniq_locs.last
-<<<<<<< HEAD
-          next unless top_ruling.to_line.intersectsLine(left_ruling.to_line)
-=======
           next unless top_ruling.nearlyIntersects?(left_ruling)
->>>>>>> garments
 
           #find the vertical line with (a) a left strictly greater than left_ruling's
           #                            (b) a top non-strictly smaller than top_ruling's
           #                            (c) the lowest left of all other vertical rulings that fit (a) and (b).
           #                            (d) if married and filing jointly, the subtract $6,100 (standard deduction) and amount from line 32 (adjusted gross income)
           candidate_right_rulings = @vertical_ruling_lines[i+1..-1].select{|l| l.left > left_ruling.left } # (a)
-<<<<<<< HEAD
-          candidate_right_rulings.select!{|l| l.to_line.intersectsLine(top_ruling.to_line) && l.bottom > top_ruling.top} #TODO make a better intersection function to check for this.
-=======
           candidate_right_rulings.select!{|l| l.nearlyIntersects?(top_ruling) && l.bottom > top_ruling.top} #TODO make a better intersection function to check for this.
->>>>>>> garments
           if candidate_right_rulings.empty?
             # TODO: why does THIS ever happen?
             # Oh, presumably because there's a broken line at the end?
@@ -604,12 +648,6 @@ module Tabula
           end
           right_ruling = candidate_right_rulings.sort_by{|l| l.left }[0] # (c)
 
-<<<<<<< HEAD
-          #find the horizontal line with (a) intersections with left_ruling and right_ruling
-          #                              (b) the lowest top that is strictly greater than top_ruling's
-          candidate_bottom_rulings = @horizontal_ruling_lines[j+1..-1].select{|l| l.top > top_ruling.top }
-          candidate_bottom_rulings.select!{|l| l.to_line.intersectsLine(right_ruling.to_line) && l.to_line.intersectsLine(left_ruling.to_line)}
-=======
           #random debug crap
           # if left_ruling.left == vertical_uniq_locs[0] && top_ruling.top == horizontal_uniq_locs[0]
           #   candidate_right_rulings = @vertical_ruling_lines[i+1..-1].select{|l| l.left > left_ruling.left }.select{|l| l.left == 142.0 }
@@ -620,7 +658,6 @@ module Tabula
           #                              (b) the lowest top that is strictly greater than top_ruling's
           candidate_bottom_rulings = @horizontal_ruling_lines[j+1..-1].select{|l| l.top > top_ruling.top }
           candidate_bottom_rulings.select!{|l| l.nearlyIntersects?(right_ruling) && l.nearlyIntersects?(left_ruling)}
->>>>>>> garments
           if candidate_bottom_rulings.empty?
             next
           end
@@ -634,19 +671,12 @@ module Tabula
           c = Cell.new(cell_top, cell_left, cell_width, cell_height)
           @cells << c
 
-<<<<<<< HEAD
-          #if c is a "merged cell", that is
-          #              if there are N>0 vertical lines strictly between this cell's left and right
-          #insert N placeholder cells after it with zero size (but same top)
-          #TODO: support vertically merged cells
-=======
           ##########################
           # Chapter 2, Merged Cells
           ##########################
           #if c is a "merged cell", that is
           #              if there are N>0 vertical lines strictly between this cell's left and right
           #insert N placeholder cells after it with zero size (but same top)
->>>>>>> garments
           vertical_rulings_merged_over = vertical_uniq_locs.select{|l| l > c.left && l < c.right }
           horizontal_rulings_merged_over = horizontal_uniq_locs.select{|t| t > c.top && t < c.bottom }
 
@@ -695,11 +725,6 @@ module Tabula
 
     def rows
       tops = cells.map(&:top).uniq.sort
-<<<<<<< HEAD
-      tops.map do |top|
-        cells.select{|c| c.top == top }.sort_by(&:left)
-      end
-=======
       array_of_rows = tops.map do |top|
         cells.select{|c| c.top == top }.sort_by(&:left)
       end
@@ -719,7 +744,6 @@ module Tabula
         array_of_rows[0].sort_by!(&:left)
       end
       array_of_rows
->>>>>>> garments
     end
 
     def cols
@@ -729,13 +753,10 @@ module Tabula
       end
     end
 
-<<<<<<< HEAD
-=======
     def to_a
       rows.map{|row| row.map(&:text)}
     end
 
->>>>>>> garments
     def to_csv
       rows.map do |row|
         CSV.generate_line(row.map(&:text), row_sep: "\r\n")
@@ -743,16 +764,8 @@ module Tabula
     end
     def to_tsv
       rows.map do |row|
-<<<<<<< HEAD
-        row.map(&:text).join("\t") + "\n"
-      end.join('')
-    end
-  end
-
-=======
         CSV.generate_line(row.map(&:text), col_sep: "\t", row_sep: "\r\n")
       end.join('')
     end
   end
->>>>>>> garments
 end

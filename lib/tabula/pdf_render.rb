@@ -31,7 +31,6 @@ module Tabula
       rotation = java.lang.Math.toRadians(page.findRotation)
 
       scaling = width / (rotation == 0 ? widthPt : heightPt)
-      #widthPx, heightPx = java.lang.Math.round(widthPt * scaling), java.lang.Math.round(heightPt * scaling)
       widthPx, heightPx = (java.lang.Math.java_send :round, [Java::float], widthPt * scaling ), (java.lang.Math.java_send :round, [Java::float], heightPt * scaling)
 
 
@@ -65,4 +64,3 @@ if __FILE__ == $0
   ImageIO.write(bi, 'png',
                 java.io.File.new('notext.png'))
 end
-
