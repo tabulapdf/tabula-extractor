@@ -152,6 +152,20 @@ class TestDumper < Minitest::Test
   end
 end
 
+class TestRulingIntersection < Minitest::Test
+  def test_ruling_intersection
+    horizontals = [Tabula::Ruling.new(10, 1, 10, 0)]
+    verticals   = [Tabula::Ruling.new(1, 3, 0, 11)]
+    ints = Tabula::Ruling.find_intersections(horizontals, verticals).to_a
+    assert_equal ints.first.first.getX, 3.0
+    assert_equal ints.first.first.getY, 10.0
+
+    verticals =   [Tabula::Ruling.new(20, 3, 0, 11)]
+    ints = Tabula::Ruling.find_intersections(horizontals, verticals).to_a
+    assert_equal ints.size, 0
+  end
+end
+
 class TestExtractor < Minitest::Test
 
   def test_table_extraction_1
