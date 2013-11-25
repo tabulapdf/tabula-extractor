@@ -92,19 +92,36 @@ class Rectangle2D::Float
   end
 
   def top=(new_y)
-    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, new_y, self.width, self.height
+    if new_y > self.bottom
+      bottom= new_y
+    else
+      delta_height = new_y - self.y
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, new_y, self.width, (self.height - delta_height)
+    end
+  end
+  def bottom=(new_y2)
+    if new_y2 < self.top
+      top= new_y2
+    else
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, self.width, new_y2 - self.y
+    end
   end
 
   def left=(new_x)
-    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], new_x, self.y, self.width, self.height
-  end
-
-  def bottom=(new_y2)
-    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, self.width, new_y2 - self.y
+    if new_x > self.right
+      right= new_x
+    else
+      delta_width = new_x - self.x
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], new_x, self.y, self.width - delta_width, self.height
+    end
   end
 
   def right=(new_x2)
-    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, new_x2 - self.x, self.height
+    if new_x2 < self.left
+      left= new_x2
+    else
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, new_x2 - self.x, self.height
+    end
   end
 
   def area

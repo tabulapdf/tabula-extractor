@@ -90,12 +90,7 @@ def main
         puts (page_index + 1).to_s + ', ' + page_area.to_s
       else
         text = page.get_text( page_area )
-        table = if vertical_rulings.nil?
-                  Tabula.make_table(text)
-                else
-                  Tabula.make_table_with_vertical_rulings(text,
-                                                          :vertical_rulings => rulings_from_columns(page, area, vertical_rulings))
-                end
+        table = Tabula.make_table(text, vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(page, area, vertical_rulings) })
         Tabula::Writers.send(opts[:format].to_sym,
                             table,
                             out)

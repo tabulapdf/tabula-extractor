@@ -56,6 +56,19 @@ module Tabula
       end
     end
 
+    def ruling_lines(options={})
+      if @ruling_lines.empty?
+        @ruling_lines = get_ruling_lines(options)
+      end
+      @ruling_lines
+    end
+
+    #memoize the ruling lines, since getting them can hypothetically be expensive
+    def get_ruling_lines(options={})
+      options[:render_pdf] ||= false
+      Tabula::Extraction::LineExtractor.lines_in_pdf_page(file_path, number(:zero_indexed), options)
+    end
+
     # get text, optionally from a provided area in the page [top, left, bottom, right]
     def get_text(area=nil)
       area = [0, 0, width, height] if area.nil?
@@ -98,6 +111,24 @@ module Tabula
     def get_ruling_lines(options={})
       options[:render_pdf] ||= false
       Tabula::Extraction::LineExtractor.lines_in_pdf_page(file_path, number(:zero_indexed), options)
+    end
+
+    def get_cell_text(area=nil)
+      area = Rectangle2D::Float.new(0, 0, width, height) if area.nil?
+      # puts ""
+
+      texts = self.texts.select do |t|
+        # if t.top >= 76.0 && t.bottom <= 84
+        #   puts [t.text, t.top, t.bottom].inspect
+        # end
+        t.top.between?(area.top, area.bottom) &&
+        #t.top >= area.top && t.vertical_midpoint <= area.bottom) && \
+        t.horizontal_midpoint.between?(area.left, area.right)
+        #t.horizontal_midpoint >= area.left && t.horizontal_midpoint <= area.right
+      end
+      # puts ""
+
+      texts
     end
 
     def to_json(options={})
@@ -161,6 +192,10 @@ module Tabula
         hash[m] = self.send(m)
       end
       hash
+    end
+
+    def inspect
+      "#<TextElement: #{self.top.round(2)},#{self.left.round(2)},#{self.bottom.round(2)},#{right.round(2)} '#{self.text}'"
     end
 
     def ==(other)
@@ -321,6 +356,9 @@ module Tabula
   class Ruling < ZoneEntity
 
     attr_accessor :stroking_color
+    EXPANSION_COEFFICIENT = 0.01
+    PIXEL_BLOOP_AMOUNT = 2
+
 
     def initialize(top, left, width, height, stroking_color=nil)
       super(top, left, width, height)
@@ -344,10 +382,37 @@ module Tabula
       end
     end
 
+    # 2D line intersection test taken from comp.graphics.algorithms FAQ
+    def intersects?(other)
+      r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
+        / ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
+      s = ((self.top-other.top)*(self.right-self.left) - (self.left-other.left)*(self.bottom-self.top)) \
+        / ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
+      r >= 0 && r < 1 && s >= 0 && s < 1
+    end
 
-    #for comparisons, deprecate when this inherits from Line2D
-    def to_line
-      java.awt.geom.Line2D::Float.new(left, top, right, bottom)
+    # ugh I can't come up with a good name for this
+    # but what it does is expand each line outwards by EXPANSION_COEFFICIENT in each direction
+    # then we can (in #nearlyIntersects?) check if lines nearly intersect -- i.e. if their blooped counterparts strictly intersect
+    def bloop
+      r = Ruling.new(self.top, self.left, self.width, self.height)
+      if r.horizontal?
+        r.left = r.left - PIXEL_BLOOP_AMOUNT #* (1 - EXPANSION_COEFFICIENT)
+        r.right = (r.right + PIXEL_BLOOP_AMOUNT) #* (1 + EXPANSION_COEFFICIENT)
+      elsif r.vertical?
+        r.top = r.top - PIXEL_BLOOP_AMOUNT #* (1 - EXPANSION_COEFFICIENT)
+        r.bottom = r.bottom + PIXEL_BLOOP_AMOUNT #* (1 + EXPANSION_COEFFICIENT)
+      end
+      r
+    end
+
+    def nearlyIntersects?(another)
+      if self.to_line.intersectsLine(another.to_line)
+        return true
+      else
+        result = self.bloop.to_line.intersectsLine(another.bloop.to_line)
+        return result
+      end
     end
 
     #for comparisons, deprecate when this inherits from Line2D
@@ -472,6 +537,10 @@ module Tabula
       super(top, left, width, height)
       @placeholder = false
       @merged = false
+<<<<<<< HEAD
+=======
+      @text_elements = []
+>>>>>>> garments
     end
 
     def text(debug=false)
@@ -511,14 +580,22 @@ module Tabula
         @horizontal_ruling_lines.each_with_index do |top_ruling, j|
 
           next if top_ruling.top == horizontal_uniq_locs.last
+<<<<<<< HEAD
           next unless top_ruling.to_line.intersectsLine(left_ruling.to_line)
+=======
+          next unless top_ruling.nearlyIntersects?(left_ruling)
+>>>>>>> garments
 
           #find the vertical line with (a) a left strictly greater than left_ruling's
           #                            (b) a top non-strictly smaller than top_ruling's
           #                            (c) the lowest left of all other vertical rulings that fit (a) and (b).
           #                            (d) if married and filing jointly, the subtract $6,100 (standard deduction) and amount from line 32 (adjusted gross income)
           candidate_right_rulings = @vertical_ruling_lines[i+1..-1].select{|l| l.left > left_ruling.left } # (a)
+<<<<<<< HEAD
           candidate_right_rulings.select!{|l| l.to_line.intersectsLine(top_ruling.to_line) && l.bottom > top_ruling.top} #TODO make a better intersection function to check for this.
+=======
+          candidate_right_rulings.select!{|l| l.nearlyIntersects?(top_ruling) && l.bottom > top_ruling.top} #TODO make a better intersection function to check for this.
+>>>>>>> garments
           if candidate_right_rulings.empty?
             # TODO: why does THIS ever happen?
             # Oh, presumably because there's a broken line at the end?
@@ -527,10 +604,23 @@ module Tabula
           end
           right_ruling = candidate_right_rulings.sort_by{|l| l.left }[0] # (c)
 
+<<<<<<< HEAD
           #find the horizontal line with (a) intersections with left_ruling and right_ruling
           #                              (b) the lowest top that is strictly greater than top_ruling's
           candidate_bottom_rulings = @horizontal_ruling_lines[j+1..-1].select{|l| l.top > top_ruling.top }
           candidate_bottom_rulings.select!{|l| l.to_line.intersectsLine(right_ruling.to_line) && l.to_line.intersectsLine(left_ruling.to_line)}
+=======
+          #random debug crap
+          # if left_ruling.left == vertical_uniq_locs[0] && top_ruling.top == horizontal_uniq_locs[0]
+          #   candidate_right_rulings = @vertical_ruling_lines[i+1..-1].select{|l| l.left > left_ruling.left }.select{|l| l.left == 142.0 }
+          #   puts candidate_right_rulings.map{|l| [l.left, l.nearlyIntersects?(top_ruling), top_ruling, l]}.inspect #TODO make a better intersection function to check for this.
+          # end
+
+          #find the horizontal line with (a) intersections with left_ruling and right_ruling
+          #                              (b) the lowest top that is strictly greater than top_ruling's
+          candidate_bottom_rulings = @horizontal_ruling_lines[j+1..-1].select{|l| l.top > top_ruling.top }
+          candidate_bottom_rulings.select!{|l| l.nearlyIntersects?(right_ruling) && l.nearlyIntersects?(left_ruling)}
+>>>>>>> garments
           if candidate_bottom_rulings.empty?
             next
           end
@@ -544,10 +634,19 @@ module Tabula
           c = Cell.new(cell_top, cell_left, cell_width, cell_height)
           @cells << c
 
+<<<<<<< HEAD
           #if c is a "merged cell", that is
           #              if there are N>0 vertical lines strictly between this cell's left and right
           #insert N placeholder cells after it with zero size (but same top)
           #TODO: support vertically merged cells
+=======
+          ##########################
+          # Chapter 2, Merged Cells
+          ##########################
+          #if c is a "merged cell", that is
+          #              if there are N>0 vertical lines strictly between this cell's left and right
+          #insert N placeholder cells after it with zero size (but same top)
+>>>>>>> garments
           vertical_rulings_merged_over = vertical_uniq_locs.select{|l| l > c.left && l < c.right }
           horizontal_rulings_merged_over = horizontal_uniq_locs.select{|t| t > c.top && t < c.bottom }
 
@@ -596,9 +695,31 @@ module Tabula
 
     def rows
       tops = cells.map(&:top).uniq.sort
+<<<<<<< HEAD
       tops.map do |top|
         cells.select{|c| c.top == top }.sort_by(&:left)
       end
+=======
+      array_of_rows = tops.map do |top|
+        cells.select{|c| c.top == top }.sort_by(&:left)
+      end
+      #here, insert another kind of placeholder for empty corners
+      # like in 01001523B_China.pdf
+      #TODO: support placeholders for "empty" cells in rows other than row 1
+      zerozero =  array_of_rows[0]
+      # puts array_of_rows[0].inspect
+      if array_of_rows.size > 2
+        if array_of_rows[0].map(&:left).uniq.size < array_of_rows[1].map(&:left).uniq.size
+          missing_spots = array_of_rows[1].map(&:left) - array_of_rows[0].map(&:left)
+          # puts missing_spots.inspect
+          missing_spots.each do |missing_spot|
+            array_of_rows[0] << Cell.new(array_of_rows[0][0].top, missing_spot, 0, 0)
+          end
+        end
+        array_of_rows[0].sort_by!(&:left)
+      end
+      array_of_rows
+>>>>>>> garments
     end
 
     def cols
@@ -608,6 +729,13 @@ module Tabula
       end
     end
 
+<<<<<<< HEAD
+=======
+    def to_a
+      rows.map{|row| row.map(&:text)}
+    end
+
+>>>>>>> garments
     def to_csv
       rows.map do |row|
         CSV.generate_line(row.map(&:text), row_sep: "\r\n")
@@ -615,9 +743,16 @@ module Tabula
     end
     def to_tsv
       rows.map do |row|
+<<<<<<< HEAD
         row.map(&:text).join("\t") + "\n"
       end.join('')
     end
   end
 
+=======
+        CSV.generate_line(row.map(&:text), col_sep: "\t", row_sep: "\r\n")
+      end.join('')
+    end
+  end
+>>>>>>> garments
 end

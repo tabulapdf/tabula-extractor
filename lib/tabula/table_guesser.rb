@@ -2,7 +2,6 @@ require 'java'
 require 'json'
 require_relative './pdf_render'
 require_relative './core_ext'
-#CLASSPATH=:./target/javacpp.jar:./target/javacv.jar:./target/javacv-macosx-x86_64.jar:./target/PDFRenderer-0.9.1.jar
 
 module Tabula
   module TableGuesser
@@ -57,8 +56,8 @@ module Tabula
     end
 
     def TableGuesser.find_rects_from_lines(lines)
-      horizontal_lines = lines.select &:horizontal?
-      vertical_lines = lines.select &:vertical?
+      horizontal_lines = lines.select(&:horizontal?)
+      vertical_lines = lines.select(&:vertical?)
       find_tables(vertical_lines, horizontal_lines).inject([]) do |memo, next_rect|
         java.awt.geom.Rectangle2D::Float.unionize( memo, next_rect )
       end.compact.reject{|r| r.area == 0 }.sort_by(&:area).reverse
@@ -75,13 +74,13 @@ module Tabula
     end
 
     def TableGuesser.find_tables(verticals, horizontals)
-      # /*
-      #  * Find all the rectangles in the vertical and horizontal lines given.
-      #  *
-      #  * Rectangles are deduped with hashRectangle, which considers two rectangles identical if each point rounds to the same tens place as the other.
-      #  *
-      #  * TODO: generalize this.
-      #  */
+      #
+      # Find all the rectangles in the vertical and horizontal lines given.
+      #
+      # Rectangles are deduped with hashRectangle, which considers two rectangles identical if each point rounds to the same tens place as the other.
+      #
+      # TODO: generalize this.
+      #
       corner_proximity_threshold = 0.10;
 
       rectangles = []

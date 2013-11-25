@@ -31,7 +31,7 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   def self.collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
     lines.sort!{|a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
     lines.inject([]) do |memo, next_line|
-      if memo.last && next_line.left == memo.last.left && memo.last.to_line.intersectsLine(next_line.to_line)
+      if memo.last && next_line.left == memo.last.left && memo.last.nearlyIntersects?(next_line)
         memo.last.top = [next_line.top, memo.last.top].min
         memo.last.bottom = [next_line.bottom, memo.last.bottom].max
         memo
@@ -44,7 +44,7 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   def self.collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
     lines.sort!{|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
     lines.inject([]) do |memo, next_line|
-      if memo.last && next_line.top == memo.last.top && memo.last.to_line.intersectsLine(next_line.to_line)
+      if memo.last && next_line.top == memo.last.top && memo.last.nearlyIntersects?(next_line)
         memo.last.left = [next_line.left, memo.last.left].min
         memo.last.right = [next_line.right, memo.last.right].max
         memo
@@ -54,6 +54,9 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     end
   end
 
+  #N.B. for merge `spreadsheets` into `text-extractor-refactor` --
+  # only substantive change here is calling Tabula::Ruling::clean_rulings on LSD output in this method
+  # the rest is readability changes.
   #page_number here is zero-indexed
 
   #N.B. for merge `spreadsheets` into `text-extractor-refactor` --
@@ -276,11 +279,11 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     ruling.snap!(options[:snapping_grid_cell_size])
 
     # merge lines, still not finished
-    close_rulings = self.rulings.find_all { |r|
-      (ruling.vertical? && r.vertical? || ruling.horizontal? && r.horizontal?) \
-      && (r.getP2.distance(ruling.getP1) <= options[:snapping_grid_cell_size] \
-          || r.getP1.distance(ruling.getP2) <= options[:snapping_grid_cell_size])
-    }
+    # close_rulings = self.rulings.find_all { |r|
+    #   (ruling.vertical? && r.vertical? || ruling.horizontal? && r.horizontal?) \
+    #   && (r.getP2.distance(ruling.getP1) <= options[:snapping_grid_cell_size] \
+    #       || r.getP1.distance(ruling.getP2) <= options[:snapping_grid_cell_size])
+    # }
 
     self.rulings << ruling
 
