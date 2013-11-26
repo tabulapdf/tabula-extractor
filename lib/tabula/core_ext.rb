@@ -39,9 +39,38 @@ module Enumerable
 
 end
 
+class Point2D::Float
+  def inspect
+    toString
+  end
+
+  def to_json(*args)
+    [self.getX, self.getY].to_json(*args)
+  end
+end
+
 class Line2D::Float
   def to_json(*args)
     [self.getX1, self.getY1, self.getX2, self.getY2].to_json(*args)
+  end
+
+  def inspect
+    "<Line2D::Float[(#{self.getX1},#{self.getY1}),(#{self.getX2},#{self.getY2})]>"
+  end
+
+  def rotate!(pointX, pointY, amount)
+    px1 = self.getX1 - pointX; px2 = self.getX2 - pointX
+    py1 = self.getY1 - pointY; py2 = self.getY2 - pointY
+
+    if amount == 90 || amount == -270
+      setLine(pointX - py2, pointY + px1,
+              pointX - py1, pointY + px2)
+    elsif amount == 270 || amount == -90
+      setLine(pointX + py1, pointY - px2,
+              pointX + py2, pointY - px1)
+
+    end
+
   end
 
   def transform!(affine_transform)
@@ -62,7 +91,7 @@ class Line2D::Float
   end
 
   def horizontal?(threshold=0.00001)
-    (self.getY2 - self.getY2).abs < threshold
+    (self.getY2 - self.getY1).abs < threshold
   end
 
   def vertical?(threshold=0.00001)
@@ -97,6 +126,14 @@ class Rectangle2D::Float
 
   def left=(new_x)
     self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], new_x, self.y, self.width, self.height
+  end
+
+  def bottom=(new_y2)
+    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, self.width, new_y2 - self.y
+  end
+
+  def right=(new_x2)
+    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, new_x2 - self.x, self.height
   end
 
   def area
@@ -176,12 +213,15 @@ class Rectangle2D::Float
 
   def self.unionize(non_overlapping_rectangles, next_rect)
     #if next_rect doesn't overlap any of non_overlapping_rectangles
-    if (overlapping = non_overlapping_rectangles.compact.select{|r| next_rect.overlaps? r}) && !non_overlapping_rectangles.empty?
+    if !(overlapping = non_overlapping_rectangles.compact.select{|r| next_rect.overlaps? r}).empty? &&
+         !non_overlapping_rectangles.empty?
       #remove all of those that it overlaps from non_overlapping_rectangles and
       non_overlapping_rectangles -= overlapping
       #add to non_overlapping_rectangles the bounding box of the overlapping rectangles.
       non_overlapping_rectangles << overlapping.inject(next_rect) do |memo, overlap|
-        union(overlap, memo, memo)
+        #all we're doing is unioning `overlap` and `memo` and setting that result to `memo`
+        union(overlap, memo, memo) #I </3 Java.
+        memo
       end
     else
       non_overlapping_rectangles << next_rect
@@ -194,6 +234,10 @@ class Rectangle2D::Float
       hash[m] = self.send(m)
     end
     hash
+  end
+
+  def inspect
+    "#<Rectangle2D dims:[#{top}, #{left}, #{bottom}, #{right}]>"
   end
 
 end

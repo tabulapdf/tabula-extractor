@@ -13,3 +13,4 @@ Special thanks to these organizations:
 * Knight-Mozilla OpenNews <http://www.mozillaopennews.org/>
 * ProPublica <http://propublica.org>
 * La Nación <http://www.lanacion.com.ar>
+* The New York Times <http://www.nytimes.com>
