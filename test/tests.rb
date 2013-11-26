@@ -313,7 +313,7 @@ class TestExtractor < Minitest::Test
         text = pdf_page.get_text( page_area ) #all the characters within the given area.
         Tabula.make_table(text, {:vertical_rulings => vertical_rulings, :merge_words => true})
       end
-      assert_equal other_expected, lines_to_table(tables.first)
+      assert_equal expected, lines_to_table(tables.first)
     end
   end
 
