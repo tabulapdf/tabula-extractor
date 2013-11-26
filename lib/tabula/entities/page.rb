@@ -59,7 +59,7 @@ module Tabula
         # if t.top >= 76.0 && t.bottom <= 84
         #   puts [t.text, t.top, t.bottom].inspect
         # end
-        t.top.between?(area.top, area.bottom) &&
+        t.vertical_midpoint.between?(area.top, area.bottom) &&
         #t.top >= area.top && t.vertical_midpoint <= area.bottom) && \
         t.horizontal_midpoint.between?(area.left, area.right)
         #t.horizontal_midpoint >= area.left && t.horizontal_midpoint <= area.right
@@ -80,24 +80,6 @@ module Tabula
     def get_ruling_lines(options={})
       options[:render_pdf] ||= false
       Tabula::Extraction::LineExtractor.lines_in_pdf_page(file_path, number(:zero_indexed), options)
-    end
-
-    def get_cell_text(area=nil)
-      area = Rectangle2D::Float.new(0, 0, width, height) if area.nil?
-      # puts ""
-
-      texts = self.texts.select do |t|
-        # if t.top >= 76.0 && t.bottom <= 84
-        #   puts [t.text, t.top, t.bottom].inspect
-        # end
-        t.top.between?(area.top, area.bottom) &&
-        #t.top >= area.top && t.vertical_midpoint <= area.bottom) && \
-        t.horizontal_midpoint.between?(area.left, area.right)
-        #t.horizontal_midpoint >= area.left && t.horizontal_midpoint <= area.right
-      end
-      # puts ""
-
-      texts
     end
 
     def to_json(options={})
