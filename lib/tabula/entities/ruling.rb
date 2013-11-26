@@ -26,16 +26,6 @@ module Tabula
       end
     end
 
-    # 2D line intersection test taken from comp.graphics.algorithms FAQ
-    def intersects?(other)
-      r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
-        / ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
-      s = ((self.top-other.top)*(self.right-self.left) - (self.left-other.left)*(self.bottom-self.top)) \
-        / ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
-      r >= 0 && r < 1 && s >= 0 && s < 1
-    end
-
-
     #ok wtf are you doing, Jeremy?
     # some PDFs (garment factory audits, precise link TK) make tables by drawing lines that
     # very nearly intersect each other, but not quite. E.g. a horizontal line spans the table at a Y val of 100
