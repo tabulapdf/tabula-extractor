@@ -360,11 +360,6 @@ module Tabula
         self.height = t.height
       else
         if in_same_column = @text_elements.find { |te| te.horizontally_overlaps?(t) }
-          #sometimes a space needs to be added here
-          # TODO: @jeremybmerill why? Commenting this out for now
-#          unless in_same_column.vertically_overlaps?(t)
-#            t.text = " " + t.text
-#          end
           in_same_column.merge!(t)
         else
           self.text_elements << t
@@ -507,6 +502,46 @@ module Tabula
 
     def to_json(arg)
       [left, top, right, bottom].to_json
+    end
+
+    def intersection_point(other)
+      # algo taken from http://mathworld.wolfram.com/Line-LineIntersection.html
+      self_l  = self.to_line
+      other_l = other.to_line
+
+      return nil if !self_l.intersectsLine(other_l)
+
+      x1 = self_l.getX1; y1 = self_l.getY1
+      x2 = self_l.getX2; y2 = self_l.getY2
+      x3 = other_l.getX1; y3 = other_l.getY1
+      x4 = other_l.getX2; y4 = other_l.getY2
+
+      det = lambda { |a,b,c,d| a * d - b * c }
+
+      int_x = det.call(det.call(x1, y1, x2, y2), x1 - x2, det.call(x3, y3, x4, y4), x3 - x4) /
+        det.call(x1 - x2, y1 - y2, x3 - x4, y3 - y4)
+
+      int_y = det.call(det.call(x1, y1, x2, y2), y1 - y2,
+                       det.call(x3, y3, x4, y4), y3 - y4) /
+        det.call(x1 - x2, y1 - y2, x3 - x4, y3 - y4)
+
+      return nil if int_x.nan? || int_y.nan? # TODO is this right?
+
+      java.awt.geom.Point2D::Float.new(int_x, int_y)
+    end
+
+    # Find all intersection points between two list of +Ruling+
+    # (+horizontals+ and +verticals+)
+    # TODO: this is O(n^2) - optimize.
+    def self.find_intersections(horizontals, verticals)
+      horizontals.product(verticals).inject({}) { |memo, (h, v)|
+        ip = h.intersection_point(v)
+        unless ip.nil?
+          memo[ip] ||= []
+          memo[ip] << [h, v]
+        end
+        memo
+      }
     end
 
     # crop an enumerable of +Ruling+ to an +area+
