@@ -134,16 +134,16 @@ class TestTableGuesser < Minitest::Test
     assert_equal expected_page_areas, page_areas
   end
 
-  # def test_find_rects_from_lines
-  #   filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-  #   page_index = 0
-  #   lines = Tabula::Extraction::LineExtractor(filename, page_index, :render_pdf => false))
+  def test_find_rects_from_lines_with_operators
+    filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    page_index = 0
+    lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(filename, page_index, :render_pdf => false)
 
-  #   page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
-  #   page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
-  #   expected_page_areas = [[54.087890625, 50.203125, 734.220703125, 550.44140625], [734.220703125, 50.203125, 54.087890625, 550.44140625], [54.087890625, 550.44140625, 734.220703125, 50.203125]]
-  #   assert_equal expected_page_areas, page_areas
-  # end
+    page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
+    page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
+    expected_page_areas = [[54.0, 50.0, 734.0, 552.0]] #same as above, but with rounding. (cf 550.44 -> 552 -- maybe rounded too much?)
+    assert_equal expected_page_areas, page_areas
+  end
 end
 
 class TestDumper < Minitest::Test
@@ -224,15 +224,14 @@ class TestExtractor < Minitest::Test
   def test_missing_spaces_around_an_ampersand
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     character_extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path)
-    lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
-    vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }[1..-1]
-
+    lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(pdf_file_path, 0)
+    vertical_rulings = lines.select(&:vertical?)
 
     characters = character_extractor.extract.next.get_text([170, 28, 185, 833])
                                                            #top left bottom right
     expected = Tabula::Table.new_from_array([
        ["", "REGIONAL PULMONARY & SLEEP",],
-       ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", '', "$4,700.00"],
+       ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"],
        ["", "MEDICINE", ],
       ])
 
@@ -244,7 +243,7 @@ class TestExtractor < Minitest::Test
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     character_extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path)
     lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
-    vertical_rulings = lines.select(&:vertical?).uniq{|line| (line.left / 10).round }
+    vertical_rulings = lines.select(&:vertical?) #.uniq{|line| (line.left / 10).round }
 
     characters = character_extractor.extract.next.get_text([110, 28, 218, 833])
                                                            #top left bottom right
