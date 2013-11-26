@@ -159,11 +159,13 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   class CloseFillNonZeroAndStrokePathOperator < OperatorProcessor
     def process(operator, arguments)
       drawer = self.context
-      # NOTE: color check temporarily disabled
-      #fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
-#      if fillColorComps.any? { |c| c < 0.9 }
+
+      fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
+      color_filter = drawer.options[:line_color_filter] || lambda{|c| true } #by default, use all lines, regardless of color
+      if color_filter.call(fillColorComps)
         drawer.currentPath.each { |segment| drawer.addRuling(segment) }
-#      end
+      end
+
       drawer.currentPath = []
     end
   end

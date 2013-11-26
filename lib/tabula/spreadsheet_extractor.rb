@@ -16,7 +16,7 @@ module Tabula
       # because each page can contain an arbitrary number of spreadsheets, each page can be sent
       # to the block an arbitrary number of times.
       # so the extract.each_with_index trick will absolutely not work.
-      def extract
+      def extract(options={})
         Enumerator.new do |y|
           begin
             @pages.each do |i|
@@ -33,7 +33,7 @@ module Tabula
                                        i, #one-indexed, just like `i` is.
                                        @extractor.characters)
 
-              lines = page.ruling_lines
+              lines = page.ruling_lines(options)
               spreadsheet_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
               spreadsheet_areas.sort!{|a1, a2| a1.top == a2.top ? a1.left <=> a2.left : a1.top <=> a2.top}
               spreadsheet_areas.each do |area|
