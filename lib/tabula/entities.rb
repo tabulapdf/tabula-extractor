@@ -178,7 +178,7 @@ module Tabula
 
     def merge!(other)
       if other.instance_of?(TextChunk)
-        if self.horizontally_overlaps?(other) and other.top < self.top
+        if self.horizontally_overlaps?(other) && other.top < self.top
           self.text_elements = other.text_elements + self.text_elements
         else
           self.text_elements = self.text_elements + other.text_elements
@@ -257,8 +257,9 @@ module Tabula
     def should_add_space?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
 
-      self.vertically_overlaps?(other) \
-        && self.horizontal_distance(other).abs.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))
+      (self.vertically_overlaps?(other) &&
+        self.horizontal_distance(other).abs.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))) ||
+      (self.vertical_distance(other) > self.height)
     end
 
     def merge!(other)
