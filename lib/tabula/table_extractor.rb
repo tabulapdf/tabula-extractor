@@ -157,9 +157,8 @@ module Tabula
 
     use_detected_lines = false
     if options[:detect_ruling_lines] && options[:vertical_rulings].empty?
-      detected_vertical_rulings = Ruling.clean_rulings(Extraction::LineExtractor.lines_in_pdf_page(pdf_path,
-                                                                                          page-1)) \
-        .find_all(&:vertical?)
+      detected_vertical_rulings = Extraction::LineExtractor.lines_in_pdf_page(pdf_path, page-1).
+          find_all(&:vertical?)
 
       # crop lines to area of interest
       detected_vertical_rulings = Ruling.crop_rulings_to_area(detected_vertical_rulings, area)
