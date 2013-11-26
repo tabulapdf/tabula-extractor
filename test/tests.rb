@@ -123,16 +123,27 @@ class TestPagesInfoExtractor < Minitest::Test
 end
 
 class TestTableGuesser < Minitest::Test
-  def test_find_rects_from_lines
+  def test_find_rects_from_lines_with_lsd
     filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     page_index = 0
-    lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index))
+    lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(filename, page_index, :render_pdf => true)
 
     page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
     page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
-    expected_page_areas = [[54.087890625, 50.203125, 734.220703125, 550.44140625], [734.220703125, 50.203125, 54.087890625, 550.44140625], [54.087890625, 550.44140625, 734.220703125, 50.203125]]
-    assert_equal page_areas, expected_page_areas
+    expected_page_areas = [[54.087890625, 50.203125, 734.220703125, 550.44140625]]
+    assert_equal expected_page_areas, page_areas
   end
+
+  # def test_find_rects_from_lines
+  #   filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+  #   page_index = 0
+  #   lines = Tabula::Extraction::LineExtractor(filename, page_index, :render_pdf => false))
+
+  #   page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
+  #   page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
+  #   expected_page_areas = [[54.087890625, 50.203125, 734.220703125, 550.44140625], [734.220703125, 50.203125, 54.087890625, 550.44140625], [54.087890625, 550.44140625, 734.220703125, 50.203125]]
+  #   assert_equal expected_page_areas, page_areas
+  # end
 end
 
 class TestDumper < Minitest::Test

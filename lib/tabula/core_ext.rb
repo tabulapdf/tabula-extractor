@@ -124,7 +124,7 @@ class Rectangle2D::Float
     delta_height = new_y - self.y
     self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, new_y, self.width, (self.height - delta_height)
 
-    #used to be:
+    #used to be: (fixes test_vertical_rulings_splitting_words)
     # self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, new_y, self.width, self.height
   end
 
@@ -135,9 +135,9 @@ class Rectangle2D::Float
   def left=(new_x)
     delta_width = new_x - self.x
     self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], new_x, self.y, (self.width - delta_width), self.height
-    #used to be:
+    #used to be: (fixes test_vertical_rulings_splitting_words)
     # self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], new_x, self.y, self.width, self.height
-  end 
+  end
 
   def right=(new_x2)
     self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, new_x2 - self.x, self.height
