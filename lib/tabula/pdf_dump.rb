@@ -129,7 +129,11 @@ module Tabula
           puts "TYPE3"
         end
 
-        spaceWidthText = font.getFontWidth([0x20].to_java(Java::byte), 0, 1)
+        # idea from pdf.js
+        # https://github.com/mozilla/pdf.js/blob/master/src/core/fonts.js#L4418
+        spaceWidthText = spaceWidthText = [' ', '-', '1', 'i'] \
+          .map { |c| font.getFontWidth(c.ord) } \
+          .find { |w| w > 0 } || 1000
 
         ctm00 = gs.getCurrentTransformationMatrix.getValue(0, 0)
 
