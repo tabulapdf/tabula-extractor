@@ -27,6 +27,7 @@ module Tabula
     def <=>(other)
       return  1 if self.left > other.left
       return -1 if self.left < other.left
+      return  0 if self.vertically_overlaps?(other)
       return  1 if self.top  > other.top
       return -1 if self.top  < other.top
       return  0
