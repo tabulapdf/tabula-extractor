@@ -75,7 +75,7 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
                              l.getP2.getX - l.getP1.getX,
                              l.getP2.getY - l.getP1.getY)
       end
-      rulings.reject!{|l| l.left == l.right && l.top == l.bottom}
+      rulings.reject! { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }
       collapse_vertical_rulings(rulings.select(&:vertical?)) + collapse_horizontal_rulings(rulings.select(&:horizontal?))
     end
   end
