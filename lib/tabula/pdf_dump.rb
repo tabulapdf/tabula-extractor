@@ -23,9 +23,8 @@ module Tabula
 
     class TextExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
-      attr_accessor :characters, :debug_text
+      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths
       field_accessor :pageSize, :page, :graphics
-
 
       PRINTABLE_RE = /[[:print:]]/
 
@@ -33,6 +32,7 @@ module Tabula
         super
         self.characters = []
         @graphics = java.awt.Graphics2D
+        self.clipping_paths = []
       end
 
       def clear!
@@ -76,21 +76,21 @@ module Tabula
       end
 
       def transformClippingPath(cp)
-        return cp if self.page.getRotation.nil? || !([90, -270, -90, 270].include?(self.page.getRotation))
-
         mb = self.page.getMediaBox
 
-        rotate = AffineTransform.getRotateInstance(self.page.getRotation * (Math::PI/180.0),
-                                                   mb.getLowerLeftX, mb.getLowerLeftY)
+        if self.page.getRotation.nil? || !([90, -270, -90, 270].include?(self.page.getRotation))
+          trans = AffineTransform.getScaleInstance(1, -1)
+          trans.translate(0, -mb.getHeight)
+          return cp.createTransformedShape(trans)
+        end
 
+        trans = AffineTransform.getScaleInstance(-1, 1)
 
-        trans = if page.getRotation == 90 || page.getRotation == -270
-                  AffineTransform.getTranslateInstance(mb.getHeight, 0)
-                else
-                  AffineTransform.getTranslateInstance(0, mb.getWidth)
-                end
-        trans.concatenate(rotate)
+        trans.rotate(self.page.getRotation * (Math::PI/180.0),
+                     mb.getLowerLeftX, mb.getLowerLeftY)
+
         return cp.createTransformedShape(trans)
+
       end
 
       def processTextPosition(text)
@@ -109,6 +109,11 @@ module Tabula
                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
                                      text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
         ccp = self.getGraphicsState.getCurrentClippingPath
+
+        if self.debug_clipping_paths && !self.clipping_paths.include?(self.transformClippingPath(ccp).getBounds2D)
+          self.clipping_paths << self.transformClippingPath(ccp).getBounds2D
+        end
+
         if c =~ PRINTABLE_RE && self.transformClippingPath(ccp).getBounds2D.intersects(te)
             self.characters << te
         end
@@ -190,7 +195,7 @@ module Tabula
     class CharacterExtractor
       #N.B. pages can be :all, a list of pages or a range.
       #     but if it's a list or a range, it's one-indexed
-      def initialize(pdf_filename, pages=[1], password='')
+      def initialize(pdf_filename, pages=[1], password='', options={})
         raise Errno::ENOENT unless File.exists?(pdf_filename)
         @pdf_filename = pdf_filename
         @pdf_file = Extraction.openPDF(pdf_filename, password)
