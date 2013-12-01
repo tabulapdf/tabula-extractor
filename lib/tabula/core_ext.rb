@@ -63,12 +63,9 @@ class Line2D::Float
     py1 = self.getY1 - pointY; py2 = self.getY2 - pointY
 
     if amount == 90 || amount == -270
-      setLine(pointX - py2, pointY + px1,
-              pointX - py1, pointY + px2)
+      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], pointX - py2, pointY + px1, pointX - py1, pointY + px2
     elsif amount == 270 || amount == -90
-      setLine(pointX + py1, pointY - px2,
-              pointX + py2, pointY - px1)
-
+      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], pointX + py1, pointY - px2, pointX + py2, pointY - px1
     end
 
   end
