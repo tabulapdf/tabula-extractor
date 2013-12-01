@@ -1,5 +1,4 @@
 require 'java'
-require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
 
 java_import org.apache.pdfbox.util.operator.OperatorProcessor
 java_import org.apache.pdfbox.pdfparser.PDFParser
@@ -253,6 +252,28 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     @pageSize = nil
   end
 
+  # copied from Tabula::Extraction::TextExtractor
+  # remove when when we merge line and text extractors
+  # see https://github.com/jazzido/tabula-extractor/issues/26
+  def transformClippingPath(cp)
+    return cp if self.page.getRotation.nil? || !([90, -270, -90, 270].include?(self.page.getRotation))
+
+    mb = self.page.getMediaBox
+
+    rotate = AffineTransform.getRotateInstance(self.page.getRotation * (Math::PI/180.0),
+                                               mb.getLowerLeftX, mb.getLowerLeftY)
+
+
+    trans = if page.getRotation == 90 || page.getRotation == -270
+              AffineTransform.getTranslateInstance(mb.getHeight, 0)
+            else
+              AffineTransform.getTranslateInstance(0, mb.getWidth)
+            end
+    trans.concatenate(rotate)
+    return cp.createTransformedShape(trans)
+  end
+
+
   def addRuling(ruling)
     if !page.getRotation.nil? && [90, -270, -90, 270].include?(page.getRotation)
 
@@ -272,7 +293,6 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     ruling.snap!(options[:snapping_grid_cell_size])
 
     self.rulings << ruling
-
   end
 
   ##

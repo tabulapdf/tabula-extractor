@@ -2,6 +2,8 @@ module Tabula
   PDFBOX = 'pdfbox-app-2.0.0-SNAPSHOT.jar'
 end
 
+require File.join(File.dirname(__FILE__), '../target/', Tabula::PDFBOX)
+
 require_relative './tabula/version'
 require_relative './tabula/core_ext'
 require_relative './tabula/entities'

@@ -1,7 +1,6 @@
 require_relative './entities.rb'
 
 require 'java'
-require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.util.TextPosition
 java_import org.apache.pdfbox.pdmodel.PDDocument

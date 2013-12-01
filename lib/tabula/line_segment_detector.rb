@@ -6,7 +6,6 @@ require 'ffi'
 require_relative './entities'
 require_relative './pdf_render'
 require_relative './pdf_dump'
-require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
 
 java_import javax.imageio.ImageIO
 java_import java.awt.image.BufferedImage
