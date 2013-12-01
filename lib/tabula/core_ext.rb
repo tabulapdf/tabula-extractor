@@ -80,10 +80,8 @@ class Line2D::Float
 
   def snap!(cell_size)
     newP1, newP2 = Point2D::Float.new, Point2D::Float.new
-    newP1.setLocation((self.getX1 / cell_size).round * cell_size,
-                      (self.getY1 / cell_size).round * cell_size)
-    newP2.setLocation((self.getX2 / cell_size).round * cell_size,
-                      (self.getY2 / cell_size).round * cell_size)
+    newP1.java_send :setLocation, [Java::float, Java::float], (self.getX1 / cell_size).round * cell_size, (self.getY1 / cell_size).round * cell_size
+    newP2.java_send :setLocation, [Java::float, Java::float], (self.getX2 / cell_size).round * cell_size, (self.getY2 / cell_size).round * cell_size
     setLine(newP1, newP2)
   end
 
