@@ -165,6 +165,12 @@ module Tabula
 
       # only use lines if at least 80% of them cover at least 90%
       # of the height of area of interest
+
+      # TODO this heuristic SUCKS
+      # what if only a couple columns is delimited with vertical rulings?
+      # ie: https://www.dropbox.com/s/lpydler5c3pn408/S2MNCEbirdisland.pdf (see 7th column)
+      # idea: detect columns without considering rulings, detect vertical rulings
+      # calculate ratio and try to come up with a threshold
       use_detected_lines = detected_vertical_rulings.size > 2 \
       && (detected_vertical_rulings.count { |vl|
             vl.height / area.height > 0.9
