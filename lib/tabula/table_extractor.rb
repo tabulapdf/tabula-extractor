@@ -87,7 +87,7 @@ module Tabula
       return []
     end
 
-    text_chunks = merge_words(text_elements, options).sort
+    text_chunks = merge_words(text_elements.uniq, options).sort
 
     lines = group_by_lines(text_chunks)
 
