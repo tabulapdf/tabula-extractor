@@ -128,8 +128,10 @@ module Tabula
 
     def intersection_point(other)
       # algo taken from http://mathworld.wolfram.com/Line-LineIntersection.html
-      self_l  = self.to_line
-      other_l = other.to_line
+
+      #self and other should always be perpendicular, since one should be horizontal and one should be vertical
+      self_l  = self.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line
+      other_l = other.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line
 
       return nil if !self_l.intersectsLine(other_l)
 
@@ -160,7 +162,8 @@ module Tabula
         ip = h.intersection_point(v)
         unless ip.nil?
           memo[ip] ||= []
-          memo[ip] << [h, v]
+          #TODO: stupid hack for FLA pdfs where lines appear to intersect, but don't.
+          memo[ip] << [h.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT), v.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT)]
         end
         memo
       end

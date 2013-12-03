@@ -1,3 +1,5 @@
+java_import java.awt.geom.Point2D
+
 module Tabula
 
   class ZoneEntity < java.awt.geom.Rectangle2D::Float
@@ -39,6 +41,13 @@ module Tabula
 
     def tlbr
       [top, left, bottom, right]
+    end
+
+    def points
+      [ Point2D::Float.new(left, top),
+        Point2D::Float.new(right, top),
+        Point2D::Float.new(right, bottom),
+        Point2D::Float.new(left, bottom) ]
     end
   end
 end
