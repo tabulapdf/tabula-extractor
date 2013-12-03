@@ -213,17 +213,18 @@ module Tabula
     end
 
     def to_a
-      rows.map{|row| row.map(&:text)}
+      rows.map{|row_cells| row_cells.map(&:text)}
     end
 
     def to_csv
-      rows.map do |row|
-        CSV.generate_line(row.map(&:text), row_sep: "\r\n")
+      rows.map do |row_cells|
+        #row_cells.each{|c| c.options = {:use_line_returns => true}}
+        CSV.generate_line(row_cells.map(&:text), row_sep: "\r\n")
       end.join('')
     end
     def to_tsv
-      rows.map do |row|
-        CSV.generate_line(row.map(&:text), col_sep: "\t", row_sep: "\r\n")
+      rows.map do |row_cells|
+        CSV.generate_line(row_cells.map(&:text), col_sep: "\t", row_sep: "\r\n")
       end.join('')
     end
   end
