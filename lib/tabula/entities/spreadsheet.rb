@@ -57,19 +57,17 @@ module Tabula
               btmRight = Point2D::Float.new( y_point.x, x_point.y )
               if intersection_points.include?(btmRight) 
 
-                #TODO loop over intersection_points[btmRight]
-
-                btmRightHorizontal = intersection_points[btmRight][0][0]
-                btmRightVertical = intersection_points[btmRight][0][1]
-                if btmRightHorizontal.colinear?( x_point ) &&
-                  btmRightVertical.colinear?( y_point )
-                  # Rectangle is confirmed to have 4 sides
-                  @cells << Cell.new_from_points( topLeft, btmRight)
-                  # Each crossing point can be the top left corner
-                  # of only a single rectangle
-                  #next crossing-point; #Jeremy asks: we need to "next" out of the outer loop here
-                     # to avoid creating non-minimal cells, I htink.
-                  throw :cellCreated
+                intersection_points[btmRight].each do |btmRightHorizontal, btmRightVertical|
+                  if btmRightHorizontal.colinear?( x_point ) &&
+                    btmRightVertical.colinear?( y_point )
+                    # Rectangle is confirmed to have 4 sides
+                    @cells << Cell.new_from_points( topLeft, btmRight)
+                    # Each crossing point can be the top left corner
+                    # of only a single rectangle
+                    #next crossing-point; #Jeremy asks: we need to "next" out of the outer loop here
+                       # to avoid creating non-minimal cells, I htink.
+                    throw :cellCreated
+                  end
                 end
               end
             end

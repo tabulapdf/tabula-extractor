@@ -5,7 +5,7 @@ module Tabula
   class Cell < ZoneEntity
     attr_accessor :text_elements, :placeholder, :merged, :options
 
-    def initialize(top, left, width, height)
+    def initialize(top, left, width, height, options={})
       super(top, left, width, height)
       @placeholder = false
       @merged = false
