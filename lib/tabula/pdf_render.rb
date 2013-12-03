@@ -1,7 +1,5 @@
 require 'java'
 
-require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
-
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.pdfviewer.PageDrawer
 java_import java.awt.image.BufferedImage

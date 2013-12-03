@@ -19,8 +19,7 @@ module Tabula
     # more or less returns True if distance < tolerance
     def should_merge?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-
-      self.vertically_overlaps?(other) && self.horizontal_distance(other) < width_of_space * 1.1 && !self.should_add_space?(other)
+      self.vertically_overlaps?(other) && self.horizontal_distance(other) < width_of_space * (1 + TOLERANCE_FACTOR) && !self.should_add_space?(other)
     end
 
     # more or less returns True if (tolerance <= distance < CHARACTER_DISTANCE_THRESHOLD*tolerance)

@@ -51,7 +51,7 @@ module Tabula
       # we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
       # Why are both of those `.left`?, you might ask. The intuition is that a letter
       # that starts on the left of a vertical ruling ought to remain on the left of it.
-      if prev_char.should_merge?(char) && !across_vertical_ruling
+      if !across_vertical_ruling && prev_char.should_merge?(char)
         chunks.last << char
       else
         # create a new chunk
@@ -87,7 +87,7 @@ module Tabula
       return []
     end
 
-    text_chunks = merge_words(text_elements, options).sort
+    text_chunks = merge_words(text_elements.uniq, options).sort
 
     lines = group_by_lines(text_chunks)
 
@@ -97,6 +97,7 @@ module Tabula
 
     unless options[:vertical_rulings].empty?
       columns = options[:vertical_rulings].map(&:left) #pixel locations, not entities
+      separators = columns.sort.reverse
     else
       text_chunks.each do |te|
         next if te.text =~ ONLY_SPACES_RE
@@ -110,9 +111,8 @@ module Tabula
           end
         end
       end
+      separators = columns[1..-1].sort.reverse
     end
-
-    separators = columns[1..-1].sort.reverse
 
     table = Table.new(lines.count, separators)
     lines.each_with_index do |line, i|
@@ -165,6 +165,12 @@ module Tabula
 
       # only use lines if at least 80% of them cover at least 90%
       # of the height of area of interest
+
+      # TODO this heuristic SUCKS
+      # what if only a couple columns is delimited with vertical rulings?
+      # ie: https://www.dropbox.com/s/lpydler5c3pn408/S2MNCEbirdisland.pdf (see 7th column)
+      # idea: detect columns without considering rulings, detect vertical rulings
+      # calculate ratio and try to come up with a threshold
       use_detected_lines = detected_vertical_rulings.size > 2 \
       && (detected_vertical_rulings.count { |vl|
             vl.height / area.height > 0.9

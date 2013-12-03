@@ -1,5 +1,4 @@
 require 'java'
-require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
 
 java_import org.apache.pdfbox.util.operator.OperatorProcessor
 java_import org.apache.pdfbox.pdfparser.PDFParser
@@ -76,7 +75,7 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
                              l.getP2.getX - l.getP1.getX,
                              l.getP2.getY - l.getP1.getY)
       end
-      rulings.reject!{|l| l.left == l.right && l.top == l.bottom}
+      rulings.reject! { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }
       collapse_vertical_rulings(rulings.select(&:vertical?)) + collapse_horizontal_rulings(rulings.select(&:horizontal?))
     end
   end
@@ -267,25 +266,13 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
               else
                 AffineTransform.getTranslateInstance(0, mb.getWidth)
               end
-      scale = AffineTransform.getScaleInstance(mb.getWidth / mb.getHeight,
-
-                                             mb.getWidth / mb.getHeight)
-      scale.concatenate(trans)
-      ruling.transform!(scale)
+      ruling.transform!(trans)
     end
 
     # snapping to grid and joining lines that are close together
     ruling.snap!(options[:snapping_grid_cell_size])
 
-    # merge lines, still not finished
-    # close_rulings = self.rulings.find_all { |r|
-    #   (ruling.vertical? && r.vertical? || ruling.horizontal? && r.horizontal?) \
-    #   && (r.getP2.distance(ruling.getP1) <= options[:snapping_grid_cell_size] \
-    #       || r.getP1.distance(ruling.getP2) <= options[:snapping_grid_cell_size])
-    # }
-
     self.rulings << ruling
-
   end
 
   ##

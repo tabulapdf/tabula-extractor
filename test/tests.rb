@@ -187,7 +187,7 @@ class TestExtractor < Minitest::Test
     table = lines_to_array Tabula.extract_table(File.expand_path('data/gre.pdf', File.dirname(__FILE__)),
                                                 1,
                                                 [107.1, 57.9214, 394.5214, 290.7],
-                                                :vertical_rulings => [])
+                                                :detect_ruling_lines => false)
 
     expected = [["Prior Scale","New Scale","% Rank*"], ["800","170","99"], ["790","170","99"], ["780","170","99"], ["770","170","99"], ["760","170","99"], ["750","169","99"], ["740","169","99"], ["730","168","98"], ["720","168","98"], ["710","167","97"], ["700","166","96"], ["690","165","95"], ["680","165","95"], ["670","164","93"], ["660","164","93"], ["650","163","91"]]
 
@@ -328,6 +328,17 @@ class TestExtractor < Minitest::Test
                                                 :vertical_rulings => vertical_rulings)
 
     assert_equal expected, table
+  end
+
+  def test_get_spacing_and_merging_right
+    table = lines_to_array Tabula.extract_table(File.expand_path('data/strongschools.pdf', File.dirname(__FILE__)),
+                                                1,
+                                                [52.32857142857143,15.557142857142859,128.70000000000002,767.9571428571429],
+                                                :detect_ruling_lines => true)
+    expected = [["Last Name", "First Name", "Address", "City", "State", "Zip", "Occupation", "Employer", "Date", "Amount"], ["Lidstad", "Dick & Peg", "62 Mississippi River Blvd N", "Saint Paul", "MN", "55104", "retired", "", "10/12/2012", "60.00"], ["Strom", "Pam", "1229 Hague Ave", "St. Paul", "MN", "55104", "", "", "9/12/2012", "60.00"], ["Seeba", "Louise & Paul", "1399 Sheldon St", "Saint Paul", "MN", "55108", "BOE", "City of Saint Paul", "10/12/2012", "60.00"], ["Schumacher / Bales", "Douglas L. / Patricia ", "948 County Rd. D W", "Saint Paul", "MN", "55126", "", "", "10/13/2012", "60.00"], ["Abrams", "Marjorie", "238 8th St east", "St Paul", "MN", "55101", "Retired", "Retired", "8/8/2012", "75.00"], ["Crouse / Schroeder", "Abigail / Jonathan", "1545 Branston St.", "Saint Paul", "MN", "55108", "", "", "10/6/2012", "75.00"]]
+
+    assert_equal expected, table
+
   end
 
 
