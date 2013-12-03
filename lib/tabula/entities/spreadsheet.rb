@@ -76,8 +76,6 @@ module Tabula
           end
         end #cellCreated
       end
-
-      puts @cells.size
     end
 
 
