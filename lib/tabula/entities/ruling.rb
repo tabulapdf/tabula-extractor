@@ -121,6 +121,11 @@ module Tabula
       [left, top, right, bottom].to_json
     end
 
+    def colinear?(point)
+      point.x >= left && point.x <= right &&
+        point.y >= top && point.y <= bottom
+    end
+
     def intersection_point(other)
       # algo taken from http://mathworld.wolfram.com/Line-LineIntersection.html
       self_l  = self.to_line
@@ -151,14 +156,14 @@ module Tabula
     # (+horizontals+ and +verticals+)
     # TODO: this is O(n^2) - optimize.
     def self.find_intersections(horizontals, verticals)
-      horizontals.product(verticals).inject({}) { |memo, (h, v)|
+      horizontals.product(verticals).inject({}) do |memo, (h, v)|
         ip = h.intersection_point(v)
         unless ip.nil?
           memo[ip] ||= []
           memo[ip] << [h, v]
         end
         memo
-      }
+      end
     end
 
     # crop an enumerable of +Ruling+ to an +area+

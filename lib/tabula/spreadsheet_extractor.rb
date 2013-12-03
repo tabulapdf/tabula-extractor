@@ -51,59 +51,6 @@ module Tabula
           end # begin
         end
       end
-
-      #implement Nurminen thesis algorithm
-      def find_cells(lines_zones)
-        lines = lines_zones.map &:to_line #let's make this work with Line2D descendants, for forwards compatibility
-        intersectionPoints = findIntersectionPoints(lines) #naively, O(n^2) for each horizontal, compare to each vertical
-        #should be Point2D objects (or inherit from them)
-
-        # All crossing-points have been sorted from up to down,
-        # and left to right in ascending order
-        intersectionPoints.each_with_index do |topLeft|
-          # Fetch all points on the same vertical and horizontal
-          # line with current crossing point
-
-          #N.B. both of these could be made more efficient by only selecting from
-          # points with an index greater than i
-
-          # CrossingPointsDirectlyBelow( topLeft );
-          x_points = intersectionPoints.select{|pt| pt.x == topLeft.x && pt.y > topLeft.y }
-          # CrossingPointsDirectlyToTheRight( topLeft );
-          y_points = intersectionPoints.select{|pt| pt.y == topLeft.y && pt.x > topLeft.x }
-
-
-          x_points.each do |x_point|
-            #                                Skip to next crossing-point
-            # if( NOT EdgeExistsBetween( topLeft, x_point)) next crossing-
-            #                                                    point;
-            next unless edge_exists_between(topLeft, x_point)
-            y_points.each do |y_point|
-
-              # if( NOT EdgeExistsBetween( topLeft, y_point)) next crossing-
-              #                                                    point;
-              next unless edge_exists_between(topLeft, y_point)
-
-              #Hypothetical bottom right point of rectangle
-              btmRight = Point( y_point.x(), x_point.y());
-
-              if( intersectionPoints.include?(btmRight) &&
-                 edge_exists_between( x_point, btmRight) &&
-                 edge_exists_between( y_point, btmRight))
-                # Rectangle is confirmed to have 4 sides
-                foundRectangles.append( Cell.new_from_points( topLeft, btmRight);
-                # Each crossing point can be the top left corner
-                # of only a single rectangle
-              end
-            end
-            next crossing-point; #Jeremy asks: we need to "next" out of the outer loop here
-                                 # to avoid creating non-minimal cells, I htink.
-          end
-        end
-
-      end
-
-
     end
   end
 end

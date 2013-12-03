@@ -12,6 +12,12 @@ module Tabula
       @text_elements = []
     end
 
+    def self.new_from_points(topleft, bottomright)
+      width = bottomright.x - topleft.x
+      height = bottomright.y - topleft.y
+      Cell.new(topleft.y, topleft.x, width, height)
+    end
+
     def text(debug=false)
       return "placeholder" if @placeholder && debug
       output = ""

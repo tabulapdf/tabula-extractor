@@ -47,6 +47,19 @@ class Point2D::Float
   def to_json(*args)
     [self.getX, self.getY].to_json(*args)
   end
+
+  def hash
+    "#{self.getX},#{self.getY}".hash
+  end
+
+  def <=>(other)
+    return  1 if self.y > other.y
+    return -1 if self.y < other.y
+    return  1 if self.x  > other.x
+    return -1 if self.x  < other.x
+    return  0
+  end
+
 end
 
 class Line2D::Float
