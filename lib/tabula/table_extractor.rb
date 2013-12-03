@@ -7,6 +7,8 @@ module Tabula
     options = default_options.merge(options)
     vertical_ruling_locations = options[:vertical_rulings].map(&:left) if options[:vertical_rulings]
 
+    return [] if text_elements.empty?
+
     text_chunks = [TextChunk.create_from_text_element(text_elements.shift)]
 
     text_elements.inject(text_chunks) do |chunks, char|

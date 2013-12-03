@@ -64,6 +64,7 @@ module Tabula
         t.horizontal_midpoint.between?(area.left, area.right)
         #t.horizontal_midpoint >= area.left && t.horizontal_midpoint <= area.right
       end
+      texts = Tabula.merge_words(texts)
       # puts ""
 
       texts
