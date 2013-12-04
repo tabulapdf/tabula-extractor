@@ -1,3 +1,5 @@
+java_import java.awt.geom.Point2D
+
 module Tabula
 
   class ZoneEntity < java.awt.geom.Rectangle2D::Float
@@ -37,8 +39,19 @@ module Tabula
       self.to_h.to_json
     end
 
+    def inspect
+      "#<#{self.class} dims: #{self.dims(:x, :y, :width, :height)}>"
+    end
+
     def tlbr
       [top, left, bottom, right]
+    end
+
+    def points
+      [ Point2D::Float.new(left, top),
+        Point2D::Float.new(right, top),
+        Point2D::Float.new(right, bottom),
+        Point2D::Float.new(left, bottom) ]
     end
   end
 end

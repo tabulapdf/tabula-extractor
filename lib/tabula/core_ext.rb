@@ -60,6 +60,18 @@ class Point2D::Float
     return  0
   end
 
+  def x_first_cmp(other)
+    return  1 if self.x  > other.x
+    return -1 if self.x  < other.x
+    return  1 if self.y > other.y
+    return -1 if self.y < other.y
+    return  0
+  end
+
+  def ==(other)
+    return self.x == other.x && self.y == other.y
+  end
+
 end
 
 class Line2D::Float

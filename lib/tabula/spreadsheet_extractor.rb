@@ -20,7 +20,7 @@ module Tabula
         Enumerator.new do |y|
           begin
             @pages.each do |i|
-              pdfbox_page = @all_pages.get(i-1)
+              pdfbox_page = @all_pages.get(i-1) #TODO: this can error out ungracefully if you try to extract a page that doesn't exist (e.g. page 5 of a 4 page doc). we should catch and handle.
               contents = pdfbox_page.getContents
               next if contents.nil?
               @extractor.clear!
@@ -33,12 +33,7 @@ module Tabula
                                        i, #one-indexed, just like `i` is.
                                        @extractor.characters)
 
-              lines = page.ruling_lines(options)
-              spreadsheet_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
-              spreadsheet_areas.sort!{|a1, a2| a1.top == a2.top ? a1.left <=> a2.left : a1.top <=> a2.top}
-              spreadsheet_areas.each do |area|
-                spreadsheet_rulings = lines.select{|rul| area.intersectsLine(rul.to_line) }
-                spreadsheet = Tabula::Spreadsheet.new(area.top, area.left, area.width, area.height, spreadsheet_rulings)
+              page.spreadsheets.each do |spreadsheet|
                 spreadsheet.cells.each do |cell|
                   cell.text_elements = page.get_cell_text(cell)
                 end
@@ -54,3 +49,8 @@ module Tabula
     end
   end
 end
+
+
+#new plan:
+# find all the cells on the page (lines -> minimal rects)
+# find all the spreadsheets from the cells (minimal rects -> maximal rects)

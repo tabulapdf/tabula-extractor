@@ -1,5 +1,6 @@
 require_relative './entities/zone_entity'
 require_relative './entities/cell'
+require_relative './entities/has_cells'
 require_relative './entities/line'
 require_relative './entities/page'
 require_relative './entities/ruling'
