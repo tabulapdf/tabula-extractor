@@ -20,7 +20,7 @@ module Tabula
         Enumerator.new do |y|
           begin
             @pages.each do |i|
-              pdfbox_page = @all_pages.get(i-1)
+              pdfbox_page = @all_pages.get(i-1) #TODO: this can error out ungracefully if you try to extract a page that doesn't exist (e.g. page 5 of a 4 page doc). we should catch and handle.
               contents = pdfbox_page.getContents
               next if contents.nil?
               @extractor.clear!
