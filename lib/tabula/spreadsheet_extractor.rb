@@ -40,20 +40,6 @@ module Tabula
                 y.yield page, spreadsheet
 
               end
-
-
-              # lines = page.ruling_lines(options)
-              # spreadsheet_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
-              # spreadsheet_areas.sort!{|a1, a2| a1.top == a2.top ? a1.left <=> a2.left : a1.top <=> a2.top}
-              # spreadsheet_areas.each do |area|
-              #   spreadsheet_rulings = lines.select{|rul| area.intersectsLine(rul.to_line) }
-              #   spreadsheet = Tabula::Spreadsheet.new(area.top, area.left, area.width, area.height, spreadsheet_rulings)
-              #   spreadsheet.cells.each do |cell|
-              #     cell.text_elements = page.get_cell_text(cell)
-              #   end
-              #   y.yield page, spreadsheet
-
-              # end
             end
           ensure
             @pdf_file.close

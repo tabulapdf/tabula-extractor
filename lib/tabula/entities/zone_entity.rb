@@ -39,6 +39,10 @@ module Tabula
       self.to_h.to_json
     end
 
+    def inspect
+      "#<#{self.class} dims: #{self.dims(:x, :y, :width, :height)}>"
+    end
+
     def tlbr
       [top, left, bottom, right]
     end

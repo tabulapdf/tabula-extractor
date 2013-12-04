@@ -10,7 +10,7 @@ module Tabula
       @placeholder = false
       @merged = false
       @text_elements = []
-      @options = options
+      @options = options #.merge({:use_line_returns => true})
     end
 
     def self.new_from_points(topleft, bottomright)
@@ -24,11 +24,10 @@ module Tabula
       output = ""
       text_elements.sort #use the default sort for ZoneEntity
       text_elements.group_by(&:top).values.each do |row|
-        #output << " " if !output[-1].nil? && output[-1] != " " && el.text[0] != " "
         output << row.map{|el| el.text}.join('') + (@options[:use_line_returns] ? "\n" : '')
       end
       if output.empty? && debug
-        output = "width: #{width} h: #{height}"
+        output = "top: #{top} left: #{left} \n w: #{width} h: #{height}"
       end
       output.strip
     end

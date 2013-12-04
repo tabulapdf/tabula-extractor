@@ -3,15 +3,17 @@ java_import java.awt.Polygon
 java_import java.awt.geom.Area
 
 module Tabula
-
+  # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
   module HasCells
 
     #implement Nurminen thesis algorithm
-    def find_cells(horizontal_ruling_lines, vertical_ruling_lines)
+
+    # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
+    def find_cells!
       # All lines need to been sorted from up to down,
       # and left to right in ascending order
 
-      cells = []
+      cellsFound = []
 
       # puts "h lines"
       # puts horizontal_ruling_lines.select{|l| l.left <= 56.0 }
@@ -56,7 +58,7 @@ module Tabula
                   if btmRightHorizontal.colinear?( x_point ) &&
                     btmRightVertical.colinear?( y_point )
                     # Rectangle is confirmed to have 4 sides
-                    cells << Cell.new_from_points( topLeft, btmRight)
+                    cellsFound << Cell.new_from_points( topLeft, btmRight)
                     # Each crossing point can be the top left corner
                     # of only a single rectangle
                     #next crossing-point; #Jeremy asks: we need to "next" out of the outer loop here
@@ -69,60 +71,9 @@ module Tabula
           end
         end #cellCreated
       end
-      cells
+      self.cells = cellsFound
+      cellsFound
     end
-
-
-    # def find_cells_inefficiently!(horizontal_ruling_lines, vertical_ruling_lines)
-    #   cells = []
-    #   vertical_ruling_lines.each_with_index do |left_ruling, i|
-    #     next if left_ruling.left == vertical_ruling_lines.last.left #skip the rightmost rulings (since they're no cell's left boundary)
-    #     prev_top_ruling = nil
-    #     horizontal_ruling_lines.each_with_index do |top_ruling, j|
-
-    #       next if top_ruling.top == horizontal_ruling_lines.last.top  #skip the bottommost rulings (since they're no cell's top boundary)
-    #       next unless top_ruling.nearlyIntersects?(left_ruling)
-
-    #       #find the vertical line with (a) a left strictly greater than left_ruling's
-    #       #                            (b) a top non-strictly smaller than top_ruling's
-    #       #                            (c) the lowest left of all other vertical rulings that fit (a) and (b).
-    #       #                            (d) if married and filing jointly, the subtract $6,100 (standard deduction) and amount from line 32 (adjusted gross income)
-    #       candidate_right_rulings = vertical_ruling_lines[i+1..-1].select{|l| l.left > left_ruling.left } # (a)
-    #       candidate_right_rulings.select!{|l| l.nearlyIntersects?(top_ruling) && l.bottom > top_ruling.top} #TODO make a better intersection function to check for this.
-    #       if candidate_right_rulings.empty?
-    #         # TODO: why does THIS ever happen?
-    #         # Oh, presumably because there's a broken line at the end?
-    #         # (But that doesn't make sense either.)
-    #         next
-    #       end
-    #       right_ruling = candidate_right_rulings.sort_by{|l| l.left }[0] # (c)
-
-    #       #random debug crap
-    #       # if left_ruling.left == vertical_uniq_locs[0] && top_ruling.top == horizontal_uniq_locs[0]
-    #       #   candidate_right_rulings = vertical_ruling_lines[i+1..-1].select{|l| l.left > left_ruling.left }.select{|l| l.left == 142.0 }
-    #       #   puts candidate_right_rulings.map{|l| [l.left, l.nearlyIntersects?(top_ruling), top_ruling, l]}.inspect #TODO make a better intersection function to check for this.
-    #       # end
-
-    #       #find the horizontal line with (a) intersections with left_ruling and right_ruling
-    #       #                              (b) the lowest top that is strictly greater than top_ruling's
-    #       candidate_bottom_rulings = horizontal_ruling_lines[j+1..-1].select{|l| l.top > top_ruling.top }
-    #       candidate_bottom_rulings.select!{|l| l.nearlyIntersects?(right_ruling) && l.nearlyIntersects?(left_ruling)}
-    #       if candidate_bottom_rulings.empty?
-    #         next
-    #       end
-    #       bottom_ruling = candidate_bottom_rulings.sort_by{|l| l.top }[0]
-
-    #       cell_left = left_ruling.left
-    #       cell_top = top_ruling.top
-    #       cell_width = right_ruling.right - cell_left
-    #       cell_height = bottom_ruling.bottom - cell_top
-
-    #       c = Cell.new(cell_top, cell_left, cell_width, cell_height)
-    #       cells << c
-    #     end
-    #   end
-    #   cells
-    # end
 
     ##########################
     # Chapter 2, Merged Cells
@@ -130,12 +81,13 @@ module Tabula
     #if c is a "merged cell", that is
     #              if there are N>0 vertical lines strictly between this cell's left and right
     #insert N placeholder cells after it with zero size (but same top)
-    def add_merged_cells!(cells, horizontal_ruling_lines, vertical_ruling_lines)
+
+    # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
+    def add_merged_cells!
       vertical_uniq_locs = vertical_ruling_lines.map(&:left).uniq    #already sorted
       horizontal_uniq_locs = horizontal_ruling_lines.map(&:top).uniq #already sorted
 
       cells.each do |c|
-
         vertical_rulings_merged_over = vertical_uniq_locs.select{|l| l > c.left && l < c.right }
         horizontal_rulings_merged_over = horizontal_uniq_locs.select{|t| t > c.top && t < c.bottom }
 

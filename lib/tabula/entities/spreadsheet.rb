@@ -2,16 +2,19 @@ module Tabula
   # a counterpart of Table, to be sure.
   # not sure yet what their relationship ought to be.
   class Spreadsheet < ZoneEntity
+    include Tabula::HasCells
     attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines
 
-    def initialize(top, left, width, height, cells) #, lines)
+    def initialize(top, left, width, height, cells, vertical_ruling_lines, horizontal_ruling_lines) #, lines)
       super(top, left, width, height)
       @cells = cells
-      # @vertical_ruling_lines = lines.select(&:vertical?).sort_by(&:left)
-      # @horizontal_ruling_lines = lines.select(&:horizontal?).sort_by(&:top)
+      @vertical_ruling_lines = vertical_ruling_lines
+      @horizontal_ruling_lines = horizontal_ruling_lines
+    end
 
-      # @cells = find_cells(@vertical_ruling_lines, @horizontal_ruling_lines)
-      # add_merged_cells!(@cells, @vertical_ruling_lines,  @horizontal_ruling_lines)
+    def ruling_lines=(lines)
+      @vertical_ruling_lines = lines.select{|vl| vl.vertical? && spr.intersectsLine(vl.to_line) }
+      @horizontal_ruling_lines = lines.select{|hl| hl.horizontal? && spr.intersectsLine(hl.to_line) }
     end
 
     def rows
@@ -21,7 +24,7 @@ module Tabula
       end
       #here, insert another kind of placeholder for empty corners
       # like in 01001523B_China.pdf
-      #TODO: support placeholders for "empty" cells in rows other than row 1
+      #TODO: support placeholders for "empty" cells in rows other than row 1, and in #cols
       zerozero =  array_of_rows[0]
       # puts array_of_rows[0].inspect
       if array_of_rows.size > 2
@@ -29,7 +32,9 @@ module Tabula
           missing_spots = array_of_rows[1].map(&:left) - array_of_rows[0].map(&:left)
           # puts missing_spots.inspect
           missing_spots.each do |missing_spot|
-            array_of_rows[0] << Cell.new(array_of_rows[0][0].top, missing_spot, 0, 0)
+            missing_spot_placeholder = Cell.new(array_of_rows[0][0].top, missing_spot, 0, 0)
+            missing_spot_placeholder.placeholder = true
+            array_of_rows[0] << missing_spot_placeholder
           end
         end
         array_of_rows[0].sort_by!(&:left)
