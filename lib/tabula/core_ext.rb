@@ -1,6 +1,7 @@
 java_import java.awt.geom.Point2D
 java_import java.awt.geom.Line2D
 java_import java.awt.geom.Rectangle2D
+java_import java.awt.Rectangle
 
 class Array
   def rpad(padding, target_size)
@@ -275,4 +276,11 @@ class Rectangle2D::Float
     "#<Rectangle2D dims:[#{top}, #{left}, #{bottom}, #{right}]>"
   end
 
+end
+
+# used only in GetBounds2D in an intermediate step in HasCells#find_spreadsheets_from_cells
+class Rectangle #java.awt.Rectangle
+  def inspect
+    "#<Rectangle dims:[x:#{x}, y:#{y}, w:#{width}, h:#{height}]>"
+  end
 end

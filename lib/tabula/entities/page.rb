@@ -25,7 +25,7 @@ module Tabula
       self.find_cells!
       # add_merged_cells!(@cells, @vertical_ruling_lines,  @horizontal_ruling_lines)
 
-      spreadsheet_areas = find_spreadsheets_from_cells(@cells) #literally, java.awt.geom.Area objects. lol sorry. polygons.
+      spreadsheet_areas = find_spreadsheets_from_cells #literally, java.awt.geom.Area objects. lol sorry. polygons.
 
       #e.g.
       # [

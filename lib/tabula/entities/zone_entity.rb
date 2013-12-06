@@ -40,7 +40,7 @@ module Tabula
     end
 
     def inspect
-      "#<#{self.class} dims: #{self.dims(:x, :y, :width, :height)}>"
+      "#<#{self.class} dims: #{self.dims(:top, :left, :width, :height)}>"
     end
 
     def tlbr

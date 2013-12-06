@@ -6,8 +6,8 @@ module Tabula
   # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
   module HasCells
 
-    #implement Nurminen thesis algorithm
-
+    # finds cells from the ruling lines on the page.
+    # implements Nurminen thesis algorithm cf. https://github.com/jazzido/tabula-extractor/issues/16
     # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
     def find_cells!
       # All lines need to been sorted from up to down,
@@ -134,7 +134,7 @@ module Tabula
     #TODO:
     #returns array of Spreadsheet objects constructed (or spreadsheet_areas => cells)
     #maybe placeholders should be added after cells is split into spreadsheets
-    def find_spreadsheets_from_cells(cells)
+    def find_spreadsheets_from_cells
       cells.sort!
 
       # via http://stackoverflow.com/questions/13746284/merging-multiple-adjacent-rectangles-into-one-polygon

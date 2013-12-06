@@ -342,4 +342,149 @@ class TestExtractor < Minitest::Test
   end
 
 
+  class SpreadsheetsHasCellsTester
+    include Tabula::HasCells
+    attr_accessor :cells
+    def initialize(cells)
+      @cells = cells
+    end
+  end
+
+  #just tests the algorithm
+  def test_cells_to_spreadsheets
+
+    cells = [Tabula::Cell.new(40.0, 18.0, 208.0, 4.0), Tabula::Cell.new(44.0, 18.0, 52.0, 6.0),
+      Tabula::Cell.new(50.0, 18.0, 52.0, 4.0), Tabula::Cell.new(54.0, 18.0, 52.0, 6.0),
+      Tabula::Cell.new(60.0, 18.0, 52.0, 4.0), Tabula::Cell.new(64.0, 18.0, 52.0, 6.0),
+      Tabula::Cell.new(70.0, 18.0, 52.0, 4.0), Tabula::Cell.new(74.0, 18.0, 52.0, 6.0),
+      Tabula::Cell.new(90.0, 18.0, 52.0, 4.0), Tabula::Cell.new(94.0, 18.0, 52.0, 6.0),
+      Tabula::Cell.new(100.0, 18.0, 52.0, 28.0), Tabula::Cell.new(128.0, 18.0, 52.0, 4.0),
+      Tabula::Cell.new(132.0, 18.0, 52.0, 64.0), Tabula::Cell.new(196.0, 18.0, 52.0, 66.0),
+      Tabula::Cell.new(262.0, 18.0, 52.0, 4.0), Tabula::Cell.new(266.0, 18.0, 52.0, 84.0),
+      Tabula::Cell.new(350.0, 18.0, 52.0, 4.0), Tabula::Cell.new(354.0, 18.0, 52.0, 32.0),
+      Tabula::Cell.new(386.0, 18.0, 52.0, 38.0), Tabula::Cell.new(424.0, 18.0, 52.0, 18.0),
+      Tabula::Cell.new(442.0, 18.0, 52.0, 74.0), Tabula::Cell.new(516.0, 18.0, 52.0, 28.0),
+      Tabula::Cell.new(544.0, 18.0, 52.0, 4.0), Tabula::Cell.new(44.0, 70.0, 156.0, 6.0),
+      Tabula::Cell.new(50.0, 70.0, 156.0, 4.0), Tabula::Cell.new(54.0, 70.0, 156.0, 6.0),
+      Tabula::Cell.new(60.0, 70.0, 156.0, 4.0), Tabula::Cell.new(64.0, 70.0, 156.0, 6.0),
+      Tabula::Cell.new(70.0, 70.0, 156.0, 4.0), Tabula::Cell.new(74.0, 70.0, 156.0, 6.0),
+      Tabula::Cell.new(84.0, 70.0, 2.0, 6.0), Tabula::Cell.new(90.0, 70.0, 156.0, 4.0),
+      Tabula::Cell.new(94.0, 70.0, 156.0, 6.0), Tabula::Cell.new(100.0, 70.0, 156.0, 28.0),
+      Tabula::Cell.new(128.0, 70.0, 156.0, 4.0), Tabula::Cell.new(132.0, 70.0, 156.0, 64.0),
+      Tabula::Cell.new(196.0, 70.0, 156.0, 66.0), Tabula::Cell.new(262.0, 70.0, 156.0, 4.0),
+      Tabula::Cell.new(266.0, 70.0, 156.0, 84.0), Tabula::Cell.new(350.0, 70.0, 156.0, 4.0),
+      Tabula::Cell.new(354.0, 70.0, 156.0, 32.0), Tabula::Cell.new(386.0, 70.0, 156.0, 38.0),
+      Tabula::Cell.new(424.0, 70.0, 156.0, 18.0), Tabula::Cell.new(442.0, 70.0, 156.0, 74.0),
+      Tabula::Cell.new(516.0, 70.0, 156.0, 28.0), Tabula::Cell.new(544.0, 70.0, 156.0, 4.0),
+      Tabula::Cell.new(84.0, 72.0, 446.0, 6.0), Tabula::Cell.new(90.0, 226.0, 176.0, 4.0),
+      Tabula::Cell.new(94.0, 226.0, 176.0, 6.0), Tabula::Cell.new(100.0, 226.0, 176.0, 28.0),
+      Tabula::Cell.new(128.0, 226.0, 176.0, 4.0), Tabula::Cell.new(132.0, 226.0, 176.0, 64.0),
+      Tabula::Cell.new(196.0, 226.0, 176.0, 66.0), Tabula::Cell.new(262.0, 226.0, 176.0, 4.0),
+      Tabula::Cell.new(266.0, 226.0, 176.0, 84.0), Tabula::Cell.new(350.0, 226.0, 176.0, 4.0),
+      Tabula::Cell.new(354.0, 226.0, 176.0, 32.0), Tabula::Cell.new(386.0, 226.0, 176.0, 38.0),
+      Tabula::Cell.new(424.0, 226.0, 176.0, 18.0), Tabula::Cell.new(442.0, 226.0, 176.0, 74.0),
+      Tabula::Cell.new(516.0, 226.0, 176.0, 28.0), Tabula::Cell.new(544.0, 226.0, 176.0, 4.0),
+      Tabula::Cell.new(90.0, 402.0, 116.0, 4.0), Tabula::Cell.new(94.0, 402.0, 116.0, 6.0),
+      Tabula::Cell.new(100.0, 402.0, 116.0, 28.0), Tabula::Cell.new(128.0, 402.0, 116.0, 4.0),
+      Tabula::Cell.new(132.0, 402.0, 116.0, 64.0), Tabula::Cell.new(196.0, 402.0, 116.0, 66.0),
+      Tabula::Cell.new(262.0, 402.0, 116.0, 4.0), Tabula::Cell.new(266.0, 402.0, 116.0, 84.0),
+      Tabula::Cell.new(350.0, 402.0, 116.0, 4.0), Tabula::Cell.new(354.0, 402.0, 116.0, 32.0),
+      Tabula::Cell.new(386.0, 402.0, 116.0, 38.0), Tabula::Cell.new(424.0, 402.0, 116.0, 18.0),
+      Tabula::Cell.new(442.0, 402.0, 116.0, 74.0), Tabula::Cell.new(516.0, 402.0, 116.0, 28.0),
+      Tabula::Cell.new(544.0, 402.0, 116.0, 4.0), Tabula::Cell.new(84.0, 518.0, 246.0, 6.0),
+      Tabula::Cell.new(90.0, 518.0, 186.0, 4.0), Tabula::Cell.new(94.0, 518.0, 186.0, 6.0),
+      Tabula::Cell.new(100.0, 518.0, 186.0, 28.0), Tabula::Cell.new(128.0, 518.0, 186.0, 4.0),
+      Tabula::Cell.new(132.0, 518.0, 186.0, 64.0), Tabula::Cell.new(196.0, 518.0, 186.0, 66.0),
+      Tabula::Cell.new(262.0, 518.0, 186.0, 4.0), Tabula::Cell.new(266.0, 518.0, 186.0, 84.0),
+      Tabula::Cell.new(350.0, 518.0, 186.0, 4.0), Tabula::Cell.new(354.0, 518.0, 186.0, 32.0),
+      Tabula::Cell.new(386.0, 518.0, 186.0, 38.0), Tabula::Cell.new(424.0, 518.0, 186.0, 18.0),
+      Tabula::Cell.new(442.0, 518.0, 186.0, 74.0), Tabula::Cell.new(516.0, 518.0, 186.0, 28.0),
+      Tabula::Cell.new(544.0, 518.0, 186.0, 4.0), Tabula::Cell.new(90.0, 704.0, 60.0, 4.0),
+      Tabula::Cell.new(94.0, 704.0, 60.0, 6.0), Tabula::Cell.new(100.0, 704.0, 60.0, 28.0),
+      Tabula::Cell.new(128.0, 704.0, 60.0, 4.0), Tabula::Cell.new(132.0, 704.0, 60.0, 64.0),
+      Tabula::Cell.new(196.0, 704.0, 60.0, 66.0), Tabula::Cell.new(262.0, 704.0, 60.0, 4.0),
+      Tabula::Cell.new(266.0, 704.0, 60.0, 84.0), Tabula::Cell.new(350.0, 704.0, 60.0, 4.0),
+      Tabula::Cell.new(354.0, 704.0, 60.0, 32.0), Tabula::Cell.new(386.0, 704.0, 60.0, 38.0),
+      Tabula::Cell.new(424.0, 704.0, 60.0, 18.0), Tabula::Cell.new(442.0, 704.0, 60.0, 74.0),
+      Tabula::Cell.new(516.0, 704.0, 60.0, 28.0), Tabula::Cell.new(544.0, 704.0, 60.0, 4.0),
+      Tabula::Cell.new(84.0, 764.0, 216.0, 6.0), Tabula::Cell.new(90.0, 764.0, 216.0, 4.0),
+      Tabula::Cell.new(94.0, 764.0, 216.0, 6.0), Tabula::Cell.new(100.0, 764.0, 216.0, 28.0),
+      Tabula::Cell.new(128.0, 764.0, 216.0, 4.0), Tabula::Cell.new(132.0, 764.0, 216.0, 64.0),
+      Tabula::Cell.new(196.0, 764.0, 216.0, 66.0), Tabula::Cell.new(262.0, 764.0, 216.0, 4.0),
+      Tabula::Cell.new(266.0, 764.0, 216.0, 84.0), Tabula::Cell.new(350.0, 764.0, 216.0, 4.0),
+      Tabula::Cell.new(354.0, 764.0, 216.0, 32.0), Tabula::Cell.new(386.0, 764.0, 216.0, 38.0),
+      Tabula::Cell.new(424.0, 764.0, 216.0, 18.0), Tabula::Cell.new(442.0, 764.0, 216.0, 74.0),
+      Tabula::Cell.new(516.0, 764.0, 216.0, 28.0), Tabula::Cell.new(544.0, 764.0, 216.0, 4.0)]
+
+
+    expected_spreadsheets = [Tabula::Spreadsheet.new(40.0, 18.0, 208.0, 40.0, nil, nil, nil),
+                             Tabula::Spreadsheet.new(84.0, 18.0, 962.0, 464.0, nil, nil, nil)]
+
+    #compares spreadsheets on area only.
+    assert_equal expected_spreadsheets.map{|s| [s.x, s.y, s.width, s.height] },
+      SpreadsheetsHasCellsTester.new(cells).find_spreadsheets_from_cells.map{|a| s = a.getBounds; [s.x, s.y, s.width, s.height] }
+
+
+  end
+
+  def test_add_merged_cells
+    skip "until I write it"
+  end
+
+  def test_add_placeholder_cells_to_funny_shaped_tables
+    skip "until I write it, cf 01005787B_Pakistan.pdf"
+  end
+
+  class CellsHasCellsTester
+    include Tabula::HasCells
+    attr_accessor :vertical_ruling_lines, :horizontal_ruling_lines, :cells
+    def initialize(vertical_ruling_lines, horizontal_ruling_lines)
+      @cells = []
+      @vertical_ruling_lines = vertical_ruling_lines
+      @horizontal_ruling_lines = horizontal_ruling_lines
+      find_cells!
+    end
+  end
+
+  #just tests the algorithm
+  def test_lines_to_cells
+    vertical_ruling_lines = [ Tabula::Ruling.new(40.0, 18.0, 0.0, 40.0),
+                              Tabula::Ruling.new(44.0, 70.0, 0.0, 36.0),
+                              Tabula::Ruling.new(40.0, 226.0, 0.0, 40.0)]
+
+    horizontal_ruling_lines = [ Tabula::Ruling.new(40.0, 18.0, 208.0, 0.0),
+                                Tabula::Ruling.new(44.0, 18.0, 208.0, 0.0),
+                                Tabula::Ruling.new(50.0, 18.0, 208.0, 0.0),
+                                Tabula::Ruling.new(54.0, 18.0, 208.0, 0.0),
+                                Tabula::Ruling.new(60.0, 18.0, 208.0, 0.0),
+                                Tabula::Ruling.new(64.0, 18.0, 208.0, 0.0),
+                                Tabula::Ruling.new(70.0, 18.0, 208.0, 0.0),
+                                Tabula::Ruling.new(74.0, 18.0, 208.0, 0.0),
+                                Tabula::Ruling.new(80.0, 18.0, 208.0, 0.0)]
+
+    expected_cells = [Tabula::Cell.new(40.0, 18.0, 208.0, 4.0), Tabula::Cell.new(44.0, 18.0, 52.0, 6.0),
+                      Tabula::Cell.new(50.0, 18.0, 52.0, 4.0), Tabula::Cell.new(54.0, 18.0, 52.0, 6.0),
+                      Tabula::Cell.new(60.0, 18.0, 52.0, 4.0), Tabula::Cell.new(64.0, 18.0, 52.0, 6.0),
+                      Tabula::Cell.new(70.0, 18.0, 52.0, 4.0), Tabula::Cell.new(74.0, 18.0, 52.0, 6.0),
+                      Tabula::Cell.new(44.0, 70.0, 156.0, 6.0), Tabula::Cell.new(50.0, 70.0, 156.0, 4.0),
+                      Tabula::Cell.new(54.0, 70.0, 156.0, 6.0), Tabula::Cell.new(60.0, 70.0, 156.0, 4.0),
+                      Tabula::Cell.new(64.0, 70.0, 156.0, 6.0), Tabula::Cell.new(70.0, 70.0, 156.0, 4.0),
+                      Tabula::Cell.new(74.0, 70.0, 156.0, 6.0), ]
+
+    actual_cells = CellsHasCellsTester.new(vertical_ruling_lines, horizontal_ruling_lines).cells
+    assert_equal Set.new(expected_cells), Set.new(actual_cells) #I don't care about order
+  end
+
+  #this is the real deal!!
+  def test_extract_tabular_data_using_lines_and_spreadsheets
+    pdf_file_path = "./test/data/frx_2012_disclosure.pdf"
+    expected_data_path = "./test/data/frx_2012_disclosure.tsv"
+    expected = open(expected_data_path, 'r').read #.split("\n").map{|line| line.split("\t")}
+
+    Tabula::Extraction::SpreadsheetExtractor.new(pdf_file_path, :all).extract.each do |pdf_page, spreadsheet|
+      assert_equal expected, spreadsheet.to_tsv
+    end
+
+  end
+
 end
