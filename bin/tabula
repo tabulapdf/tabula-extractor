@@ -40,6 +40,8 @@ EOS
     opt :debug, 'Print detected table areas instead of processing.'
     opt :format, "Output format (#{FORMATS.join(",")})", :default => 'CSV'
     opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
+    opt :spreadsheet, "Force PDF to be extracted using spreadsheet-style extraction (if there are ruling lines separating each cell, as in a PDF of an Excel spreadsheet)"
+    opt :no_spreadsheet, "Force PDF not to be extracted using spreadsheet-style extraction (if there are ruling lines separating each cell, as in a PDF of an Excel spreadsheet)"
   end
 
   if !opts[:columns].nil?
@@ -69,33 +71,59 @@ def rulings_from_columns(page, area, vertical_rulings)
   }
 end
 
+def heuristic_to_decide_whether_to_use_spreadsheet_extraction
+  false #TODO
+end
+
 def main
   opts, filename = parse_command_line
 
   area = opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)
   vertical_rulings = opts[:columns].nil? ? nil : opts[:columns].split(',').map(&:to_f)
   out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'wb')
-  extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
-  extractor.extract.each_with_index do |page, page_index|
-    if opts[:guess]
-      lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index))
-      page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
-      page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
-    else
-      page_areas = [area]
-    end
 
-    page_areas.each do |page_area|
-      if opts[:guess] && opts[:debug]
-        puts (page_index + 1).to_s + ', ' + page_area.to_s
+  use_spreadsheet_extraction =  if opts[:spreadsheet]
+                                  true
+                                elsif opts[:no_spreadsheet]
+                                  false
+                                else
+                                  heuristic_to_decide_whether_to_use_spreadsheet_extraction
+                                end
+
+  if use_spreadsheet_extraction #TODO: use a heuristic, but allow forcing.
+    extractor = Tabula::Extraction::SpreadsheetExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
+    extractor.extract.each do |pdf_page, spreadsheet|
+      if opts[:debug]
+        puts "Page #{pdf_page}: #{spreadsheet.dims(:top, :left, :bottom, :right)}"
       else
-        text = page.get_text( page_area )
-        table = Tabula.make_table(text, vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(page, area, vertical_rulings) })
         Tabula::Writers.send(opts[:format].to_sym,
-                            table,
+                            spreadsheet.rows,
                             out)
       end
+    end
+  else
+    extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
+    extractor.extract.each_with_index do |page, page_index|
+      if opts[:guess]
+        lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index))
+        page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
+        page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
+      else
+        page_areas = [area]
+      end
 
+      page_areas.each do |page_area|
+        if opts[:guess] && opts[:debug]
+          puts (page_index + 1).to_s + ', ' + page_area.to_s
+        else
+          text = page.get_text( page_area )
+          table = Tabula.make_table(text, vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(page, area, vertical_rulings) })
+          Tabula::Writers.send(opts[:format].to_sym,
+                              table,
+                              out)
+        end
+
+      end
     end
   end
   out.close
