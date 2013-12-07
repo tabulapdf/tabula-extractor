@@ -9,7 +9,7 @@ module Tabula
     def TableGuesser.find_and_write_rects(filename, output_dir)
       #writes to JSON the rectangles on each page in the specified PDF.
       open(File.join(output_dir, "tables.json"), 'w') do |f|
-        f.write( JSON.dump(find_rects(filename).map{|a| a.map{|r| r.dims.map &:to_i }} ))
+        f.write( JSON.dump(find_rects(filename).map{|a| a.map{|r| r.dims.map(&:to_i) }} ))
       end
     end
 
@@ -47,8 +47,7 @@ module Tabula
     end
 
     def TableGuesser.find_lines_on_page(pdf, page_number_zero_indexed)
-      #Tabula::LSD.detect_lines_in_pdf_page(pdf, page_index)
-      Tabula::Extraction::LineExtractor.lines_in_pdf_page(pdf, page_number_zero_indexed, options={:render_pdf => false})
+      Tabula::Extraction::LineExtractor.lines_in_pdf_page(pdf, page_number_zero_indexed, {:render_pdf => false})
     end
 
     def TableGuesser.find_rects_on_page(pdf, page_index)
