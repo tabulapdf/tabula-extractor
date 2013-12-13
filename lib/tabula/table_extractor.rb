@@ -152,7 +152,7 @@ module Tabula
                                     right - left, bottom - top)
     end
 
-    text_elements = Extraction::CharacterExtractor.new(pdf_path,
+    text_elements = Extraction::ObjectExtractor.new(pdf_path,
                                                        [page],
                                                        options[:password]) \
       .extract.next.get_text(area)

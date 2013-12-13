@@ -102,7 +102,7 @@ def main
       end
     end
   else
-    extractor = Tabula::Extraction::CharacterExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
+    extractor = Tabula::Extraction::ObjectExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
     extractor.extract.each_with_index do |page, page_index|
       if opts[:guess]
         lines = Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(filename, page_index))

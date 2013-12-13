@@ -149,7 +149,7 @@ end
 class TestDumper < Minitest::Test
 
   def test_extractor
-    extractor = Tabula::Extraction::CharacterExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
+    extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
     page = extractor.extract.first
     assert_instance_of Tabula::Page, page
   end
@@ -157,7 +157,7 @@ class TestDumper < Minitest::Test
   def test_get_by_area
 
 #    http://localhost:8080/debug/418b1d5698e5c7b724551d9610c071ab3063275c/characters?x1=57.921428571428564&x2=290.7&y1=107.1&y2=394.52142857142854&page=1&use_lines=false
-    extractor = Tabula::Extraction::CharacterExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
+    extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
     characters = extractor.extract.next.get_text([107.1, 57.9214, 394.5214, 290.7])
     assert_equal characters.size, 206
   end
@@ -223,7 +223,7 @@ class TestExtractor < Minitest::Test
 
   def test_missing_spaces_around_an_ampersand
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    character_extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path)
+    character_extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
     lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(pdf_file_path, 0)
     vertical_rulings = lines.select(&:vertical?)
 
@@ -241,7 +241,7 @@ class TestExtractor < Minitest::Test
   def test_forest_disclosure_report
     skip "Skipping until we support multiline cells"
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    character_extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path)
+    character_extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
     lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
     vertical_rulings = lines.select(&:vertical?) #.uniq{|line| (line.left / 10).round }
 
@@ -300,7 +300,7 @@ class TestExtractor < Minitest::Test
     #N.B. it's "MORGANTOWN", "WV" that we're most interested in here (it used to show up as ["MORGANTOWNWV", "", ""])
 
 
-    extractor = Tabula::Extraction::CharacterExtractor.new(pdf_file_path, 1...2) #:all ) # 1..2643
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, 1...2) #:all ) # 1..2643
     extractor.extract.each_with_index do |pdf_page, page_index|
 
       page_areas = [[250, 0, 325, 1700]]

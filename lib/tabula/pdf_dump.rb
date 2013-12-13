@@ -21,23 +21,53 @@ module Tabula
       document
     end
 
-    class TextExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
+    class ObjectExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
       attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :lines
       field_accessor :pageSize, :page, :graphics
 
       PRINTABLE_RE = /[[:print:]]/
 
-      def initialize
-        super
+      def initialize(pdf_filename, pages=[1], password='', options={})
+        raise Errno::ENOENT unless File.exists?(pdf_filename)
+        @pdf_filename = pdf_filename
+        @pdf_file = Extraction.openPDF(pdf_filename, password)
+        @all_pages = @pdf_file.getDocumentCatalog.getAllPages
+        @pages = pages == :all ?  (1..@all_pages.size) : pages
+
+        super()
         self.characters = []
         @graphics = java.awt.Graphics2D
         self.clipping_paths = []
         self.lines = []
       end
 
+      def extract
+        Enumerator.new do |y|
+          begin
+            @pages.each do |i|
+              page = @all_pages.get(i-1)
+              contents = page.getContents
+              next if contents.nil?
+              self.clear!
+              self.drawPage(page)
+              y.yield Tabula::Page.new(@pdf_filename,
+                                       page.findCropBox.width,
+                                       page.findCropBox.height,
+                                       page.getRotation.to_i,
+                                       i, #one-indexed, just like `i` is.
+                                       self.characters)
+            end
+          ensure
+            @pdf_file.close
+          end # begin
+        end
+      end
+
       def clear!
-        self.characters = []
+        self.characters.clear
+        self.clipping_paths.clear
+        self.lines.clear
       end
 
       def ensurePageSize!
@@ -67,18 +97,25 @@ module Tabula
 
       def strokePath
         # TODO FINISH IMPLEMENTING
-        path = self.getLinePath
-        puts "stroke"
-        puts self.pathToList(path).inspect
-        self.getLinePath.reset
+        path = self.pathToList(self.getLinePath)
+        if path[0][0] != java.awt.geom.PathIterator::SEG_MOVETO \
+          || path[1..-1].any? { |p| p.first != java.awt.geom.PathIterator::SEG_LINETO }
+          self.getLinePath.reset
+          return
+        end
       end
 
       def fillPath(windingRule)
         # TODO FINISH IMPLEMENTING
-        path = self.getLinePath
-        puts "fill"
-        puts self.pathToList(path).inspect
-        puts
+        path = self.pathToList(self.getLinePath)
+        if path[0][0] != java.awt.geom.PathIterator::SEG_MOVETO \
+          || path[1..-1].any? { |p| p.first != java.awt.geom.PathIterator::SEG_LINETO }
+          raise "MIERDA"
+        end
+
+        #puts "fill"
+        #puts self.pathToList(path).inspect
+        #puts
         self.getLinePath.reset
       end
 
@@ -86,21 +123,20 @@ module Tabula
       end
 
       def transformClippingPath(cp)
-        mb = self.page.getMediaBox
+        mb = self.page.findCropBox
 
-        if self.page.getRotation.nil? || !([90, -270, -90, 270].include?(self.page.getRotation))
-          trans = AffineTransform.getScaleInstance(1, -1)
-          trans.translate(0, -mb.getHeight)
-          return cp.createTransformedShape(trans)
-        end
+        rv = if !([90, -270, -90, 270].include?(self.page.getRotation))
+               trans = AffineTransform.getScaleInstance(1, -1)
+               trans.translate(0, -mb.getHeight)
+               cp.createTransformedShape(trans)
+             else
+               trans = AffineTransform.getScaleInstance(-1, 1)
 
-        trans = AffineTransform.getScaleInstance(-1, 1)
-
-        trans.rotate(self.page.getRotation * (Math::PI/180.0),
-                     mb.getLowerLeftX, mb.getLowerLeftY)
-
-        return cp.createTransformedShape(trans)
-
+               trans.rotate(self.page.getRotation * (Math::PI/180.0),
+                            mb.getLowerLeftX, mb.getLowerLeftY)
+               cp.createTransformedShape(trans)
+             end
+        rv
       end
 
       def processTextPosition(text)
@@ -205,42 +241,6 @@ module Tabula
           ensure
             @pdf_file.close
           end
-        end
-      end
-    end
-
-
-    class CharacterExtractor
-      #N.B. pages can be :all, a list of pages or a range.
-      #     but if it's a list or a range, it's one-indexed
-      def initialize(pdf_filename, pages=[1], password='', options={})
-        raise Errno::ENOENT unless File.exists?(pdf_filename)
-        @pdf_filename = pdf_filename
-        @pdf_file = Extraction.openPDF(pdf_filename, password)
-        @all_pages = @pdf_file.getDocumentCatalog.getAllPages
-        @pages = pages == :all ?  (1..@all_pages.size) : pages
-        @extractor = TextExtractor.new
-      end
-
-      def extract
-        Enumerator.new do |y|
-          begin
-            @pages.each do |i|
-              page = @all_pages.get(i-1)
-              contents = page.getContents
-              next if contents.nil?
-              @extractor.clear!
-              @extractor.drawPage page
-              y.yield Tabula::Page.new(@pdf_filename,
-                                       page.findCropBox.width,
-                                       page.findCropBox.height,
-                                       page.getRotation.to_i,
-                                       i, #one-indexed, just like `i` is.
-                                       @extractor.characters)
-            end
-          ensure
-            @pdf_file.close
-          end # begin
         end
       end
     end
