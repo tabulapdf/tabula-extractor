@@ -16,38 +16,24 @@ module Tabula
       @number_one_indexed = number
       self.texts = texts
       @cells = []
+      @spreadsheets = nil
     end
 
-    # returns the Spreadsheets
-    # TODO: doesn't memoize, probably it should.
+    # returns the Spreadsheets; creating them if they're not memoized
     def spreadsheets(options={})
-      get_ruling_lines!
+      unless @spreadsheets.nil?
+        return @spreadsheets
+      end
+      get_ruling_lines!(options)
       self.find_cells!(options)
 
       spreadsheet_areas = find_spreadsheets_from_cells #literally, java.awt.geom.Area objects. lol sorry. polygons.
-
-      #e.g.
-      # [
-      #  [Point2D.Float[54.0, 24.0],
-      #   Point2D.Float[54.0, 98.0],
-      #   Point2D.Float[344.0, 98.0],
-      #   Point2D.Float[344.0, 24.0]
-      #  ],
-
-      #  [Point2D.Float[154.0, 104.0],
-      #   Point2D.Float[154.0, 110.0],
-      #   Point2D.Float[54.0, 110.0],
-      #   Point2D.Float[54.0, 572.0],
-      #   Point2D.Float[930.0, 572.0],
-      #   Point2D.Float[930.0, 104.0]
-      #  ]
-      # ]
 
       #transform each spreadsheet area into a rectangle
       # and get the cells contained within it.
       spreadsheet_rectangle_areas = spreadsheet_areas.map{|a| a.getBounds } #getBounds2D is theoretically better, but returns a Rectangle2D.Double, which doesn't have our Ruby sugar on it.
 
-      actual_spreadsheets = spreadsheet_rectangle_areas.map do |rect|
+      @spreadsheets = spreadsheet_rectangle_areas.map do |rect|
         spr = Spreadsheet.new(rect.y, rect.x,
                         rect.width, rect.height,
                         #TODO: keep track of the cells, instead of getting them again inefficiently.
@@ -60,7 +46,7 @@ module Tabula
         spr
       end
 
-      actual_spreadsheets
+      spreadsheets
     end
 
     def number(indexing_base=:one_indexed)

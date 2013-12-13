@@ -487,4 +487,19 @@ class TestExtractor < Minitest::Test
 
   end
 
+  def test_cope_with_a_tableless_page
+    pdf_file_path = "./test/data/Auth1.pdf"
+    expected = ""
+
+    actual = ""
+
+    Tabula::Extraction::SpreadsheetExtractor.new(pdf_file_path, :all).extract(
+        :line_color_filter => lambda{|components| components.all?{|c| c < 0.2}} 
+      ).each do |pdf_page, spreadsheet|
+      puts pdf_page.ruling_lines
+      actual << spreadsheet.to_tsv
+    end
+    assert_equal expected, actual
+  end
+
 end
