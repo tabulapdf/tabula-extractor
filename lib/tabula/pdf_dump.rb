@@ -163,6 +163,10 @@ module Tabula
         if c =~ PRINTABLE_RE && self.transformClippingPath(ccp).getBounds2D.intersects(te)
           self.characters << te
         end
+
+        def page_count
+          @all_pages.size
+        end
       end
 
       protected
