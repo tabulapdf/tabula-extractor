@@ -15,7 +15,7 @@ module Tabula
       @placeholder = false
       @merged = false
       @text_elements = []
-      @options = ({:use_line_returns => true, :cell_debug => NORMAL}).merge options
+      @options = ({:use_line_returns => false, :cell_debug => NORMAL}).merge options
     end
 
     def self.new_from_points(topleft, bottomright, options={})
