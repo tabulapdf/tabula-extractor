@@ -9,7 +9,7 @@ module Tabula
     # finds cells from the ruling lines on the page.
     # implements Nurminen thesis algorithm cf. https://github.com/jazzido/tabula-extractor/issues/16
     # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
-    def find_cells!
+    def find_cells!(options={})
       # All lines need to been sorted from up to down,
       # and left to right in ascending order
 
@@ -58,7 +58,7 @@ module Tabula
                   if btmRightHorizontal.colinear?( x_point ) &&
                     btmRightVertical.colinear?( y_point )
                     # Rectangle is confirmed to have 4 sides
-                    cellsFound << Cell.new_from_points( topLeft, btmRight)
+                    cellsFound << Cell.new_from_points( topLeft, btmRight, options)
                     # Each crossing point can be the top left corner
                     # of only a single rectangle
                     #next crossing-point; #Jeremy asks: we need to "next" out of the outer loop here

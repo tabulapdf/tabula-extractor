@@ -20,10 +20,9 @@ module Tabula
 
     # returns the Spreadsheets
     # TODO: doesn't memoize, probably it should.
-    def spreadsheets
+    def spreadsheets(options={})
       get_ruling_lines!
-      self.find_cells!
-      # add_merged_cells!(@cells, @vertical_ruling_lines,  @horizontal_ruling_lines)
+      self.find_cells!(options)
 
       spreadsheet_areas = find_spreadsheets_from_cells #literally, java.awt.geom.Area objects. lol sorry. polygons.
 
