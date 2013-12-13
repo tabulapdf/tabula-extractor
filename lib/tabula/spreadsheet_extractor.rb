@@ -33,7 +33,7 @@ module Tabula
                                        i, #one-indexed, just like `i` is.
                                        @extractor.characters)
 
-              page.spreadsheets.each do |spreadsheet|
+              page.spreadsheets(options).each do |spreadsheet|
                 spreadsheet.cells.each do |cell|
                   cell.text_elements = page.get_cell_text(cell)
                 end
