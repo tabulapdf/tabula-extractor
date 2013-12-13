@@ -23,7 +23,7 @@ module Tabula
 
     class TextExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
-      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths
+      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :lines
       field_accessor :pageSize, :page, :graphics
 
       PRINTABLE_RE = /[[:print:]]/
@@ -33,6 +33,7 @@ module Tabula
         self.characters = []
         @graphics = java.awt.Graphics2D
         self.clipping_paths = []
+        self.lines = []
       end
 
       def clear!
@@ -65,10 +66,19 @@ module Tabula
       end
 
       def strokePath
+        # TODO FINISH IMPLEMENTING
+        path = self.getLinePath
+        puts "stroke"
+        puts self.pathToList(path).inspect
         self.getLinePath.reset
       end
 
       def fillPath(windingRule)
+        # TODO FINISH IMPLEMENTING
+        path = self.getLinePath
+        puts "fill"
+        puts self.pathToList(path).inspect
+        puts
         self.getLinePath.reset
       end
 
@@ -115,7 +125,7 @@ module Tabula
         end
 
         if c =~ PRINTABLE_RE && self.transformClippingPath(ccp).getBounds2D.intersects(te)
-            self.characters << te
+          self.characters << te
         end
       end
 
@@ -144,12 +154,21 @@ module Tabula
         return (spaceWidthText/1000.0) * fontSizeText * horizontalScalingText * (ctm00 == 0 ? 1 : ctm00)
       end
 
-      def debugPath(path)
+      def pathToList(path)
         iterator = path.getPathIterator(java.awt.geom.AffineTransform.new)
         coords = Java::double[6].new
-        rv = ''
+        rv = []
         while !iterator.isDone do
           segType = iterator.currentSegment(coords)
+          rv << [segType, coords]
+          iterator.next
+        end
+        rv
+      end
+
+      def debugPath(path)
+        rv = ''
+        pathToList(path).each do |type, coords|
           case segType
           when java.awt.geom.PathIterator::SEG_MOVETO
             rv += "MOVE: #{coords[0]} #{coords[1]}\n"
@@ -158,7 +177,6 @@ module Tabula
           when java.awt.geom.PathIterator::SEG_CLOSE
             rv += "CLOSE\n\n"
           end
-          iterator.next
         end
         rv
       end
