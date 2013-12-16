@@ -24,7 +24,8 @@ module Tabula
                                        pdfbox_page.findCropBox.height,
                                        pdfbox_page.getRotation.to_i,
                                        i, #one-indexed, just like `i` is.
-                                       self.characters)
+                                       self.characters,
+                                       self.rulings)
 
               page.spreadsheets.each do |spreadsheet|
                 spreadsheet.cells.each do |cell|

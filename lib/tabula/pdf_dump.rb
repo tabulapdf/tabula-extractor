@@ -23,7 +23,7 @@ module Tabula
 
     class ObjectExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
-      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :rulings
+      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :min_char_width, :min_char_height
       field_accessor :pageSize, :page, :graphics
 
       PRINTABLE_RE = /[[:print:]]/
@@ -41,7 +41,8 @@ module Tabula
         @clipping_path = nil
         @transformed_clipping_path = nil
         self.clipping_paths = []
-        self.rulings = []
+        @rulings = []
+        self.min_char_width = self.min_char_height = 1000000
       end
 
       def extract
@@ -51,6 +52,7 @@ module Tabula
               page = @all_pages.get(i-1)
               contents = page.getContents
               next if contents.nil?
+
               self.clear!
               self.drawPage(page)
               y.yield Tabula::Page.new(@pdf_filename,
@@ -58,7 +60,8 @@ module Tabula
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
                                        i, #one-indexed, just like `i` is.
-                                       self.characters)
+                                       self.characters,
+                                       self.rulings)
             end
           ensure
             @pdf_file.close
@@ -69,7 +72,8 @@ module Tabula
       def clear!
         self.characters.clear
         self.clipping_paths.clear
-        self.rulings.clear
+        @page_transform = nil
+        @rulings.clear
       end
 
       def ensurePageSize!
@@ -101,12 +105,10 @@ module Tabula
         # TODO FINISH IMPLEMENTING
         path = self.pathToList(self.getLinePath)
         if path[0][0] != java.awt.geom.PathIterator::SEG_MOVETO \
-          || path[1..-1].any? { |p| p.first != java.awt.geom.PathIterator::SEG_LINETO }
+          || path[1..-1].any? { |p| p.first != java.awt.geom.PathIterator::SEG_LINETO  && p.first != java.awt.geom.PathIterator::SEG_MOVETO }
           self.getLinePath.reset
           return
         end
-
-        puts "path: #{path[0].inspect}"
 
         start_pos = java.awt.geom.Point2D::Float.new(path[0][1][0], path[0][1][1])
 
@@ -115,14 +117,14 @@ module Tabula
           line = java.awt.geom.Line2D::Float.new(*([start_pos, end_pos].sort))
 
           ccp_bounds = self.currentClippingPath.getBounds2D
-          if line.intersects(ccp_bounds)
+          if p[0] == java.awt.geom.PathIterator::SEG_LINETO && line.intersects(ccp_bounds)
             # convert line to rectangle for clipping it to the current clippath
             # sucks, but awt doesn't have methods for this
-            tmp = self.transformPath(line.getBounds2D.createIntersection(ccp_bounds)).getBounds2D
-            self.rulings << ::Tabula::Ruling.new(tmp.getY,
-                                                 tmp.getX,
-                                                 tmp.getWidth,
-                                                 tmp.getHeight)
+            tmp = line.getBounds2D.createIntersection(ccp_bounds).getBounds2D
+            @rulings << ::Tabula::Ruling.new(tmp.getY,
+                                             tmp.getX,
+                                             tmp.getWidth,
+                                             tmp.getHeight)
           end
           start_pos = end_pos
         end
@@ -136,32 +138,30 @@ module Tabula
       end
 
       def transformPath(path)
-        mb = page.findCropBox
-        trans = nil
-        if !([90, -270, -90, 270].include?(self.page.getRotation))
-          trans = AffineTransform.getScaleInstance(1, -1)
-          trans.translate(0, -mb.getHeight)
+        # create default transform for this page
+        cb = page.findCropBox
+        if !([90, -270, -90, 270].include?(page.getRotation))
+          @page_transform = AffineTransform.getScaleInstance(1, -1)
+          @page_transform.translate(0, -cb.getHeight)
         else
-          trans = AffineTransform.getScaleInstance(-1, 1)
-
-          trans.rotate(self.page.getRotation * (Math::PI/180.0),
-                       mb.getLowerLeftX, mb.getLowerLeftY)
+          @page_transform = AffineTransform.getScaleInstance(-1, 1)
+          @page_transform.rotate(page.getRotation * (Math::PI/180.0),
+                                 cb.getLowerLeftX, cb.getLowerLeftY)
         end
-        trans.createTransformedShape(path)
+        @page_transform.createTransformedShape(path)
       end
 
       def currentClippingPath
         cp = self.getGraphicsState.getCurrentClippingPath
 
-        if cp == @clipping_path
-          return @transformed_clipping_path
-        end
+        #if cp == @clipping_path
+        #  return @transformed_clipping_path
+        #end
 
         @clipping_path = cp
 
         @transformed_clipping_path =  self.transformPath(cp)
         return @transformed_clipping_path
-
       end
 
       def processTextPosition(text)
@@ -183,11 +183,63 @@ module Tabula
         ccp_bounds = self.currentClippingPath.getBounds2D
 
         if self.debug_clipping_paths && !self.clipping_paths.include?(ccp_bounds)
-          self.clipping_paths << ccp_bounds
+          self.clipping_paths << ::Tabula::ZoneEntity.new(ccp_bounds.getMinY,
+                                                          ccp_bounds.getMinX,
+                                                          ccp_bounds.getWidth,
+                                                          ccp_bounds.getHeight)
+        end
+
+        if te.width < self.min_char_width
+          self.min_char_width = te.width
+        end
+
+        if te.height < self.min_char_height
+          self.min_char_height = te.height
         end
 
         if c =~ PRINTABLE_RE && ccp_bounds.intersects(te)
           self.characters << te
+        end
+      end
+
+      def rulings
+        # TODO optimize
+        r = @rulings.reject { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }
+        self.collapse_vertical_rulings(r.select(&:vertical?)) + self.collapse_horizontal_rulings(r.select(&:horizontal?))
+      end
+
+      def collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
+        lines.sort!{|a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
+        lines.inject([]) do |memo, next_line|
+          if memo.last && next_line.left == memo.last.left && memo.last.nearlyIntersects?(next_line)
+            memo.last.top = [next_line.top, memo.last.top].min
+            memo.last.bottom = [next_line.bottom, memo.last.bottom].max
+            memo
+          elsif memo.last && memo.last.height == next_line.height && (next_line.left - memo.last.left) < self.min_char_width
+            # merge parallel vertical lines that are close together (closer than the width of the narrowest char)
+            memo.last.left += (next_line.left - memo.last.left) / 2
+            memo
+          else
+            memo << next_line
+          end
+
+        end
+      end
+
+      def collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
+        lines.sort!{|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
+        lines.inject([]) do |memo, next_line|
+          if memo.last && next_line.top == memo.last.top && memo.last.nearlyIntersects?(next_line)
+            memo.last.left = [next_line.left, memo.last.left].min
+            memo.last.right = [next_line.right, memo.last.right].max
+            memo
+          elsif memo.last && memo.last.width == next_line.width && (next_line.top - memo.last.top) < self.min_char_height
+            # merge parallel horizontal lines that are close together (closer than the width of the shortest char)
+            memo.last.top += (next_line.top - memo.last.top) / 2
+            memo
+          else
+            memo << next_line
+          end
         end
       end
 
@@ -217,7 +269,7 @@ module Tabula
       end
 
       def pathToList(path)
-        iterator = path.getPathIterator(java.awt.geom.AffineTransform.new)
+        iterator = path.getPathIterator(@page_transform)
         rv = []
         while !iterator.isDone do
           coords = Java::double[6].new
@@ -242,6 +294,7 @@ module Tabula
         end
         rv
       end
+
     end
 
 

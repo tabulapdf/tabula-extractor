@@ -5,13 +5,13 @@ module Tabula
     attr_reader :rotation, :number_one_indexed, :file_path, :ruling_lines
     attr_accessor :cells, :horizontal_ruling_lines, :vertical_ruling_lines
 
-    def initialize(file_path, width, height, rotation, number, texts=[])
+    def initialize(file_path, width, height, rotation, number, texts=[], ruling_lines=[])
       super(0, 0, width, height)
       @rotation = rotation
       if number < 1
         raise ArgumentError, "Tabula::Page numbers are one-indexed; numbers < 1 are invalid."
       end
-      @ruling_lines = nil
+      @ruling_lines = ruling_lines
       @file_path = file_path
       @number_one_indexed = number
       self.texts = texts
@@ -74,9 +74,7 @@ module Tabula
 
     #returns ruling lines, memoizes them in
     def get_ruling_lines!(options={})
-      if @ruling_lines.nil?
-        options[:render_pdf] ||= false
-        @ruling_lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(file_path, number(:zero_indexed), options)
+      if !@ruling_lines.nil?
         @vertical_ruling_lines = @ruling_lines.select(&:vertical?)
         @horizontal_ruling_lines = @ruling_lines.select(&:horizontal?)
       end
