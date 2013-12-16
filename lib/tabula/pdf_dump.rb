@@ -23,7 +23,7 @@ module Tabula
 
     class ObjectExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
-      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :lines
+      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :rulings
       field_accessor :pageSize, :page, :graphics
 
       PRINTABLE_RE = /[[:print:]]/
@@ -38,8 +38,10 @@ module Tabula
         super()
         self.characters = []
         @graphics = java.awt.Graphics2D
+        @clipping_path = nil
+        @transformed_clipping_path = nil
         self.clipping_paths = []
-        self.lines = []
+        self.rulings = []
       end
 
       def extract
@@ -67,7 +69,7 @@ module Tabula
       def clear!
         self.characters.clear
         self.clipping_paths.clear
-        self.lines.clear
+        self.rulings.clear
       end
 
       def ensurePageSize!
@@ -103,40 +105,63 @@ module Tabula
           self.getLinePath.reset
           return
         end
+
+        puts "path: #{path[0].inspect}"
+
+        start_pos = java.awt.geom.Point2D::Float.new(path[0][1][0], path[0][1][1])
+
+        path[1..-1].each do |p|
+          end_pos = java.awt.geom.Point2D::Float.new(p[1][0], p[1][1])
+          line = java.awt.geom.Line2D::Float.new(*([start_pos, end_pos].sort))
+
+          ccp_bounds = self.currentClippingPath.getBounds2D
+          if line.intersects(ccp_bounds)
+            # convert line to rectangle for clipping it to the current clippath
+            # sucks, but awt doesn't have methods for this
+            tmp = self.transformPath(line.getBounds2D.createIntersection(ccp_bounds)).getBounds2D
+            self.rulings << ::Tabula::Ruling.new(tmp.getY,
+                                                 tmp.getX,
+                                                 tmp.getWidth,
+                                                 tmp.getHeight)
+          end
+          start_pos = end_pos
+        end
       end
 
       def fillPath(windingRule)
-        # TODO FINISH IMPLEMENTING
-        path = self.pathToList(self.getLinePath)
-        if path[0][0] != java.awt.geom.PathIterator::SEG_MOVETO \
-          || path[1..-1].any? { |p| p.first != java.awt.geom.PathIterator::SEG_LINETO }
-          raise "MIERDA"
-        end
-
-        #puts "fill"
-        #puts self.pathToList(path).inspect
-        #puts
-        self.getLinePath.reset
+        self.strokePath
       end
 
       def drawImage(image, at)
       end
 
-      def transformClippingPath(cp)
-        mb = self.page.findCropBox
+      def transformPath(path)
+        mb = page.findCropBox
+        trans = nil
+        if !([90, -270, -90, 270].include?(self.page.getRotation))
+          trans = AffineTransform.getScaleInstance(1, -1)
+          trans.translate(0, -mb.getHeight)
+        else
+          trans = AffineTransform.getScaleInstance(-1, 1)
 
-        rv = if !([90, -270, -90, 270].include?(self.page.getRotation))
-               trans = AffineTransform.getScaleInstance(1, -1)
-               trans.translate(0, -mb.getHeight)
-               cp.createTransformedShape(trans)
-             else
-               trans = AffineTransform.getScaleInstance(-1, 1)
+          trans.rotate(self.page.getRotation * (Math::PI/180.0),
+                       mb.getLowerLeftX, mb.getLowerLeftY)
+        end
+        trans.createTransformedShape(path)
+      end
 
-               trans.rotate(self.page.getRotation * (Math::PI/180.0),
-                            mb.getLowerLeftX, mb.getLowerLeftY)
-               cp.createTransformedShape(trans)
-             end
-        rv
+      def currentClippingPath
+        cp = self.getGraphicsState.getCurrentClippingPath
+
+        if cp == @clipping_path
+          return @transformed_clipping_path
+        end
+
+        @clipping_path = cp
+
+        @transformed_clipping_path =  self.transformPath(cp)
+        return @transformed_clipping_path
+
       end
 
       def processTextPosition(text)
@@ -154,13 +179,14 @@ module Tabula
                                      c,
                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
                                      text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
-        ccp = self.getGraphicsState.getCurrentClippingPath
 
-        if self.debug_clipping_paths && !self.clipping_paths.include?(self.transformClippingPath(ccp).getBounds2D)
-          self.clipping_paths << self.transformClippingPath(ccp).getBounds2D
+        ccp_bounds = self.currentClippingPath.getBounds2D
+
+        if self.debug_clipping_paths && !self.clipping_paths.include?(ccp_bounds)
+          self.clipping_paths << ccp_bounds
         end
 
-        if c =~ PRINTABLE_RE && self.transformClippingPath(ccp).getBounds2D.intersects(te)
+        if c =~ PRINTABLE_RE && ccp_bounds.intersects(te)
           self.characters << te
         end
       end
@@ -192,9 +218,9 @@ module Tabula
 
       def pathToList(path)
         iterator = path.getPathIterator(java.awt.geom.AffineTransform.new)
-        coords = Java::double[6].new
         rv = []
         while !iterator.isDone do
+          coords = Java::double[6].new
           segType = iterator.currentSegment(coords)
           rv << [segType, coords]
           iterator.next
@@ -204,7 +230,7 @@ module Tabula
 
       def debugPath(path)
         rv = ''
-        pathToList(path).each do |type, coords|
+        pathToList(path).each do |segType, coords|
           case segType
           when java.awt.geom.PathIterator::SEG_MOVETO
             rv += "MOVE: #{coords[0]} #{coords[1]}\n"
