@@ -204,7 +204,7 @@ module Tabula
 
       def rulings
         # TODO optimize
-        r = @rulings.reject { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }
+        r = @rulings.reject { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }.uniq
         self.collapse_vertical_rulings(r.select(&:vertical?)) + self.collapse_horizontal_rulings(r.select(&:horizontal?))
       end
 
@@ -218,6 +218,7 @@ module Tabula
           elsif memo.last && memo.last.height == next_line.height && (next_line.left - memo.last.left) < self.min_char_width
             # merge parallel vertical lines that are close together (closer than the width of the narrowest char)
             memo.last.left += (next_line.left - memo.last.left) / 2
+            memo.last.right = memo.last.left
             memo
           else
             memo << next_line
@@ -236,6 +237,7 @@ module Tabula
           elsif memo.last && memo.last.width == next_line.width && (next_line.top - memo.last.top) < self.min_char_height
             # merge parallel horizontal lines that are close together (closer than the width of the shortest char)
             memo.last.top += (next_line.top - memo.last.top) / 2
+            memo.last.bottom = memo.last.top
             memo
           else
             memo << next_line
