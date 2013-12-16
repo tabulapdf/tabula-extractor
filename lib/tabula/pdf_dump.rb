@@ -138,7 +138,14 @@ module Tabula
       end
 
       def transformPath(path)
-        # create default transform for this page
+        self.pageTransform.createTransformedShape(path)
+      end
+
+      def pageTransform
+        unless @page_transform.nil?
+          return @page_transform
+        end
+
         cb = page.findCropBox
         if !([90, -270, -90, 270].include?(page.getRotation))
           @page_transform = AffineTransform.getScaleInstance(1, -1)
@@ -148,15 +155,15 @@ module Tabula
           @page_transform.rotate(page.getRotation * (Math::PI/180.0),
                                  cb.getLowerLeftX, cb.getLowerLeftY)
         end
-        @page_transform.createTransformedShape(path)
+        @page_transform
       end
 
       def currentClippingPath
         cp = self.getGraphicsState.getCurrentClippingPath
 
-        #if cp == @clipping_path
-        #  return @transformed_clipping_path
-        #end
+        if cp == @clipping_path
+          return @transformed_clipping_path
+        end
 
         @clipping_path = cp
 
@@ -210,34 +217,37 @@ module Tabula
 
       def collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
         lines.sort!{|a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
-        lines.inject([]) do |memo, next_line|
-          if memo.last && next_line.left == memo.last.left && memo.last.nearlyIntersects?(next_line)
+        lines[1..-1].inject([lines.first]) do |memo, next_line|
+          if next_line.left == memo.last.left && memo.last.nearlyIntersects?(next_line)
             memo.last.top = [next_line.top, memo.last.top].min
             memo.last.bottom = [next_line.bottom, memo.last.bottom].max
             memo
-          elsif memo.last && memo.last.height == next_line.height && (next_line.left - memo.last.left) < self.min_char_width
+          elsif (next_line.left - memo.last.left) < self.min_char_width
             # merge parallel vertical lines that are close together (closer than the width of the narrowest char)
             memo.last.left += (next_line.left - memo.last.left) / 2
             memo.last.right = memo.last.left
+            memo.last.top = [next_line.top, memo.last.top].min
+            memo.last.bottom = [next_line.bottom, memo.last.bottom].max
             memo
           else
             memo << next_line
           end
-
         end
       end
 
       def collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
         lines.sort!{|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
-        lines.inject([]) do |memo, next_line|
-          if memo.last && next_line.top == memo.last.top && memo.last.nearlyIntersects?(next_line)
+        lines[1..-1].inject([lines.first]) do |memo, next_line|
+          if next_line.top == memo.last.top && memo.last.nearlyIntersects?(next_line)
             memo.last.left = [next_line.left, memo.last.left].min
             memo.last.right = [next_line.right, memo.last.right].max
             memo
-          elsif memo.last && memo.last.width == next_line.width && (next_line.top - memo.last.top) < self.min_char_height
+          elsif (next_line.top - memo.last.top) < self.min_char_height
             # merge parallel horizontal lines that are close together (closer than the width of the shortest char)
             memo.last.top += (next_line.top - memo.last.top) / 2
             memo.last.bottom = memo.last.top
+            memo.last.left = [next_line.left, memo.last.left].min
+            memo.last.right = [next_line.right, memo.last.right].max
             memo
           else
             memo << next_line
@@ -271,7 +281,7 @@ module Tabula
       end
 
       def pathToList(path)
-        iterator = path.getPathIterator(@page_transform)
+        iterator = path.getPathIterator(self.pageTransform)
         rv = []
         while !iterator.isDone do
           coords = Java::double[6].new
