@@ -124,6 +124,7 @@ end
 
 class TestTableGuesser < Minitest::Test
   def test_find_rects_from_lines_with_lsd
+    skip "Skipping until we actually use LSD"
     filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     page_index = 0
     lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(filename, page_index, :render_pdf => true)
@@ -134,16 +135,6 @@ class TestTableGuesser < Minitest::Test
     assert_equal expected_page_areas, page_areas
   end
 
-  def test_find_rects_from_lines_with_operators
-    filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    page_index = 0
-    lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(filename, page_index, :render_pdf => false)
-
-    page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
-    page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
-    expected_page_areas = [[54.0, 50.0, 734.0, 552.0]] #same as above, but with rounding. (cf 550.44 -> 552 -- maybe rounded too much?)
-    assert_equal expected_page_areas, page_areas
-  end
 end
 
 class TestDumper < Minitest::Test
@@ -222,11 +213,12 @@ class TestExtractor < Minitest::Test
   def test_missing_spaces_around_an_ampersand
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     character_extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
-    lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(pdf_file_path, 0)
+    page_obj = character_extractor.extract.next
+    lines = page_obj.ruling_lines
     vertical_rulings = lines.select(&:vertical?)
 
-    characters = character_extractor.extract.next.get_text([170, 28, 185, 833])
-                                                           #top left bottom right
+    characters = page_obj.get_text([170, 28, 185, 833]) #top left bottom right
+
     expected = Tabula::Table.new_from_array([
        ["", "REGIONAL PULMONARY & SLEEP",],
        ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"],
