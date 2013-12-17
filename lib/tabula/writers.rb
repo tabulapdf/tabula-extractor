@@ -16,10 +16,9 @@ module Tabula
 
     def Writers.TSV(lines, output=$stdout)
       lines.each do |l|
-        output.write(l.map(&:text).join("\t") + "\n")
+        output.write CSV.generate_line(l.map(&:text), col_sep: "\t", row_sep: "\r\n")
       end
     end
-
 
     def Writers.HTML(lines, output=$stdout)
       raise "not implemented"
