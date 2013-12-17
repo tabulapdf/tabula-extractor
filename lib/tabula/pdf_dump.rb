@@ -3,6 +3,7 @@ java_import org.apache.pdfbox.util.TextPosition
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.util.PDFTextStripper
 java_import org.apache.pdfbox.pdmodel.encryption.StandardDecryptionMaterial
+java_import java.awt.geom.AffineTransform
 
 module Tabula
 
@@ -111,10 +112,11 @@ module Tabula
 
         start_pos = java.awt.geom.Point2D::Float.new(path[0][1][0], path[0][1][1])
 
-
         path[1..-1].each do |p|
           end_pos = java.awt.geom.Point2D::Float.new(p[1][0], p[1][1])
-          line = start_pos < end_pos ? java.awt.geom.Line2D::Float.new(start_pos, end_pos) : java.awt.geom.Line2D::Float.new(end_pos, start_pos)
+          line = (start_pos <=> end_pos) == -1 \
+            ? java.awt.geom.Line2D::Float.new(start_pos, end_pos) \
+            : java.awt.geom.Line2D::Float.new(end_pos, start_pos)
 
           ccp_bounds = self.currentClippingPath
           if p[0] == java.awt.geom.PathIterator::SEG_LINETO && line.intersects(ccp_bounds)
@@ -166,8 +168,7 @@ module Tabula
         end
 
         @clipping_path = cp
-
-        @transformed_clipping_path =  self.transformPath(cp)
+        @transformed_clipping_path = self.transformPath(cp)
         @transformed_clipping_path_bounds = @transformed_clipping_path.getBounds2D
 
         return @transformed_clipping_path_bounds
