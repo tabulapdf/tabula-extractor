@@ -142,14 +142,11 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   class StrokePathOperator < OperatorProcessor
     def process(operator, arguments)
       drawer = self.context
-
-      # pretty lame, but i've never seen white lines
-      # should be safe to discard
-      # NOTE: temporarily disabled.
-      # strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
-      #if strokeColorComps.any? { |c| c < 0.9 }
+      strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
+      color_filter = drawer.options[:line_color_filter] || lambda{|c| true } #by default, use all lines, regardless of color
+      if color_filter.call(strokeColorComps)
         drawer.currentPath.each { |segment| drawer.addRuling(segment) }
-      #end
+      end
 
       drawer.currentPath = []
     end
