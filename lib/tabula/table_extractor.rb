@@ -152,14 +152,16 @@ module Tabula
                                     right - left, bottom - top)
     end
 
-    text_elements = Extraction::ObjectExtractor.new(pdf_path,
-                                                       [page],
-                                                       options[:password]) \
-      .extract.next.get_text(area)
+    page_obj = Extraction::ObjectExtractor.new(pdf_path,
+                                               [page],
+                                               options[:password]) \
+      .extract.next
+
+    text_elements = page_obj.get_text(area)
 
     use_detected_lines = false
     if options[:detect_ruling_lines] && options[:vertical_rulings].empty?
-      detected_vertical_rulings = Extraction::LineExtractor.lines_in_pdf_page(pdf_path, page-1).
+      detected_vertical_rulings = page_obj.ruling_lines.
           find_all(&:vertical?)
 
       # crop lines to area of interest
