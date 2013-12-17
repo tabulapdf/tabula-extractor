@@ -98,22 +98,25 @@ module Tabula
         @basicStroke
       end
 
+
       def strokePath
         # TODO FINISH IMPLEMENTING
         path = self.pathToList(self.getLinePath)
+
         if path[0][0] != java.awt.geom.PathIterator::SEG_MOVETO \
-          || path[1..-1].any? { |p| p.first != java.awt.geom.PathIterator::SEG_LINETO  && p.first != java.awt.geom.PathIterator::SEG_MOVETO }
+          || path[1..-1].any? { |p| p.first != java.awt.geom.PathIterator::SEG_LINETO && p.first != java.awt.geom.PathIterator::SEG_MOVETO }
           self.getLinePath.reset
           return
         end
 
         start_pos = java.awt.geom.Point2D::Float.new(path[0][1][0], path[0][1][1])
 
+
         path[1..-1].each do |p|
           end_pos = java.awt.geom.Point2D::Float.new(p[1][0], p[1][1])
-          line = java.awt.geom.Line2D::Float.new(*([start_pos, end_pos].sort))
+          line = start_pos < end_pos ? java.awt.geom.Line2D::Float.new(start_pos, end_pos) : java.awt.geom.Line2D::Float.new(end_pos, start_pos)
 
-          ccp_bounds = self.currentClippingPath.getBounds2D
+          ccp_bounds = self.currentClippingPath
           if p[0] == java.awt.geom.PathIterator::SEG_LINETO && line.intersects(ccp_bounds)
             # convert line to rectangle for clipping it to the current clippath
             # sucks, but awt doesn't have methods for this
@@ -159,13 +162,15 @@ module Tabula
         cp = self.getGraphicsState.getCurrentClippingPath
 
         if cp == @clipping_path
-          return @transformed_clipping_path
+          return @transformed_clipping_path_bounds
         end
 
         @clipping_path = cp
 
         @transformed_clipping_path =  self.transformPath(cp)
-        return @transformed_clipping_path
+        @transformed_clipping_path_bounds = @transformed_clipping_path.getBounds2D
+
+        return @transformed_clipping_path_bounds
       end
 
       def processTextPosition(text)
@@ -184,7 +189,7 @@ module Tabula
                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
                                      text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
 
-        ccp_bounds = self.currentClippingPath.getBounds2D
+        ccp_bounds = self.currentClippingPath
 
         if self.debug_clipping_paths && !self.clipping_paths.include?(ccp_bounds)
           self.clipping_paths << ::Tabula::ZoneEntity.new(ccp_bounds.getMinY,
@@ -212,6 +217,7 @@ module Tabula
 
       def rulings
         # TODO optimize
+        return [] if @rulings.empty?
         r = @rulings.reject { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }.uniq
         self.collapse_vertical_rulings(r.select(&:vertical?)) + self.collapse_horizontal_rulings(r.select(&:horizontal?))
       end
