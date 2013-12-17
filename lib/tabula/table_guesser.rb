@@ -1,8 +1,4 @@
-require 'java'
 require 'json'
-require_relative './pdf_render'
-require_relative './core_ext'
-
 module Tabula
   module TableGuesser
 
