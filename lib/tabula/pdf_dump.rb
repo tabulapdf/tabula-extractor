@@ -1,6 +1,3 @@
-require_relative './entities.rb'
-
-require 'java'
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.util.TextPosition
 java_import org.apache.pdfbox.pdmodel.PDDocument
