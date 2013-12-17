@@ -1,4 +1,7 @@
 require 'json'
+
+warn 'Tabula::TableGuesser is DEPRECATED and will be removed'
+
 module Tabula
   module TableGuesser
 

@@ -1,5 +1,3 @@
-require 'java'
-
 java_import org.apache.pdfbox.util.operator.OperatorProcessor
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.util.PDFStreamEngine
@@ -11,9 +9,7 @@ java_import java.awt.geom.GeneralPath
 java_import java.awt.geom.AffineTransform
 java_import java.awt.Color
 
-require_relative './core_ext'
-require_relative './line_segment_detector'
-require_relative './entities'
+warn 'Tabula::Extraction::LineExtractor is DEPRECATED and will be removed'
 
 class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
 
