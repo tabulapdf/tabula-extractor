@@ -12,6 +12,10 @@ module Tabula
       @horizontal_ruling_lines = horizontal_ruling_lines
     end
 
+    def ruling_lines
+      @vertical_ruling_lines + @horizontal_ruling_lines
+    end
+
     def ruling_lines=(lines)
       @vertical_ruling_lines = lines.select{|vl| vl.vertical? && spr.intersectsLine(vl.to_line) }
       @horizontal_ruling_lines = lines.select{|hl| hl.horizontal? && spr.intersectsLine(hl.to_line) }
