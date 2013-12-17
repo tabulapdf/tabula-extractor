@@ -155,8 +155,6 @@ class TestDumper < Minitest::Test
   end
 
   def test_get_by_area
-
-#    http://localhost:8080/debug/418b1d5698e5c7b724551d9610c071ab3063275c/characters?x1=57.921428571428564&x2=290.7&y1=107.1&y2=394.52142857142854&page=1&use_lines=false
     extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
     characters = extractor.extract.next.get_text([107.1, 57.9214, 394.5214, 290.7])
     assert_equal characters.size, 206
@@ -494,9 +492,8 @@ class TestExtractor < Minitest::Test
     actual = ""
 
     Tabula::Extraction::SpreadsheetExtractor.new(pdf_file_path, :all).extract(
-        :line_color_filter => lambda{|components| components.all?{|c| c < 0.2}} 
+        :line_color_filter => lambda{|components| components.all?{|c| c < 0.2}}
       ).each do |pdf_page, spreadsheet|
-      puts pdf_page.ruling_lines
       actual << spreadsheet.to_tsv
     end
     assert_equal expected, actual
