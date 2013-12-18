@@ -75,25 +75,18 @@ module Tabula
         area = Tabula::ZoneEntity.new(top, left,
                                       right - left, bottom - top)
       end
-      area ||= self # if area not provided, use entire page
-      texts.select { |t|
-        area.contains(t)
-      }
+      if area.nil?
+        texts
+      else
+        texts.select { |t|
+          area.contains(t)
+        }
+      end
     end
 
     def get_cell_text(area=nil)
-      area = Rectangle2D::Float.new(0, 0, width, height) if area.nil?
-
-      texts = self.texts.select do |t|
-        #t.vertical_midpoint.between?(area.top, area.bottom) &&
-        #t.horizontal_midpoint.between?(area.left, area.right)
-
-        # this seems faster than the commented out test
-        t.intersects(area)
-      end
-      Tabula.merge_words(texts)
+      Tabula.merge_words(self.get_text(area))
     end
-
 
     def to_json(options={})
       { :width => self.width,
