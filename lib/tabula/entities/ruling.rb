@@ -68,7 +68,7 @@ module Tabula
 
     def intersect(area)
       i = self.getBounds2D.createIntersection(area)
-      self.setLine(i.getX, i.getY, i.getX + i.getWidth, i.getY + i.getHeight)
+      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], i.getX, i.getY, i.getX + i.getWidth, i.getY + i.getHeight
       self
     end
 
