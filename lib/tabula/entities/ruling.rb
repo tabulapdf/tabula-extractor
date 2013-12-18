@@ -56,14 +56,11 @@ module Tabula
 
     def nearlyIntersects?(another)
       if self.to_line.intersectsLine(another.to_line)
-        return true
+        true
+      elsif self.perpendicular_to?(another)
+        self.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line.intersectsLine(another.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line)
       else
-        if self.perpendicular_to?(another)
-          result = self.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line.intersectsLine(another.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line)
-        else
-          result = self.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT).to_line.intersectsLine(another.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT).to_line)
-        end
-        return result
+        self.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT).to_line.intersectsLine(another.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT).to_line)
       end
     end
 
@@ -151,6 +148,7 @@ module Tabula
 
       return nil if int_x.nan? || int_y.nan? # TODO is this right?
 
+
       java.awt.geom.Point2D::Float.new(int_x, int_y)
     end
 
@@ -162,7 +160,7 @@ module Tabula
         ip = h.intersection_point(v)
         unless ip.nil?
           memo[ip] ||= []
-          #TODO: stupid hack for FLA pdfs where lines appear to intersect, but don't.
+          # TODO: stupid hack for FLA pdfs where lines appear to intersect, but don't.
           memo[ip] << [h.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT), v.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT)]
         end
         memo

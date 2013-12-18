@@ -1,7 +1,6 @@
-require 'java'
 require 'json'
-require_relative './pdf_render'
-require_relative './core_ext'
+
+warn 'Tabula::TableGuesser is DEPRECATED and will be removed'
 
 module Tabula
   module TableGuesser

@@ -12,6 +12,10 @@ module Tabula
       @horizontal_ruling_lines = horizontal_ruling_lines
     end
 
+    def ruling_lines
+      @vertical_ruling_lines + @horizontal_ruling_lines
+    end
+
     def ruling_lines=(lines)
       @vertical_ruling_lines = lines.select{|vl| vl.vertical? && spr.intersectsLine(vl.to_line) }
       @horizontal_ruling_lines = lines.select{|hl| hl.horizontal? && spr.intersectsLine(hl.to_line) }
@@ -54,15 +58,15 @@ module Tabula
     end
 
     def to_csv
-      rows.map do |row_cells|
-        #row_cells.each{|c| c.options = {:use_line_returns => true}}
-        CSV.generate_line(row_cells.map(&:text), row_sep: "\r\n")
-      end.join('')
+      out = StringIO.new
+      Tabula::Writers.CSV(rows, out)
+      out.string
     end
+
     def to_tsv
-      rows.map do |row_cells|
-        CSV.generate_line(row_cells.map(&:text), col_sep: "\t", row_sep: "\r\n")
-      end.join('')
+      out = StringIO.new
+      Tabula::Writers.TSV(rows, out)
+      out.string
     end
   end
 end

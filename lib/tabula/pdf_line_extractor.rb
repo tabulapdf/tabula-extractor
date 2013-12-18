@@ -1,5 +1,3 @@
-require 'java'
-
 java_import org.apache.pdfbox.util.operator.OperatorProcessor
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.util.PDFStreamEngine
@@ -11,9 +9,7 @@ java_import java.awt.geom.GeneralPath
 java_import java.awt.geom.AffineTransform
 java_import java.awt.Color
 
-require_relative './core_ext'
-require_relative './line_segment_detector'
-require_relative './entities'
+warn 'Tabula::Extraction::LineExtractor is DEPRECATED and will be removed'
 
 class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
 
@@ -69,11 +65,12 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
       le = self.new(options)
       le.processStream(page, page.findResources, page.getContents.getStream)
       pdf_file.close
-      rulings = le.rulings.map do |l|
+      rulings = le.rulings.map do |l, color|
         ::Tabula::Ruling.new(l.getP1.getY,
                              l.getP1.getX,
                              l.getP2.getX - l.getP1.getX,
-                             l.getP2.getY - l.getP1.getY)
+                             l.getP2.getY - l.getP1.getY,
+                             color)
       end
       rulings.reject! { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }
       collapse_vertical_rulings(rulings.select(&:vertical?)) + collapse_horizontal_rulings(rulings.select(&:horizontal?))
@@ -145,7 +142,7 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
       strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
       color_filter = drawer.options[:line_color_filter] || lambda{|c| true } #by default, use all lines, regardless of color
       if color_filter.call(strokeColorComps)
-        drawer.currentPath.each { |segment| drawer.addRuling(segment) }
+        drawer.currentPath.each { |segment| drawer.addRuling(segment, strokeColorComps.to_a) }
       end
 
       drawer.currentPath = []
@@ -159,7 +156,7 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
       fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
       color_filter = drawer.options[:line_color_filter] || lambda{|c| true } #by default, use all lines, regardless of color
       if color_filter.call(fillColorComps)
-        drawer.currentPath.each { |segment| drawer.addRuling(segment) }
+        drawer.currentPath.each { |segment| drawer.addRuling(segment, fillColorComps.to_a) }
       end
 
       drawer.currentPath = []
@@ -251,7 +248,8 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     @pageSize = nil
   end
 
-  def addRuling(ruling)
+  def addRuling(ruling, color=nil)
+    color = color.nil? ? [0,0,0] : color
     if !page.getRotation.nil? && [90, -270, -90, 270].include?(page.getRotation)
 
       mb = page.findMediaBox
@@ -269,7 +267,7 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     # snapping to grid and joining lines that are close together
     ruling.snap!(options[:snapping_grid_cell_size])
 
-    self.rulings << ruling
+    self.rulings << [ruling, color]
   end
 
   ##

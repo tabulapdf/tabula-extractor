@@ -3,8 +3,25 @@ java_import java.awt.Polygon
 java_import java.awt.geom.Area
 
 module Tabula
-  # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
+  # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors; ruling_lines reader
   module HasCells
+
+    IS_TABULAR_HEURISTIC_RATIO = 0.8
+
+
+    #goofy attempt at a heuristic to determine which extraction algorithm to use
+    def is_tabular?
+      # [(x, y) => [horizontal, vertical]]
+      intersection_points = Ruling.find_intersections(horizontal_ruling_lines, vertical_ruling_lines)
+      intersection_counts = {}
+      intersection_points.each do |_, ((horizontal, vertical))|
+        intersection_counts[horizontal] = intersection_counts.fetch(horizontal, 0) + 1
+        intersection_counts[vertical] = intersection_counts.fetch(vertical, 0) + 1
+      end
+
+      part_of_a_table = intersection_counts.count{|line, count| count >= 3 }
+      (part_of_a_table / ruling_lines.count.to_f) > IS_TABULAR_HEURISTIC_RATIO
+    end
 
     # finds cells from the ruling lines on the page.
     # implements Nurminen thesis algorithm cf. https://github.com/jazzido/tabula-extractor/issues/16
@@ -15,9 +32,7 @@ module Tabula
 
       cellsFound = []
 
-      # puts "h lines"
-      # puts horizontal_ruling_lines.select{|l| l.left <= 56.0 }
-      # puts ""
+
 
       intersection_points = Ruling.find_intersections(horizontal_ruling_lines, vertical_ruling_lines)
 

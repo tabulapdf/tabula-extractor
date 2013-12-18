@@ -1,11 +1,9 @@
-require_relative './entities.rb'
-
-require 'java'
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.util.TextPosition
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.util.PDFTextStripper
 java_import org.apache.pdfbox.pdmodel.encryption.StandardDecryptionMaterial
+java_import java.awt.geom.AffineTransform
 
 module Tabula
 
@@ -21,23 +19,60 @@ module Tabula
       document
     end
 
-    class TextExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
+    class ObjectExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
-      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :lines
+      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :min_char_width, :min_char_height, :options
       field_accessor :pageSize, :page, :graphics
 
       PRINTABLE_RE = /[[:print:]]/
 
-      def initialize
-        super
+      def initialize(pdf_filename, pages=[1], password='', options={})
+        raise Errno::ENOENT unless File.exists?(pdf_filename)
+        @pdf_filename = pdf_filename
+        @pdf_file = Extraction.openPDF(pdf_filename, password)
+        @all_pages = @pdf_file.getDocumentCatalog.getAllPages
+        @pages = pages == :all ?  (1..@all_pages.size) : pages
+        @options = options
+
+        super()
         self.characters = []
         @graphics = java.awt.Graphics2D
+        @clipping_path = nil
+        @transformed_clipping_path = nil
         self.clipping_paths = []
-        self.lines = []
+        @rulings = []
+        self.min_char_width = self.min_char_height = 1000000
+      end
+
+      def extract
+        Enumerator.new do |y|
+          begin
+            @pages.each do |i|
+              page = @all_pages.get(i-1)
+              contents = page.getContents
+              next if contents.nil?
+
+              self.clear!
+              self.drawPage(page)
+              y.yield Tabula::Page.new(@pdf_filename,
+                                       page.findCropBox.width,
+                                       page.findCropBox.height,
+                                       page.getRotation.to_i,
+                                       i, #one-indexed, just like `i` is.
+                                       self.characters,
+                                       self.rulings)
+            end
+          ensure
+            @pdf_file.close
+          end # begin
+        end
       end
 
       def clear!
-        self.characters = []
+        self.characters.clear
+        self.clipping_paths.clear
+        @page_transform = nil
+        @rulings.clear
       end
 
       def ensurePageSize!
@@ -65,42 +100,79 @@ module Tabula
         @basicStroke
       end
 
+
       def strokePath
         # TODO FINISH IMPLEMENTING
-        path = self.getLinePath
-        puts "stroke"
-        puts self.pathToList(path).inspect
-        self.getLinePath.reset
+        path = self.pathToList(self.getLinePath)
+
+        if path[0][0] != java.awt.geom.PathIterator::SEG_MOVETO \
+          || path[1..-1].any? { |p| p.first != java.awt.geom.PathIterator::SEG_LINETO && p.first != java.awt.geom.PathIterator::SEG_MOVETO }
+          self.getLinePath.reset
+          return
+        end
+
+        start_pos = java.awt.geom.Point2D::Float.new(path[0][1][0], path[0][1][1])
+
+        path[1..-1].each do |p|
+          end_pos = java.awt.geom.Point2D::Float.new(p[1][0], p[1][1])
+          line = (start_pos <=> end_pos) == -1 \
+            ? java.awt.geom.Line2D::Float.new(start_pos, end_pos) \
+            : java.awt.geom.Line2D::Float.new(end_pos, start_pos)
+
+          ccp_bounds = self.currentClippingPath
+          if p[0] == java.awt.geom.PathIterator::SEG_LINETO && line.intersects(ccp_bounds)
+            # convert line to rectangle for clipping it to the current clippath
+            # sucks, but awt doesn't have methods for this
+            tmp = line.getBounds2D.createIntersection(ccp_bounds).getBounds2D
+            @rulings << ::Tabula::Ruling.new(tmp.getY,
+                                             tmp.getX,
+                                             tmp.getWidth,
+                                             tmp.getHeight)
+          end
+          start_pos = end_pos
+        end
       end
 
       def fillPath(windingRule)
-        # TODO FINISH IMPLEMENTING
-        path = self.getLinePath
-        puts "fill"
-        puts self.pathToList(path).inspect
-        puts
-        self.getLinePath.reset
+        self.strokePath
       end
 
       def drawImage(image, at)
       end
 
-      def transformClippingPath(cp)
-        mb = self.page.getMediaBox
+      def transformPath(path)
+        self.pageTransform.createTransformedShape(path)
+      end
 
-        if self.page.getRotation.nil? || !([90, -270, -90, 270].include?(self.page.getRotation))
-          trans = AffineTransform.getScaleInstance(1, -1)
-          trans.translate(0, -mb.getHeight)
-          return cp.createTransformedShape(trans)
+      def pageTransform
+        unless @page_transform.nil?
+          return @page_transform
         end
 
-        trans = AffineTransform.getScaleInstance(-1, 1)
+        cb = page.findCropBox
+        if !([90, -270, -90, 270].include?(page.getRotation))
+          @page_transform = AffineTransform.getScaleInstance(1, -1)
+          @page_transform.translate(0, -cb.getHeight)
+        else
+          @page_transform = AffineTransform.getScaleInstance(-1, 1)
+          @page_transform.rotate(page.getRotation * (Math::PI/180.0),
+                                 cb.getLowerLeftX, cb.getLowerLeftY)
+        end
+        @page_transform
+      end
 
-        trans.rotate(self.page.getRotation * (Math::PI/180.0),
-                     mb.getLowerLeftX, mb.getLowerLeftY)
+      def currentClippingPath
+        cp = self.getGraphicsState.getCurrentClippingPath
 
-        return cp.createTransformedShape(trans)
+        if cp == @clipping_path
+          return @transformed_clipping_path_bounds
+        end
 
+        @clipping_path = cp
+        @transformed_clipping_path = self.transformPath(cp)
+        @transformed_clipping_path_bounds = @transformed_clipping_path.getBounds2D
+
+        return @transformed_clipping_path_bounds
       end
 
       def processTextPosition(text)
@@ -118,14 +190,77 @@ module Tabula
                                      c,
                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
                                      text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace)
-        ccp = self.getGraphicsState.getCurrentClippingPath
 
-        if self.debug_clipping_paths && !self.clipping_paths.include?(self.transformClippingPath(ccp).getBounds2D)
-          self.clipping_paths << self.transformClippingPath(ccp).getBounds2D
+        ccp_bounds = self.currentClippingPath
+
+        if self.debug_clipping_paths && !self.clipping_paths.include?(ccp_bounds)
+          self.clipping_paths << ::Tabula::ZoneEntity.new(ccp_bounds.getMinY,
+                                                          ccp_bounds.getMinX,
+                                                          ccp_bounds.getWidth,
+                                                          ccp_bounds.getHeight)
         end
 
-        if c =~ PRINTABLE_RE && self.transformClippingPath(ccp).getBounds2D.intersects(te)
+        if te.width < self.min_char_width
+          self.min_char_width = te.width
+        end
+
+        if te.height < self.min_char_height
+          self.min_char_height = te.height
+        end
+
+        if c =~ PRINTABLE_RE && ccp_bounds.intersects(te)
           self.characters << te
+        end
+
+        def page_count
+          @all_pages.size
+        end
+      end
+
+      def rulings
+        # TODO optimize
+        return [] if @rulings.empty?
+        r = @rulings.reject { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }.uniq
+        self.collapse_vertical_rulings(r.select(&:vertical?)) + self.collapse_horizontal_rulings(r.select(&:horizontal?))
+      end
+
+      def collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
+        lines.sort!{|a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
+        lines[1..-1].inject([lines.first]) do |memo, next_line|
+          if next_line.left == memo.last.left && memo.last.nearlyIntersects?(next_line)
+            memo.last.top = [next_line.top, memo.last.top].min
+            memo.last.bottom = [next_line.bottom, memo.last.bottom].max
+            memo
+          elsif (next_line.left - memo.last.left) < self.min_char_width
+            # merge parallel vertical lines that are close together (closer than the width of the narrowest char)
+            memo.last.left += (next_line.left - memo.last.left) / 2
+            memo.last.right = memo.last.left
+            memo.last.top = [next_line.top, memo.last.top].min
+            memo.last.bottom = [next_line.bottom, memo.last.bottom].max
+            memo
+          else
+            memo << next_line
+          end
+        end
+      end
+
+      def collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
+        lines.sort!{|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
+        lines[1..-1].inject([lines.first]) do |memo, next_line|
+          if next_line.top == memo.last.top && memo.last.nearlyIntersects?(next_line)
+            memo.last.left = [next_line.left, memo.last.left].min
+            memo.last.right = [next_line.right, memo.last.right].max
+            memo
+          elsif (next_line.top - memo.last.top) < self.min_char_height
+            # merge parallel horizontal lines that are close together (closer than the width of the shortest char)
+            memo.last.top += (next_line.top - memo.last.top) / 2
+            memo.last.bottom = memo.last.top
+            memo.last.left = [next_line.left, memo.last.left].min
+            memo.last.right = [next_line.right, memo.last.right].max
+            memo
+          else
+            memo << next_line
+          end
         end
       end
 
@@ -155,10 +290,10 @@ module Tabula
       end
 
       def pathToList(path)
-        iterator = path.getPathIterator(java.awt.geom.AffineTransform.new)
-        coords = Java::double[6].new
+        iterator = path.getPathIterator(self.pageTransform)
         rv = []
         while !iterator.isDone do
+          coords = Java::double[6].new
           segType = iterator.currentSegment(coords)
           rv << [segType, coords]
           iterator.next
@@ -168,7 +303,7 @@ module Tabula
 
       def debugPath(path)
         rv = ''
-        pathToList(path).each do |type, coords|
+        pathToList(path).each do |segType, coords|
           case segType
           when java.awt.geom.PathIterator::SEG_MOVETO
             rv += "MOVE: #{coords[0]} #{coords[1]}\n"
@@ -180,6 +315,7 @@ module Tabula
         end
         rv
       end
+
     end
 
 
@@ -205,42 +341,6 @@ module Tabula
           ensure
             @pdf_file.close
           end
-        end
-      end
-    end
-
-
-    class CharacterExtractor
-      #N.B. pages can be :all, a list of pages or a range.
-      #     but if it's a list or a range, it's one-indexed
-      def initialize(pdf_filename, pages=[1], password='', options={})
-        raise Errno::ENOENT unless File.exists?(pdf_filename)
-        @pdf_filename = pdf_filename
-        @pdf_file = Extraction.openPDF(pdf_filename, password)
-        @all_pages = @pdf_file.getDocumentCatalog.getAllPages
-        @pages = pages == :all ?  (1..@all_pages.size) : pages
-        @extractor = TextExtractor.new
-      end
-
-      def extract
-        Enumerator.new do |y|
-          begin
-            @pages.each do |i|
-              page = @all_pages.get(i-1)
-              contents = page.getContents
-              next if contents.nil?
-              @extractor.clear!
-              @extractor.drawPage page
-              y.yield Tabula::Page.new(@pdf_filename,
-                                       page.findCropBox.width,
-                                       page.findCropBox.height,
-                                       page.getRotation.to_i,
-                                       i, #one-indexed, just like `i` is.
-                                       @extractor.characters)
-            end
-          ensure
-            @pdf_file.close
-          end # begin
         end
       end
     end

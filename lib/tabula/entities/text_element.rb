@@ -26,6 +26,8 @@ module Tabula
     def should_add_space?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
 
+      return false if self.width_of_space.nan?
+
       (self.vertically_overlaps?(other) &&
         self.horizontal_distance(other).abs.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))) ||
       (self.vertical_distance(other) > self.height)
