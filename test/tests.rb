@@ -141,7 +141,7 @@ class TestDumper < Minitest::Test
 
   def test_extractor
     extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
-    page = extractor.extract.first
+    page = extractor.extract.next
     assert_instance_of Tabula::Page, page
   end
 
@@ -325,6 +325,7 @@ class TestExtractor < Minitest::Test
                                                 1,
                                                 [52.32857142857143,15.557142857142859,128.70000000000002,767.9571428571429],
                                                 :detect_ruling_lines => true)
+
     expected = [["Last Name", "First Name", "Address", "City", "State", "Zip", "Occupation", "Employer", "Date", "Amount"], ["Lidstad", "Dick & Peg", "62 Mississippi River Blvd N", "Saint Paul", "MN", "55104", "retired", "", "10/12/2012", "60.00"], ["Strom", "Pam", "1229 Hague Ave", "St. Paul", "MN", "55104", "", "", "9/12/2012", "60.00"], ["Seeba", "Louise & Paul", "1399 Sheldon St", "Saint Paul", "MN", "55108", "BOE", "City of Saint Paul", "10/12/2012", "60.00"], ["Schumacher / Bales", "Douglas L. / Patricia ", "948 County Rd. D W", "Saint Paul", "MN", "55126", "", "", "10/13/2012", "60.00"], ["Abrams", "Marjorie", "238 8th St east", "St Paul", "MN", "55101", "Retired", "Retired", "8/8/2012", "75.00"], ["Crouse / Schroeder", "Abigail / Jonathan", "1545 Branston St.", "Saint Paul", "MN", "55108", "", "", "10/6/2012", "75.00"]]
 
     assert_equal expected, table
@@ -480,8 +481,8 @@ class TestExtractor < Minitest::Test
   def test_cope_with_a_tableless_page
     pdf_file_path = "./test/data/no_tables.pdf"
 
-    spreadsheets = Tabula::Extraction::SpreadsheetExtractor.new(pdf_file_path, :all, '', 
-        :line_color_filter => lambda{|components| components.all?{|c| c < 0.0}} 
+    spreadsheets = Tabula::Extraction::SpreadsheetExtractor.new(pdf_file_path, :all, '',
+        :line_color_filter => lambda{|components| components.all?{|c| c < 0.0}}
       ).extract.to_a
 
     assert_equal 0, spreadsheets.size

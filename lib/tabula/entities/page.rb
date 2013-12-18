@@ -76,7 +76,7 @@ module Tabula
                                       right - left, bottom - top)
       end
       area ||= self # if area not provided, use entire page
-      texts.find_all { |t|
+      texts.select { |t|
         area.contains(t)
       }
     end
@@ -103,8 +103,5 @@ module Tabula
         :texts => self.texts
       }.to_json(options)
     end
-
-
-
   end
 end

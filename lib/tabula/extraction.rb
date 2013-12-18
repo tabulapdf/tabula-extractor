@@ -25,6 +25,10 @@ module Tabula
       field_accessor :pageSize, :page
 
       PRINTABLE_RE = /[[:print:]]/
+      DEFAULT_OPTIONS = {
+        :line_color_filter => nil,
+        :extract_ruling_lines => true
+      }
 
       def initialize(pdf_filename, pages=[1], password='', options={})
         raise Errno::ENOENT unless File.exists?(pdf_filename)
@@ -32,11 +36,10 @@ module Tabula
         @pdf_file = Extraction.openPDF(pdf_filename, password)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
         @pages = pages == :all ?  (1..@all_pages.size) : pages
-        @options = options
 
         super()
 
-        self.options = options
+        self.options = DEFAULT_OPTIONS.merge(options)
         self.characters = []
         @debug_clipping_paths = false
         @clipping_path = nil
@@ -104,6 +107,11 @@ module Tabula
 
 
       def strokePath(filter_by_color=nil)
+        unless self.options[:extract_ruling_lines]
+          self.getLinePath.reset
+          return
+        end
+
         path = self.pathToList(self.getLinePath)
 
         if path[0][0] != java.awt.geom.PathIterator::SEG_MOVETO \
@@ -140,6 +148,7 @@ module Tabula
           end
           start_pos = end_pos
         end
+        self.getLinePath.reset
       end
 
       def fillPath(windingRule)
