@@ -22,7 +22,7 @@ module Tabula
     class ObjectExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
       attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :min_char_width, :min_char_height, :options
-      field_accessor :pageSize, :page, :graphics
+      field_accessor :pageSize, :page
 
       PRINTABLE_RE = /[[:print:]]/
 
@@ -35,8 +35,9 @@ module Tabula
         @options = options
 
         super()
+
         self.characters = []
-        @graphics = java.awt.Graphics2D
+        @debug_clipping_paths = false
         @clipping_path = nil
         @transformed_clipping_path = nil
         self.clipping_paths = []
@@ -170,7 +171,7 @@ module Tabula
 
         @clipping_path = cp
         @transformed_clipping_path = self.transformPath(cp)
-        @transformed_clipping_path_bounds = @transformed_clipping_path.getBounds2D
+        @transformed_clipping_path_bounds = @transformed_clipping_path.getBounds
 
         return @transformed_clipping_path_bounds
       end
@@ -220,23 +221,24 @@ module Tabula
       def rulings
         # TODO optimize
         return [] if @rulings.empty?
-        r = @rulings.reject { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }.uniq
+        r = @rulings.reject { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }
         self.collapse_vertical_rulings(r.select(&:vertical?)) + self.collapse_horizontal_rulings(r.select(&:horizontal?))
       end
 
       def collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
         lines.sort!{|a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
         lines[1..-1].inject([lines.first]) do |memo, next_line|
-          if next_line.left == memo.last.left && memo.last.nearlyIntersects?(next_line)
-            memo.last.top = [next_line.top, memo.last.top].min
-            memo.last.bottom = [next_line.bottom, memo.last.bottom].max
+          last = memo.last
+          if next_line.left == last.left && last.nearlyIntersects?(next_line)
+            memo.last.top = [next_line.top, last.top].min
+            memo.last.bottom = [next_line.bottom, last.bottom].max
             memo
-          elsif (next_line.left - memo.last.left) < self.min_char_width
+          elsif (next_line.left - last.left) < self.min_char_width
             # merge parallel vertical lines that are close together (closer than the width of the narrowest char)
-            memo.last.left += (next_line.left - memo.last.left) / 2
-            memo.last.right = memo.last.left
-            memo.last.top = [next_line.top, memo.last.top].min
-            memo.last.bottom = [next_line.bottom, memo.last.bottom].max
+            memo.last.left += (next_line.left - last.left) / 2
+            memo.last.right = last.left
+            memo.last.top = [next_line.top, last.top].min
+            memo.last.bottom = [next_line.bottom, last.bottom].max
             memo
           else
             memo << next_line
@@ -247,16 +249,17 @@ module Tabula
       def collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
         lines.sort!{|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
         lines[1..-1].inject([lines.first]) do |memo, next_line|
-          if next_line.top == memo.last.top && memo.last.nearlyIntersects?(next_line)
-            memo.last.left = [next_line.left, memo.last.left].min
-            memo.last.right = [next_line.right, memo.last.right].max
+          last = memo.last
+          if next_line.top == last.top && last.nearlyIntersects?(next_line)
+            memo.last.left = [next_line.left, last.left].min
+            memo.last.right = [next_line.right, last.right].max
             memo
-          elsif (next_line.top - memo.last.top) < self.min_char_height
+          elsif (next_line.top - last.top) < self.min_char_height
             # merge parallel horizontal lines that are close together (closer than the width of the shortest char)
-            memo.last.top += (next_line.top - memo.last.top) / 2
-            memo.last.bottom = memo.last.top
-            memo.last.left = [next_line.left, memo.last.left].min
-            memo.last.right = [next_line.right, memo.last.right].max
+            memo.last.top += (next_line.top - last.top) / 2
+            memo.last.bottom = last.top
+            memo.last.left = [next_line.left, last.left].min
+            memo.last.right = [next_line.right, last.right].max
             memo
           else
             memo << next_line
