@@ -38,8 +38,8 @@ module Tabula
                         rect.width, rect.height,
                         #TODO: keep track of the cells, instead of getting them again inefficiently.
                         [],
-                        vertical_ruling_lines.select{|vl| rect.intersectsLine(vl.to_line) },
-                        horizontal_ruling_lines.select{|hl| rect.intersectsLine(hl.to_line) }
+                        vertical_ruling_lines.select{|vl| rect.intersectsLine(vl) },
+                        horizontal_ruling_lines.select{|hl| rect.intersectsLine(hl) }
                         )
         spr.cells = @cells.select{|c| spr.overlaps?(c) }
         spr.add_merged_cells!

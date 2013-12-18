@@ -1,38 +1,40 @@
 module Tabula
-  # TODO make it a heir of java.awt.geom.Line2D::Float
-  class Ruling < ZoneEntity
+  class Ruling < java.awt.geom.Line2D::Float
 
     attr_accessor :stroking_color
-    EXPANSION_COEFFICIENT = 0.01
+
     def initialize(top, left, width, height, stroking_color=nil)
-      super(top, left, width, height)
+      super(left, top, left+width, top+height)
       self.stroking_color = stroking_color
-      normalize!
     end
 
-    def normalize!
-      # sometimes lines come out of LSD with top > bottom or left > right
-      #this is, of course, nonsense, so here we fix it.
-      if top > bottom
-        bukkit = top
-        self.top = bottom
-        self.bottom = bukkit
-      end
-      if left > right
-        bukkit = left
-        self.left = right
-        #right = wrong
-        self.right = bukkit
-      end
+    alias :top :getY1
+    alias :left :getX1
+    alias :bottom :getY2
+    alias :right :getX2
+
+    def top=(v)
+      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], left, v, right, bottom
     end
 
-    # 2D line intersection test taken from comp.graphics.algorithms FAQ
-    def intersects?(other)
-      r = ((self.top-other.top)*(other.right-other.left) - (self.left-other.left)*(other.bottom-other.top)) \
-        / ((self.right-self.left)*(other.bottom-other.top)-(self.bottom-self.top)*(other.right-other.left))
-      s = ((self.top-other.top)*(self.right-self.left) - (self.left-other.left)*(self.bottom-self.top)) \
-        / ((self.right-self.left)*(other.bottom-other.top) - (self.bottom-self.top)*(other.right-other.left))
-      r >= 0 && r < 1 && s >= 0 && s < 1
+    def left=(v)
+      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], v, top, right, bottom
+    end
+
+    def bottom=(v)
+      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], left, top, right, v
+    end
+
+    def right=(v)
+      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], left, top, v, bottom
+    end
+
+    def width
+      right - left
+    end
+
+    def height
+      bottom - top
     end
 
 
@@ -55,26 +57,23 @@ module Tabula
     # source other than a little bit of experience.)
 
     def nearlyIntersects?(another)
-      if self.to_line.intersectsLine(another.to_line)
+      if self.intersectsLine(another)
         true
       elsif self.perpendicular_to?(another)
-        self.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line.intersectsLine(another.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line)
+        self.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).intersectsLine(another.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT))
       else
-        self.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT).to_line.intersectsLine(another.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT).to_line)
+        self.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT).intersectsLine(another.expand(COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT))
       end
     end
 
     def intersect(area)
-      i = self.createIntersection(area)
-      self.top    = i.top
-      self.left   = i.left
-      self.bottom = i.bottom
-      self.right  = i.right
+      i = self.getBounds2D.createIntersection(area)
+      self.setLine(i.getX, i.getY, i.getX + i.getWidth, i.getY + i.getHeight)
       self
     end
 
     def expand(amt)
-      r = Ruling.new(self.top, self.left, self.width, self.height)
+      r = self.clone
       if r.horizontal?
         r.left = r.left - amt
         r.right = (r.right + amt)
@@ -85,10 +84,6 @@ module Tabula
       r
     end
 
-    #for comparisons, deprecate when this inherits from Line2D
-    def to_line
-      java.awt.geom.Line2D::Float.new(left, top, right, bottom)
-    end
 
     def length
       Math.sqrt( (self.right - self.left).abs ** 2 + (self.bottom - self.top).abs ** 2 )
@@ -106,14 +101,6 @@ module Tabula
       return self.vertical? == other.horizontal?
     end
 
-    def right
-      left + width
-    end
-
-    def bottom
-      top + height
-    end
-
     def to_json(arg)
       [left, top, right, bottom].to_json
     end
@@ -127,8 +114,8 @@ module Tabula
       # algo taken from http://mathworld.wolfram.com/Line-LineIntersection.html
 
       #self and other should always be perpendicular, since one should be horizontal and one should be vertical
-      self_l  = self.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line
-      other_l = other.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT).to_line
+      self_l  = self.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT)
+      other_l = other.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT)
 
       return nil if !self_l.intersectsLine(other_l)
 
@@ -170,9 +157,8 @@ module Tabula
     # crop an enumerable of +Ruling+ to an +area+
     def self.crop_rulings_to_area(rulings, area)
       rulings.reduce([]) do |memo, r|
-        if r.to_line.intersects(area)
-          i = r.createIntersection(area)
-          memo << self.new(i.getY, i.getX, i.getWidth, i.getHeight)
+        if r.intersects(area)
+          memo << r.clone.intersect(area)
         end
         memo
       end
