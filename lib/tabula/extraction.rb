@@ -229,10 +229,10 @@ module Tabula
         if c =~ PRINTABLE_RE && ccp_bounds.intersects(te)
           self.characters << te
         end
+      end
 
-        def page_count
-          @all_pages.size
-        end
+      def page_count
+        @all_pages.size
       end
 
       def rulings
