@@ -112,8 +112,10 @@ module Tabula
           return
         end
 
+        ccp_bounds = self.currentClippingPath
+
         strokeColorComps = filter_by_color || self.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
-        color_filter = self.options[:line_color_filter] || lambda{ |c| true } #by default, use all lines, regardless of color
+        color_filter = self.options[:line_color_filter]
 
         first = path.shift
         start_pos = java.awt.geom.Point2D::Float.new(first[1][0], first[1][1])
@@ -124,9 +126,8 @@ module Tabula
             ? java.awt.geom.Line2D::Float.new(start_pos, end_pos) \
             : java.awt.geom.Line2D::Float.new(end_pos, start_pos)
 
-          ccp_bounds = self.currentClippingPath
           if p[0] == java.awt.geom.PathIterator::SEG_LINETO \
-            && color_filter.call(strokeColorComps) \
+            && (color_filter.nil? ? true : color_filter.call(strokeColorComps)) \
             && line.intersects(ccp_bounds)
             # convert line to rectangle for clipping it to the current clippath
             # sucks, but awt doesn't have methods for this
@@ -233,19 +234,19 @@ module Tabula
       end
 
       def collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
-        lines.sort!{|a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
+        lines.sort! { |a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
         lines.inject([lines.shift]) do |memo, next_line|
           last = memo.last
           if next_line.left == last.left && last.nearlyIntersects?(next_line)
-            memo.last.top = [next_line.top, last.top].min
-            memo.last.bottom = [next_line.bottom, last.bottom].max
+            memo.last.top = next_line.top < last.top ? next_line.top : last.top
+            memo.last.bottom = next_line.bottom < last.bottom ? last.bottom : next_line.bottom
             memo
           elsif (next_line.left - last.left) < self.min_char_width
             # merge parallel vertical lines that are close together (closer than the width of the narrowest char)
             memo.last.left += (next_line.left - last.left) / 2
             memo.last.right = last.left
-            memo.last.top = [next_line.top, last.top].min
-            memo.last.bottom = [next_line.bottom, last.bottom].max
+            memo.last.top = next_line.top < last.top ? next_line.top : last.top
+            memo.last.bottom = next_line.bottom < last.bottom ? last.bottom : next_line.bottom
             memo
           else
             memo << next_line
@@ -254,19 +255,19 @@ module Tabula
       end
 
       def collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
-        lines.sort!{|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
+        lines.sort! {|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
         lines.inject([lines.shift]) do |memo, next_line|
           last = memo.last
           if next_line.top == last.top && last.nearlyIntersects?(next_line)
-            memo.last.left = [next_line.left, last.left].min
-            memo.last.right = [next_line.right, last.right].max
+            memo.last.left = next_line.left < last.left ? next_line.left : last.left
+            memo.last.right = next_line.right < last.right ? last.right : next_line.right
             memo
           elsif (next_line.top - last.top) < self.min_char_height
             # merge parallel horizontal lines that are close together (closer than the width of the shortest char)
             memo.last.top += (next_line.top - last.top) / 2
             memo.last.bottom = last.top
-            memo.last.left = [next_line.left, last.left].min
-            memo.last.right = [next_line.right, memo.last.right].max
+            memo.last.left = next_line.left < last.left ? next_line.left : last.left
+            memo.last.right = next_line.right < last.right ? last.right : next_line.right
             memo
           else
             memo << next_line
