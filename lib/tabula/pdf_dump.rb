@@ -32,6 +32,7 @@ module Tabula
         @pdf_file = Extraction.openPDF(pdf_filename, password)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
         @pages = pages == :all ?  (1..@all_pages.size) : pages
+        @options = options
 
         super()
 
