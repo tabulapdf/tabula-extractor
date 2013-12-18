@@ -233,7 +233,7 @@ module Tabula
 
       def collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
         lines.sort!{|a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
-        lines[1..-1].inject([lines.first]) do |memo, next_line|
+        lines.inject([lines.shift]) do |memo, next_line|
           last = memo.last
           if next_line.left == last.left && last.nearlyIntersects?(next_line)
             memo.last.top = [next_line.top, last.top].min
@@ -254,7 +254,7 @@ module Tabula
 
       def collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
         lines.sort!{|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
-        lines[1..-1].inject([lines.first]) do |memo, next_line|
+        lines.inject([lines.shift]) do |memo, next_line|
           last = memo.last
           if next_line.top == last.top && last.nearlyIntersects?(next_line)
             memo.last.left = [next_line.left, last.left].min
@@ -265,7 +265,7 @@ module Tabula
             memo.last.top += (next_line.top - last.top) / 2
             memo.last.bottom = last.top
             memo.last.left = [next_line.left, last.left].min
-            memo.last.right = [next_line.right, last.right].max
+            memo.last.right = [next_line.right, memo.last.right].max
             memo
           else
             memo << next_line
