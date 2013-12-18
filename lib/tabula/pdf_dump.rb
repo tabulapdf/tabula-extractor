@@ -21,7 +21,7 @@ module Tabula
 
     class ObjectExtractor < org.apache.pdfbox.pdfviewer.PageDrawer
 
-      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :min_char_width, :min_char_height
+      attr_accessor :characters, :debug_text, :debug_clipping_paths, :clipping_paths, :min_char_width, :min_char_height, :options
       field_accessor :pageSize, :page
 
       PRINTABLE_RE = /[[:print:]]/
@@ -35,6 +35,7 @@ module Tabula
 
         super()
 
+        self.options = options
         self.characters = []
         @debug_clipping_paths = false
         @clipping_path = nil
@@ -101,8 +102,7 @@ module Tabula
       end
 
 
-      def strokePath
-        # TODO FINISH IMPLEMENTING
+      def strokePath(filter_by_color=nil)
         path = self.pathToList(self.getLinePath)
 
         if path[0][0] != java.awt.geom.PathIterator::SEG_MOVETO \
@@ -111,30 +111,37 @@ module Tabula
           return
         end
 
-        start_pos = java.awt.geom.Point2D::Float.new(path[0][1][0], path[0][1][1])
+        strokeColorComps = filter_by_color || self.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
+        color_filter = self.options[:line_color_filter] || lambda{ |c| true } #by default, use all lines, regardless of color
 
-        path[1..-1].each do |p|
+        first = path.shift
+        start_pos = java.awt.geom.Point2D::Float.new(first[1][0], first[1][1])
+
+        path.each do |p|
           end_pos = java.awt.geom.Point2D::Float.new(p[1][0], p[1][1])
           line = (start_pos <=> end_pos) == -1 \
             ? java.awt.geom.Line2D::Float.new(start_pos, end_pos) \
             : java.awt.geom.Line2D::Float.new(end_pos, start_pos)
 
           ccp_bounds = self.currentClippingPath
-          if p[0] == java.awt.geom.PathIterator::SEG_LINETO && line.intersects(ccp_bounds)
+          if p[0] == java.awt.geom.PathIterator::SEG_LINETO \
+            && color_filter.call(strokeColorComps) \
+            && line.intersects(ccp_bounds)
             # convert line to rectangle for clipping it to the current clippath
             # sucks, but awt doesn't have methods for this
             tmp = line.getBounds2D.createIntersection(ccp_bounds).getBounds2D
             @rulings << ::Tabula::Ruling.new(tmp.getY,
                                              tmp.getX,
                                              tmp.getWidth,
-                                             tmp.getHeight)
+                                             tmp.getHeight,
+                                             filter_by_color.to_a)
           end
           start_pos = end_pos
         end
       end
 
       def fillPath(windingRule)
-        self.strokePath
+        self.strokePath(self.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil))
       end
 
       def drawImage(image, at)
