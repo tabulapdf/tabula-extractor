@@ -481,7 +481,7 @@ class TestExtractor < Minitest::Test
     pdf_file_path = "./test/data/no_tables.pdf"
 
     spreadsheets = Tabula::Extraction::SpreadsheetExtractor.new(pdf_file_path, :all, '', 
-        :line_color_filter => lambda{|components| puts components.inspect; components.all?{|c| c < 0.0}} 
+        :line_color_filter => lambda{|components| components.all?{|c| c < 0.0}} 
       ).extract.to_a
 
     assert_equal 0, spreadsheets.size
