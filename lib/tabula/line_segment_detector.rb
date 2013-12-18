@@ -5,7 +5,7 @@ require 'ffi'
 
 require_relative './entities'
 require_relative './pdf_render'
-require_relative './pdf_dump'
+require_relative './extraction'
 
 java_import javax.imageio.ImageIO
 java_import java.awt.image.BufferedImage
