@@ -36,6 +36,7 @@ module Tabula
       @spreadsheets = spreadsheet_rectangle_areas.map do |rect|
         spr = Spreadsheet.new(rect.y, rect.x,
                         rect.width, rect.height,
+                        self,
                         #TODO: keep track of the cells, instead of getting them again inefficiently.
                         [],
                         vertical_ruling_lines.select{|vl| rect.intersectsLine(vl) },
@@ -45,8 +46,20 @@ module Tabula
         spr.add_merged_cells!
         spr
       end
+      if options[:fill_in_cells]
+        fill_in_cells!
+      end
 
       spreadsheets
+    end
+
+    def fill_in_cells!(options={})
+      spreadsheets(options).each do |spreadsheet|
+        spreadsheet.cells.each do |cell|
+          cell.text_elements = page.get_cell_text(cell)
+          spreadsheet.cells_resolved = true
+        end
+      end
     end
 
     def number(indexing_base=:one_indexed)
@@ -78,9 +91,9 @@ module Tabula
       if area.nil?
         texts
       else
-        texts.select { |t|
+        texts.select do |t|
           area.contains(t)
-        }
+        end
       end
     end
 

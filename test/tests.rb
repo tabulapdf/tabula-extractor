@@ -408,8 +408,8 @@ class TestExtractor < Minitest::Test
       Tabula::Cell.new(516.0, 764.0, 216.0, 28.0), Tabula::Cell.new(544.0, 764.0, 216.0, 4.0)]
 
 
-    expected_spreadsheets = [Tabula::Spreadsheet.new(40.0, 18.0, 208.0, 40.0, nil, nil, nil),
-                             Tabula::Spreadsheet.new(84.0, 18.0, 962.0, 464.0, nil, nil, nil)]
+    expected_spreadsheets = [Tabula::Spreadsheet.new(40.0, 18.0, 208.0, 40.0, nil, nil, nil, nil),
+                             Tabula::Spreadsheet.new(84.0, 18.0, 962.0, 464.0,nil, nil, nil, nil)]
 
     #compares spreadsheets on area only.
     assert_equal expected_spreadsheets.map{|s| [s.x, s.y, s.width, s.height] },
@@ -472,7 +472,8 @@ class TestExtractor < Minitest::Test
     expected_data_path = "./test/data/frx_2012_disclosure.tsv"
     expected = open(expected_data_path, 'r').read #.split("\n").map{|line| line.split("\t")}
 
-    Tabula::Extraction::SpreadsheetExtractor.new(pdf_file_path, :all).extract.each do |pdf_page, spreadsheet|
+    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all).extract.each do |pdf_page|
+      spreadsheet = pdf_page.spreadsheets.first
       assert_equal expected, spreadsheet.to_tsv
     end
 
@@ -481,9 +482,9 @@ class TestExtractor < Minitest::Test
   def test_cope_with_a_tableless_page
     pdf_file_path = "./test/data/no_tables.pdf"
 
-    spreadsheets = Tabula::Extraction::SpreadsheetExtractor.new(pdf_file_path, :all, '',
-        :line_color_filter => lambda{|components| components.all?{|c| c < 0.0}}
-      ).extract.to_a
+    spreadsheets = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all, '',
+        :line_color_filter => lambda{|components| components.all?{|c| c < 0.1}}
+      ).extract.to_a.first.spreadsheets
 
     assert_equal 0, spreadsheets.size
   end

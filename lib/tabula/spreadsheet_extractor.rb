@@ -1,5 +1,8 @@
 module Tabula
   module Extraction
+
+    warn 'Tabula::Extraction::SpreadsheetExtractor is DEPRECATED and will be removed. Use ObjectExtractor instead'
+
     class SpreadsheetExtractor < ObjectExtractor
 
       # yields each spreadsheet and the page it corresponds to

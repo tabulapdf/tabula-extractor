@@ -3,11 +3,12 @@ module Tabula
   # not sure yet what their relationship ought to be.
   class Spreadsheet < ZoneEntity
     include Tabula::HasCells
-    attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines
+    attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines, :cells_resolved
 
-    def initialize(top, left, width, height, cells, vertical_ruling_lines, horizontal_ruling_lines) #, lines)
+    def initialize(top, left, width, height, page, cells, vertical_ruling_lines, horizontal_ruling_lines) #, lines)
       super(top, left, width, height)
       @cells = cells
+      @page = page
       @vertical_ruling_lines = vertical_ruling_lines
       @horizontal_ruling_lines = horizontal_ruling_lines
     end
@@ -19,6 +20,15 @@ module Tabula
     def ruling_lines=(lines)
       @vertical_ruling_lines = lines.select{|vl| vl.vertical? && spr.intersectsLine(vl) }
       @horizontal_ruling_lines = lines.select{|hl| hl.horizontal? && spr.intersectsLine(hl) }
+    end
+
+    def fill_in_cells!
+      unless @cells_resolved
+        @cells_resolved = true
+        cells.each do |cell|
+          cell.text_elements = @page.get_cell_text(cell)
+        end
+      end
     end
 
     def rows
@@ -58,12 +68,14 @@ module Tabula
     end
 
     def to_csv
+      fill_in_cells!
       out = StringIO.new
       Tabula::Writers.CSV(rows, out)
       out.string
     end
 
     def to_tsv
+      fill_in_cells!
       out = StringIO.new
       Tabula::Writers.TSV(rows, out)
       out.string

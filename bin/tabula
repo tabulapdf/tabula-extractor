@@ -91,14 +91,17 @@ def main
                                 end
 
   if use_spreadsheet_extraction #TODO: use a heuristic, but allow forcing.
-    extractor = Tabula::Extraction::SpreadsheetExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
-    extractor.extract.each do |pdf_page, spreadsheet|
-      if opts[:debug]
-        puts "Page #{pdf_page}: #{spreadsheet.dims(:top, :left, :bottom, :right)}"
-      else
-        Tabula::Writers.send(opts[:format].to_sym,
-                            spreadsheet.rows,
-                            out)
+    extractor = Tabula::Extraction::ObjectExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
+    extractor.extract.each do |pdf_page|
+      pdf_page.spreadsheets.each do |spreadsheet|
+        if opts[:debug]
+          puts "Page #{pdf_page}: #{spreadsheet.dims(:top, :left, :bottom, :right)}"
+        else
+          spreadsheet.fill_in_cells!
+          Tabula::Writers.send(opts[:format].to_sym,
+                              spreadsheet.rows,
+                              out)
+        end
       end
     end
   else
