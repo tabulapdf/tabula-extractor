@@ -164,6 +164,7 @@ module Tabula
       end
     end
 
+    # TODO do we really need this one anymore?
     def self.clean_rulings(rulings, max_distance=4)
 
       # merge horizontal and vertical lines
