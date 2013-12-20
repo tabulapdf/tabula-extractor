@@ -32,8 +32,6 @@ module Tabula
 
       cellsFound = []
 
-
-
       intersection_points = Ruling.find_intersections(horizontal_ruling_lines, vertical_ruling_lines)
 
       # All crossing-points have been sorted from up to down,

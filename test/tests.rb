@@ -476,7 +476,6 @@ class TestExtractor < Minitest::Test
       spreadsheet = pdf_page.spreadsheets.first
       assert_equal expected, spreadsheet.to_tsv
     end
-
   end
 
   def test_cope_with_a_tableless_page

@@ -161,11 +161,8 @@ module Tabula
 
     use_detected_lines = false
     if options[:detect_ruling_lines] && options[:vertical_rulings].empty?
-      detected_vertical_rulings = page_obj.ruling_lines.
-          find_all(&:vertical?)
-
-      # crop lines to area of interest
-      detected_vertical_rulings = Ruling.crop_rulings_to_area(detected_vertical_rulings, area)
+      detected_vertical_rulings = Ruling.crop_rulings_to_area(page_obj.vertical_ruling_lines,
+                                                              area)
 
       # only use lines if at least 80% of them cover at least 90%
       # of the height of area of interest

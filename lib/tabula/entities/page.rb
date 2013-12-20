@@ -2,8 +2,8 @@ module Tabula
   class Page < ZoneEntity
     include Tabula::HasCells
 
-    attr_reader :rotation, :number_one_indexed, :file_path, :ruling_lines
-    attr_accessor :cells, :horizontal_ruling_lines, :vertical_ruling_lines
+    attr_reader :rotation, :number_one_indexed, :file_path
+    attr_accessor :cells, :min_char_width, :min_char_height
 
     def initialize(file_path, width, height, rotation, number, texts=[], ruling_lines=[])
       super(0, 0, width, height)
@@ -17,6 +17,7 @@ module Tabula
       self.texts = texts
       @cells = []
       @spreadsheets = nil
+      @min_char_width = @min_char_height = 100000
     end
 
     # returns the Spreadsheets; creating them if they're not memoized
@@ -49,7 +50,6 @@ module Tabula
       if options[:fill_in_cells]
         fill_in_cells!
       end
-
       spreadsheets
     end
 
@@ -70,11 +70,29 @@ module Tabula
       end
     end
 
+    # TODO no need for this, let's choose one name
+    def ruling_lines
+      get_ruling_lines!
+    end
+
+    def horizontal_ruling_lines
+      get_ruling_lines!
+      @horizontal_ruling_lines.nil? ? [] : @horizontal_ruling_lines
+    end
+
+    def vertical_ruling_lines
+      get_ruling_lines!
+      @vertical_ruling_lines.nil? ? [] : @vertical_ruling_lines
+    end
+
     #returns ruling lines, memoizes them in
     def get_ruling_lines!(options={})
-      if !@ruling_lines.nil?
-        @vertical_ruling_lines = @ruling_lines.select(&:vertical?)
-        @horizontal_ruling_lines = @ruling_lines.select(&:horizontal?)
+      if !@ruling_lines.nil? && !@ruling_lines.empty?
+        @vertical_ruling_lines ||= self.collapse_vertical_rulings(@ruling_lines.select(&:vertical?))
+        @horizontal_ruling_lines ||= self.collapse_horizontal_rulings(@ruling_lines.select(&:horizontal?))
+        @vertical_ruling_lines + @horizontal_ruling_lines
+      else
+        []
       end
     end
 
@@ -108,6 +126,49 @@ module Tabula
         :rotation => self.rotation,
         :texts => self.texts
       }.to_json(options)
+    end
+
+
+    def collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
+      lines.sort! { |a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
+      lines.inject([lines.shift]) do |memo, next_line|
+        last = memo.last
+        if next_line.left == last.left && last.nearlyIntersects?(next_line)
+          memo.last.top = next_line.top < last.top ? next_line.top : last.top
+          memo.last.bottom = next_line.bottom < last.bottom ? last.bottom : next_line.bottom
+          memo
+        elsif (next_line.left - last.left) < self.min_char_width
+          # merge parallel vertical lines that are close together (closer than the width of the narrowest char)
+          memo.last.left += (next_line.left - last.left) / 2
+          memo.last.right = last.left
+          memo.last.top = next_line.top < last.top ? next_line.top : last.top
+          memo.last.bottom = next_line.bottom < last.bottom ? last.bottom : next_line.bottom
+          memo
+        else
+          memo << next_line
+        end
+      end
+    end
+
+    def collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
+      lines.sort! {|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
+      lines.inject([lines.shift]) do |memo, next_line|
+        last = memo.last
+        if next_line.top == last.top && last.nearlyIntersects?(next_line)
+          memo.last.left = next_line.left < last.left ? next_line.left : last.left
+          memo.last.right = next_line.right < last.right ? last.right : next_line.right
+          memo
+        elsif (next_line.top - last.top) < self.min_char_height
+          # merge parallel horizontal lines that are close together (closer than the width of the shortest char)
+          memo.last.top += (next_line.top - last.top) / 2
+          memo.last.bottom = last.top
+          memo.last.left = next_line.left < last.left ? next_line.left : last.left
+          memo.last.right = next_line.right < last.right ? last.right : next_line.right
+          memo
+        else
+          memo << next_line
+        end
+      end
     end
   end
 end
