@@ -20,6 +20,66 @@ module Tabula
       @min_char_width = @min_char_height = 100000
     end
 
+    def make_table(area, options={})
+      options = {:vertical_rulings => []}.merge(options)
+      if texts.empty?
+        return []
+      end
+
+      text_elements = if area.nil?
+                        self.texts # use whole page
+                      elsif area.is_a?(Array)
+                        top, left, bottom, right = area
+                        self.get_text(Tabula::ZoneEntity.new(top, left,
+                                                             right - left, bottom - top))
+                      elsif area.is_a?(Tabula::ZoneEntity)
+                        self.get_text(area)
+                      end
+
+      text_chunks = TextElement.merge_words(text_elements, options).sort
+
+      lines = TextChunk.group_by_lines(text_chunks)
+
+      top = lines.first.text_elements.map(&:top).min
+      right = 0
+      columns = []
+
+      unless options[:vertical_rulings].empty?
+        columns = options[:vertical_rulings].map(&:left) #pixel locations, not entities
+        separators = columns.sort.reverse
+      else
+        text_chunks.each do |te|
+          next if te.text =~ ONLY_SPACES_RE
+          if te.top >= top
+            left = te.left
+            if (left > right)
+              columns << right
+              right = te.right
+            elsif te.right > right
+              right = te.right
+            end
+          end
+        end
+        separators = columns[1..-1].sort.reverse
+      end
+
+      table = Table.new(lines.count, separators)
+      lines.each_with_index do |line, i|
+        line.text_elements.each do |te|
+          j = separators.find_index { |s| te.left > s } || separators.count
+          table.add_text_element(te, i, separators.count - j)
+        end
+      end
+
+      table.lstrip_lines!
+
+      table.lines.map do |l|
+        l.text_elements.map! do |te|
+          te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+        end
+      end.sort_by { |l| l.map { |te| te.top or 0 }.max }
+    end
+
     # returns the Spreadsheets; creating them if they're not memoized
     def spreadsheets(options={})
       unless @spreadsheets.nil?
@@ -97,7 +157,7 @@ module Tabula
     end
 
     ##
-    #get text insidea area
+    # get text insidea area
     # area can be an Array ([top, left, width, height])
     # or a Rectangle2D
     def get_text(area=nil)
@@ -116,7 +176,7 @@ module Tabula
     end
 
     def get_cell_text(area=nil)
-      Tabula.merge_words(self.get_text(area))
+      TextElement.merge_words(self.get_text(area))
     end
 
     def to_json(options={})

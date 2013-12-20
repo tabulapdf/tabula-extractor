@@ -1,5 +1,6 @@
 module Tabula
   PDFBOX = 'pdfbox-app-2.0.0-SNAPSHOT.jar'
+  ONLY_SPACES_RE = Regexp.new('^\s+$')
 end
 
 require File.join(File.dirname(__FILE__), '../target/', Tabula::PDFBOX)

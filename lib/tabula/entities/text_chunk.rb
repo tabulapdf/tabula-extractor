@@ -14,6 +14,22 @@ module Tabula
     end
 
     ##
+    # group an iterable of TextChunk into a list of Line
+    def self.group_by_lines(text_chunks)
+      lines = []
+      text_chunks.each do |te|
+        next if te.text =~ ONLY_SPACES_RE
+        l = lines.find { |line| line.horizontal_overlap_ratio(te) >= 0.01 }
+        if l.nil?
+          l = Line.new
+          lines << l
+        end
+        l << te
+      end
+      lines
+    end
+
+    ##
     # add a TextElement to this TextChunk
     def <<(text_element)
       self.text_elements << text_element

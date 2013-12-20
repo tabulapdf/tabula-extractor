@@ -217,7 +217,7 @@ class TestExtractor < Minitest::Test
     lines = page_obj.ruling_lines
     vertical_rulings = lines.select(&:vertical?)
 
-    characters = page_obj.get_text([170, 28, 185, 833]) #top left bottom right
+    area = [170, 28, 185, 833] #top left bottom right
 
     expected = Tabula::Table.new_from_array([
        ["", "REGIONAL PULMONARY & SLEEP",],
@@ -225,7 +225,7 @@ class TestExtractor < Minitest::Test
        ["", "MEDICINE", ],
       ])
 
-    assert_equal expected, lines_to_table(Tabula.make_table(characters, :vertical_rulings => vertical_rulings))
+    assert_equal expected, lines_to_table(Tabula.make_table(page_obj, area, :vertical_rulings => vertical_rulings))
   end
 
   def test_forest_disclosure_report
@@ -300,8 +300,7 @@ class TestExtractor < Minitest::Test
       vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Tabula::Ruling.new(0, n * scale_factor, 0, 1000)}
 
       tables = page_areas.map do |page_area|
-        text = pdf_page.get_text( page_area ) #all the characters within the given area.
-        Tabula.make_table(text, {:vertical_rulings => vertical_rulings, :merge_words => true})
+        Tabula.make_table(pdf_page, page_area, {:vertical_rulings => vertical_rulings, :merge_words => true})
       end
       assert_equal expected, lines_to_table(tables.first)
     end
