@@ -1,7 +1,5 @@
 module Tabula
 
-  $FOO = false
-
   def Tabula.merge_words(text_elements, options={})
     warn 'Tabula.merge_words is DEPRECATED. Use Tabula::TextElement.merge_words instead'
     TextElement.merge_words(text_elements, options)

@@ -117,8 +117,7 @@ def main
         if opts[:guess] && opts[:debug]
           puts (page_index + 1).to_s + ', ' + page_area.to_s
         else
-          text = page.get_text( page_area )
-          table = Tabula.make_table(text, vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(page, area, vertical_rulings) })
+          table = page.make_table(page_area, vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(page, area, vertical_rulings) })
           Tabula::Writers.send(opts[:format].to_sym,
                               table,
                               out)
