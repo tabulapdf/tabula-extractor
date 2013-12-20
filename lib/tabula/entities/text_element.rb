@@ -85,6 +85,8 @@ module Tabula
       (self.vertical_distance(other) > self.height)
     end
 
+    ##
+    # merge this TextElement with another (adjust size and text content accordingly)
     def merge!(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
       if self.horizontally_overlaps?(other) and other.top < self.top

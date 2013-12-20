@@ -66,6 +66,8 @@ module Tabula
       end
     end
 
+    ##
+    # intersect this Ruling with a java.awt.geom.Rectangle2D
     def intersect(area)
       i = self.getBounds2D.createIntersection(area)
       self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], i.getX, i.getY, i.getX + i.getWidth, i.getY + i.getHeight
@@ -110,6 +112,8 @@ module Tabula
         point.y >= top && point.y <= bottom
     end
 
+    ##
+    # calculate the intersection point between +self+ and other Ruling
     def intersection_point(other)
       # algo taken from http://mathworld.wolfram.com/Line-LineIntersection.html
 
@@ -139,6 +143,7 @@ module Tabula
       java.awt.geom.Point2D::Float.new(int_x, int_y)
     end
 
+    ##
     # Find all intersection points between two list of +Ruling+
     # (+horizontals+ and +verticals+)
     # TODO: this is O(n^2) - optimize.
@@ -154,6 +159,7 @@ module Tabula
       end
     end
 
+    ##
     # crop an enumerable of +Ruling+ to an +area+
     def self.crop_rulings_to_area(rulings, area)
       rulings.reduce([]) do |memo, r|
