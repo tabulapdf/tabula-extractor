@@ -39,7 +39,6 @@ module Tabula
       #here, insert another kind of placeholder for empty corners
       # like in 01001523B_China.pdf
       #TODO: support placeholders for "empty" cells in rows other than row 1, and in #cols
-      zerozero =  array_of_rows[0]
       # puts array_of_rows[0].inspect
       if array_of_rows.size > 2
         if array_of_rows[0].map(&:left).uniq.size < array_of_rows[1].map(&:left).uniq.size
