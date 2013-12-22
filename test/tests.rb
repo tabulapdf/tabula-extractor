@@ -487,4 +487,16 @@ class TestExtractor < Minitest::Test
     assert_equal 0, spreadsheets.size
   end
 
+  def test_spanning_cells
+    pdf_file_path = "./test/data/spanning_cells.pdf"
+    expected_data_path = "./test/data/spanning_cells.csv"
+    expected = open(expected_data_path, 'r').read
+
+    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
+      spreadsheet = pdf_page.spreadsheets.first
+      assert_equal expected, spreadsheet.to_csv
+    end
+  end
+
+
 end
