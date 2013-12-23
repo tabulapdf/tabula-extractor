@@ -155,7 +155,6 @@ module Tabula
         unless ip.nil?
           memo[ip] ||= []
           # TODO: stupid hack for FLA pdfs where lines appear to intersect, but don't.
-          puts "JEREMY: " + v.inspect if v.top > 151 && v.top < 157
           memo[ip] << [h.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT), v.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT)]
         end
         memo

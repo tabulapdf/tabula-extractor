@@ -111,6 +111,13 @@ class Line2D::Float
     setLine(newP1, newP2)
   end
 
+  def oriented_snap!(x_cell_size, y_cell_size)
+    newP1, newP2 = Point2D::Float.new, Point2D::Float.new
+    newP1.java_send :setLocation, [Java::float, Java::float], (self.getX1 / x_cell_size).round * x_cell_size, (self.getY1 / y_cell_size).round * y_cell_size
+    newP2.java_send :setLocation, [Java::float, Java::float], (self.getX2 / x_cell_size).round * x_cell_size, (self.getY2 / y_cell_size).round * y_cell_size
+    setLine(newP1, newP2)
+  end
+
   def horizontal?(threshold=0.00001)
     (self.getY2 - self.getY1).abs < threshold
   end

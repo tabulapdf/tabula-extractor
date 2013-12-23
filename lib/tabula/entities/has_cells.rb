@@ -74,8 +74,8 @@ module Tabula
                     cellsFound << Cell.new_from_points( topLeft, btmRight, options)
                     # Each crossing point can be the top left corner
                     # of only a single rectangle
-                    #next crossing-point; #Jeremy asks: we need to "next" out of the outer loop here
-                       # to avoid creating non-minimal cells, I htink.
+                    #next crossing-point; we need to "next" out of the outer loop here
+                    # to avoid creating non-minimal cells, I htink.
                     throw :cellCreated
                   end
                 end
