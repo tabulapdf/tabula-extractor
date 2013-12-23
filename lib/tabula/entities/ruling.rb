@@ -53,7 +53,7 @@ module Tabula
     # (e.g. two vertical lines, at x = 100, with one having y2 of 98 and the other having y1 of 102 would
     # erroneously be said to nearlyIntersect if they were each expanded by 2 (since they'd both terminate at 100).
     # The COLINEAR_OR_PARALLEL_PIXEL_EXPAND_AMOUNT is only 1 so the total expansion is 2.
-    # A total expansion amount of 2 is empirically verified to work sometime. It's not a magic number from any
+    # A total expansion amount of 2 is empirically verified to work sometimes. It's not a magic number from any
     # source other than a little bit of experience.)
 
     def nearlyIntersects?(another)
@@ -75,7 +75,7 @@ module Tabula
     end
 
     def expand(amt)
-      r = self.clone
+      r = Ruling.new(self.top, self.left, self.width, self.height)
       if r.horizontal?
         r.left = r.left - amt
         r.right = (r.right + amt)
@@ -147,12 +147,15 @@ module Tabula
     # Find all intersection points between two list of +Ruling+
     # (+horizontals+ and +verticals+)
     # TODO: this is O(n^2) - optimize.
+    #TODO: somehow the lines put into the memo are getting way big
+    # ah,it's because they get expanded repeatedly? need to dupe them or clone them or something
     def self.find_intersections(horizontals, verticals)
       horizontals.product(verticals).inject({}) do |memo, (h, v)|
         ip = h.intersection_point(v)
         unless ip.nil?
           memo[ip] ||= []
           # TODO: stupid hack for FLA pdfs where lines appear to intersect, but don't.
+          puts "JEREMY: " + v.inspect if v.top > 151 && v.top < 157
           memo[ip] << [h.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT), v.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT)]
         end
         memo
