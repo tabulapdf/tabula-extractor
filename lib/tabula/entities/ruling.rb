@@ -147,8 +147,6 @@ module Tabula
     # Find all intersection points between two list of +Ruling+
     # (+horizontals+ and +verticals+)
     # TODO: this is O(n^2) - optimize.
-    #TODO: somehow the lines put into the memo are getting way big
-    # ah,it's because they get expanded repeatedly? need to dupe them or clone them or something
     def self.find_intersections(horizontals, verticals)
       horizontals.product(verticals).inject({}) do |memo, (h, v)|
         ip = h.intersection_point(v)

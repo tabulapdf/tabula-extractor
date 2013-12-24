@@ -63,7 +63,6 @@ module Tabula
               # if( NOT EdgeExistsBetween( topLeft, y_point)) next crossing-
               #                                                    point;
               next unless horizontal.colinear?(y_point)
-
               #Hypothetical bottom right point of rectangle
               btmRight = Point2D::Float.new( y_point.x, x_point.y )
               if intersection_points.include?(btmRight)
@@ -97,12 +96,16 @@ module Tabula
 
     # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
     def add_merged_cells!
-      vertical_uniq_locs = vertical_ruling_lines.map(&:left).uniq    #already sorted
-      horizontal_uniq_locs = horizontal_ruling_lines.map(&:top).uniq #already sorted
+      #rounding: because Cell.new_from_points, using in #find_cells above, has
+      # a float precision error where, for instance, a cell whose x2 coord is
+      # supposed to be 160.137451171875 comes out as 160.13745498657227 because
+      # of minus. :(
+      vertical_uniq_locs = vertical_ruling_lines.map{|l| l.left.round(5)}.uniq    #already sorted
+      horizontal_uniq_locs = horizontal_ruling_lines.map{|l| l.top.round(5)}.uniq #already sorted
 
       cells.each do |c|
-        vertical_rulings_merged_over = vertical_uniq_locs.select{|l| l > c.left && l < c.right }
-        horizontal_rulings_merged_over = horizontal_uniq_locs.select{|t| t > c.top && t < c.bottom }
+        vertical_rulings_merged_over = vertical_uniq_locs.select{|l| l > c.left.round(5) && l < c.right.round(5) }
+        horizontal_rulings_merged_over = horizontal_uniq_locs.select{|t| t > c.top.round(5) && t < c.bottom.round(5) }
 
         unless vertical_rulings_merged_over.empty?
           c.merged = true
