@@ -104,7 +104,7 @@ module Tabula
                         horizontal_ruling_lines.select{|hl| rect.intersectsLine(hl) }
                         )
         spr.cells = @cells.select{|c| spr.overlaps?(c) }
-        spr.add_merged_cells!
+        spr.add_spanning_cells!
         spr
       end
       if options[:fill_in_cells]
@@ -148,8 +148,8 @@ module Tabula
     #returns ruling lines, memoizes them in
     def get_ruling_lines!(options={})
       if !@ruling_lines.nil? && !@ruling_lines.empty?
-        @vertical_ruling_lines ||= self.collapse_vertical_rulings(@ruling_lines.select(&:vertical?))
-        @horizontal_ruling_lines ||= self.collapse_horizontal_rulings(@ruling_lines.select(&:horizontal?))
+        @vertical_ruling_lines ||= self.collapse_and_snap_oriented_rulings(@ruling_lines.select(&:vertical?))
+        @horizontal_ruling_lines ||= self.collapse_and_snap_oriented_rulings(@ruling_lines.select(&:horizontal?))
         @vertical_ruling_lines + @horizontal_ruling_lines
       else
         []
@@ -188,47 +188,43 @@ module Tabula
       }.to_json(options)
     end
 
+    def collapse_and_snap_oriented_rulings(lines) 
+      # lines must all be of one orientation (i.e. horizontal, vertical)
+      lines.sort! {|a, b| a.position != b.position ? a.position <=> b.position : a.start <=> b.start }
 
-    def collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
-      lines.sort! { |a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
-      lines.inject([lines.shift]) do |memo, next_line|
+      #two-pass snap
+      first = lines.shift
+      grouped_lines = lines.inject( [[first]] ) do |memo, next_line|
         last = memo.last
-        if next_line.left == last.left && last.nearlyIntersects?(next_line)
-          memo.last.top = next_line.top < last.top ? next_line.top : last.top
-          memo.last.bottom = next_line.bottom < last.bottom ? last.bottom : next_line.bottom
+        if (next_line.position - last.first.position).abs < (next_line.vertical? ? self.min_char_width : self.min_char_height)
+          memo[-1] << next_line
+        else
+          memo << [next_line]
+        end
+        memo
+      end
+      snapped_lines = []
+      grouped_lines.each do |group|
+        uniq_locs = group.map(&:position).uniq
+        avg_loc = uniq_locs.sum / uniq_locs.size
+        group.each{|l| l.position = avg_loc; snapped_lines << l }
+      end
+
+      lines = snapped_lines.inject([lines.shift]) do |memo, next_line|
+        last = memo.last
+        if next_line.position == last.position && last.nearlyIntersects?(next_line)
+          memo.last.start = next_line.start < last.start ? next_line.start : last.start
+          memo.last.end = next_line.end < last.end ? last.end : next_line.end
           memo
-        elsif (next_line.left - last.left) < self.min_char_width
-          # merge parallel vertical lines that are close together (closer than the width of the narrowest char)
-          memo.last.left += (next_line.left - last.left) / 2
-          memo.last.right = last.left
-          memo.last.top = next_line.top < last.top ? next_line.top : last.top
-          memo.last.bottom = next_line.bottom < last.bottom ? last.bottom : next_line.bottom
+        elsif next_line.length == 0
           memo
         else
           memo << next_line
         end
       end
-    end
 
-    def collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
-      lines.sort! {|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
-      lines.inject([lines.shift]) do |memo, next_line|
-        last = memo.last
-        if next_line.top == last.top && last.nearlyIntersects?(next_line)
-          memo.last.left = next_line.left < last.left ? next_line.left : last.left
-          memo.last.right = next_line.right < last.right ? last.right : next_line.right
-          memo
-        elsif (next_line.top - last.top) < self.min_char_height
-          # merge parallel horizontal lines that are close together (closer than the width of the shortest char)
-          memo.last.top += (next_line.top - last.top) / 2
-          memo.last.bottom = last.top
-          memo.last.left = next_line.left < last.left ? next_line.left : last.left
-          memo.last.right = next_line.right < last.right ? last.right : next_line.right
-          memo
-        else
-          memo << next_line
-        end
-      end
+      lines
     end
   end
+
 end

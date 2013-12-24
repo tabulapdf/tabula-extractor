@@ -8,12 +8,12 @@ module Tabula
     DEBUG = 1
     SUPERDEBUG = 2
 
-    attr_accessor :text_elements, :placeholder, :merged, :options
+    attr_accessor :text_elements, :placeholder, :spanning, :options
 
     def initialize(top, left, width, height, options={})
       super(top, left, width, height)
       @placeholder = false
-      @merged = false
+      @spanning = false
       @text_elements = []
       @options = ({:use_line_returns => false, :cell_debug => NORMAL}).merge options
     end
@@ -30,9 +30,11 @@ module Tabula
       text_elements.sort #use the default sort for ZoneEntity
       text_elements.group_by(&:top).values.each do |row|
         output << row.map{|el| el.text}.join('') + (@options[:use_line_returns] ? "\n" : '')
-      end unless @options[:cell_debug] >= SUPERDEBUG
-      if output.empty? && @options[:cell_debug] >= DEBUG
-        output = "top: #{top} left: #{left} \n w: #{width} h: #{height}"
+      end 
+      if (output.empty? && @options[:cell_debug] >= DEBUG) || @options[:cell_debug] >= SUPERDEBUG
+        text_output = output.dup
+        output = "top: #{top} left: #{left} \n w: #{width} h: #{height}" 
+        output += " \n #{text_output}"
       end
       output.strip
     end
