@@ -38,6 +38,47 @@ module Tabula
     end
 
 
+    # attributes that make sense only for non-oblique lines
+    # these are used to have a single collapse method (in page, currently)
+    def position
+      raise NoMethodError, "Oblique line #{self.inspect} has no #position method." if oblique?
+      vertical? ? left : top
+    end
+    def start
+      raise NoMethodError, "Oblique line #{self.inspect} has no #start method." if oblique?
+      vertical? ? top : left
+    end
+    def end
+      raise NoMethodError, "Oblique line #{self.inspect} has no #end method." if oblique?
+      vertical? ? bottom : right
+    end
+    def position=(coord)
+      raise NoMethodError, "Oblique line #{self.inspect} has no #position= method." if oblique?
+      if vertical?
+        self.left = coord
+        self.right = coord
+      else
+        self.top = coord
+        self.bottom = coord
+      end
+    end
+    def start=(coord)
+      raise NoMethodError, "Oblique line #{self.inspect} has no #start= method." if oblique?
+      if vertical?
+        self.top = coord
+      else
+        self.left = coord
+      end
+    end
+    def end=(coord)
+      raise NoMethodError, "Oblique line #{self.inspect} has no #end= method." if oblique?
+      if vertical?
+        self.bottom = coord
+      else
+        self.right = coord
+      end
+    end
+
     #ok wtf are you doing, Jeremy?
     # some PDFs (garment factory audits, precise link TK) make tables by drawing lines that
     # very nearly intersect each other, but not quite. E.g. a horizontal line spans the table at a Y val of 100
@@ -75,14 +116,10 @@ module Tabula
     end
 
     def expand(amt)
+      raise NoMethodError, "Oblique line #{self.inspect} has no #expand method." if oblique?
       r = Ruling.new(self.top, self.left, self.width, self.height)
-      if r.horizontal?
-        r.left = r.left - amt
-        r.right = (r.right + amt)
-      elsif r.vertical?
-        r.top = r.top - amt
-        r.bottom = r.bottom + amt
-      end
+      r.start = r.start - amt
+      r.end = r.end + amt
       r
     end
 
@@ -97,6 +134,10 @@ module Tabula
 
     def horizontal?
       top == bottom
+    end
+
+    def oblique?
+      !(vertical? || horizontal?)
     end
 
     def perpendicular_to?(other)

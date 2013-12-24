@@ -87,9 +87,9 @@ module Tabula
       cellsFound
     end
 
-    ##########################
-    # Chapter 2, Spanning Cells
-    ##########################
+    #############################
+    # Chapter 2, Spanning Cells #
+    #############################
     #if c is a "spanning cell", that is
     #              if there are N>0 vertical lines strictly between this cell's left and right
     #insert N placeholder cells after it with zero size (but same top)
