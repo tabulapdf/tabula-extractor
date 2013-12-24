@@ -104,7 +104,7 @@ module Tabula
                         horizontal_ruling_lines.select{|hl| rect.intersectsLine(hl) }
                         )
         spr.cells = @cells.select{|c| spr.overlaps?(c) }
-        spr.add_merged_cells!
+        spr.add_spanning_cells!
         spr
       end
       if options[:fill_in_cells]

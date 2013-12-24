@@ -8,12 +8,12 @@ module Tabula
     DEBUG = 1
     SUPERDEBUG = 2
 
-    attr_accessor :text_elements, :placeholder, :merged, :options
+    attr_accessor :text_elements, :placeholder, :spanning, :options
 
     def initialize(top, left, width, height, options={})
       super(top, left, width, height)
       @placeholder = false
-      @merged = false
+      @spanning = false
       @text_elements = []
       @options = ({:use_line_returns => false, :cell_debug => NORMAL}).merge options
     end

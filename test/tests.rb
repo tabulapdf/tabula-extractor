@@ -417,7 +417,7 @@ class TestExtractor < Minitest::Test
 
   end
 
-  def test_add_merged_cells
+  def test_add_spanning_cells
     skip "until I write it"
   end
 
