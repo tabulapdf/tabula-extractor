@@ -225,7 +225,7 @@ class TestExtractor < Minitest::Test
        ["", "MEDICINE", ],
       ])
 
-    assert_equal expected, lines_to_table(Tabula.make_table(page_obj, area, :vertical_rulings => vertical_rulings))
+    assert_equal expected, lines_to_table(page_obj.make_table(area, :vertical_rulings => vertical_rulings))
   end
 
   def test_forest_disclosure_report
@@ -235,7 +235,8 @@ class TestExtractor < Minitest::Test
     lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
     vertical_rulings = lines.select(&:vertical?) #.uniq{|line| (line.left / 10).round }
 
-    characters = character_extractor.extract.next.get_text([110, 28, 218, 833])
+    page_obj = character_extractor.extract.next
+    characters = page_obj.get_text([110, 28, 218, 833])
                                                            #top left bottom right
         expected = Tabula::Table.new_from_array([
           ['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '', '$85.00'],
@@ -300,7 +301,7 @@ class TestExtractor < Minitest::Test
       vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Tabula::Ruling.new(0, n * scale_factor, 0, 1000)}
 
       tables = page_areas.map do |page_area|
-        Tabula.make_table(pdf_page, page_area, {:vertical_rulings => vertical_rulings, :merge_words => true})
+        pdf_page.make_table(page_area, {:vertical_rulings => vertical_rulings, :merge_words => true})
       end
       assert_equal expected, lines_to_table(tables.first)
     end
