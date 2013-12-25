@@ -148,8 +148,9 @@ module Tabula
     #returns ruling lines, memoizes them in
     def get_ruling_lines!(options={})
       if !@ruling_lines.nil? && !@ruling_lines.empty?
-        @vertical_ruling_lines ||= self.collapse_and_snap_oriented_rulings(@ruling_lines.select(&:vertical?))
-        @horizontal_ruling_lines ||= self.collapse_and_snap_oriented_rulings(@ruling_lines.select(&:horizontal?))
+        self.snap_points!
+        @vertical_ruling_lines ||= self.collapse_oriented_rulings(@ruling_lines.select(&:vertical?))
+        @horizontal_ruling_lines ||= self.collapse_oriented_rulings(@ruling_lines.select(&:horizontal?))
         @vertical_ruling_lines + @horizontal_ruling_lines
       else
         []
@@ -188,29 +189,60 @@ module Tabula
       }.to_json(options)
     end
 
-    def collapse_and_snap_oriented_rulings(lines) 
+    def snap_points!
+      x_sorted_points = points.sort_by(&:x)
+      y_sorted_points = points.sort_by(&:y)
+      
+      lines_to_points = {}
+      points = []
+      @ruling_lines.each do |line|
+        point1 = line.p1 #comptooters are the wurst
+        point2 = line.p2
+        # for a given line, each call to #p1 and #p2 creates a new 
+        # Point2D::Float object, rather than returning the same one over and
+        # over again.
+        # so we have to get it, store it in memory as `point1` and `point2`
+        # and then store those in various places (and now, modifying one will 
+        # modify the reference and thereby modify the other)
+        lines_to_points[line] = [point1, point2]
+        points += [point1, point2]
+      end
+
+      # lines are stored separately from their constituent points 
+      # so you can't modify the points and then modify the lines.
+      # ah, but perhaps I can stick the points in a hash AND in an array
+      # and then modify the lines by means of the points in the hash.
+
+      [[:x, :x=, self.min_char_width], [:y, :y=, self.min_char_height]].each do |getter, setter, cell_size|
+        sorted_points = points.sort_by(&getter)
+        first_point = sorted_points.shift
+        grouped_points = sorted_points.inject([[first_point]] ) do |memo, next_point|
+          last = memo.last
+
+          if (next_point.send(getter) - last.first.send(getter)).abs < cell_size
+            memo[-1] << next_point
+          else
+            memo << [next_point]
+          end
+          memo
+        end
+        grouped_points.each do |group|
+          uniq_locs = group.map(&getter).uniq
+          avg_loc = uniq_locs.sum / uniq_locs.size
+          group.each{|p| p.send(setter, avg_loc) }
+        end
+      end
+
+      lines_to_points.each do |l, p1_p2|
+        l.java_send :setLine, [java.awt.geom.Point2D, java.awt.geom.Point2D], p1_p2[0], p1_p2[1]
+      end
+    end
+
+    def collapse_oriented_rulings(lines) 
       # lines must all be of one orientation (i.e. horizontal, vertical)
       lines.sort! {|a, b| a.position != b.position ? a.position <=> b.position : a.start <=> b.start }
 
-      #two-pass snap
-      first = lines.shift
-      grouped_lines = lines.inject( [[first]] ) do |memo, next_line|
-        last = memo.last
-        if (next_line.position - last.first.position).abs < (next_line.vertical? ? self.min_char_width : self.min_char_height)
-          memo[-1] << next_line
-        else
-          memo << [next_line]
-        end
-        memo
-      end
-      snapped_lines = []
-      grouped_lines.each do |group|
-        uniq_locs = group.map(&:position).uniq
-        avg_loc = uniq_locs.sum / uniq_locs.size
-        group.each{|l| l.position = avg_loc; snapped_lines << l }
-      end
-
-      lines = snapped_lines.inject([lines.shift]) do |memo, next_line|
+      lines = lines.inject([lines.shift]) do |memo, next_line|
         last = memo.last
         if next_line.position == last.position && last.nearlyIntersects?(next_line)
           memo.last.start = next_line.start < last.start ? next_line.start : last.start
