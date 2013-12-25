@@ -15,7 +15,7 @@ def lines_to_table(lines)
 end
 
 
-# I don't want to pollute the "real" class with a funny inspect method. Just for testing comparisons.
+# I don't want to pollute the "real" clasend a funny inspect method. Just for testing comparisons.
 module Tabula
   class Table
     def inspect
@@ -495,6 +495,19 @@ class TestExtractor < Minitest::Test
     Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
       spreadsheet = pdf_page.spreadsheets.first
       assert_equal expected, spreadsheet.to_csv
+    end
+  end
+
+  def test_almost_vertical_lines
+    pdf_file_path = "./test/data/puertos1.pdf"
+    top, left, bottom, right = 273.9035714285714, 30.32142857142857, 554.8821428571429, 546.7964285714286
+    area = Tabula::ZoneEntity.new(top, left,
+                                  right - left, bottom - top)
+
+    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
+      rulings = Tabula::Ruling.crop_rulings_to_area(pdf_page.ruling_lines, area)
+      # TODO assertion not entirely correct, should do the trick for now
+      assert_equal 15, rulings.select(&:vertical?).count
     end
   end
 
