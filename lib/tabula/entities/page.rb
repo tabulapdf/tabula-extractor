@@ -20,23 +20,26 @@ module Tabula
       @min_char_width = @min_char_height = 100000
     end
 
-    def make_table(area, options={})
+    def get_area(area)
+      if area.is_a?(Array)
+        top, left, bottom, right = area
+        area = Tabula::ZoneEntity.new(top, left,
+                                      right - left, bottom - top)
+      end
+
+      PageArea.new(file_path, area.width, area.height, rotation, number,
+                   self.get_text(area),
+                   Ruling.crop_rulings_to_area(self.ruling_lines, area))
+
+    end
+
+    def make_table(options={})
       options = {:vertical_rulings => []}.merge(options)
       if texts.empty?
         return []
       end
 
-      text_elements = if area.nil?
-                        self.texts # use whole page
-                      elsif area.is_a?(Array)
-                        top, left, bottom, right = area
-                        self.get_text(Tabula::ZoneEntity.new(top, left,
-                                                             right - left, bottom - top))
-                      elsif area.is_a?(Tabula::ZoneEntity)
-                        self.get_text(area)
-                      end
-
-      text_chunks = TextElement.merge_words(text_elements, options).sort
+      text_chunks = TextElement.merge_words(self.texts, options).sort
 
       lines = TextChunk.group_by_lines(text_chunks)
 

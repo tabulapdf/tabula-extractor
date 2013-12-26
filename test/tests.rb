@@ -225,7 +225,7 @@ class TestExtractor < Minitest::Test
        ["", "MEDICINE", ],
       ])
 
-    assert_equal expected, lines_to_table(page_obj.make_table(area, :vertical_rulings => vertical_rulings))
+    assert_equal expected, lines_to_table(page_obj.get_area(area).make_table(:vertical_rulings => vertical_rulings))
   end
 
   def test_forest_disclosure_report
@@ -301,7 +301,7 @@ class TestExtractor < Minitest::Test
       vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Tabula::Ruling.new(0, n * scale_factor, 0, 1000)}
 
       tables = page_areas.map do |page_area|
-        pdf_page.make_table(page_area, {:vertical_rulings => vertical_rulings, :merge_words => true})
+        pdf_page.get_area(page_area).make_table(:vertical_rulings => vertical_rulings)
       end
       assert_equal expected, lines_to_table(tables.first)
     end
@@ -511,6 +511,4 @@ class TestExtractor < Minitest::Test
       assert_equal 15, rulings.select(&:vertical?).count
     end
   end
-
-
 end

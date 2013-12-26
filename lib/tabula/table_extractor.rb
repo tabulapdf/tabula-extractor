@@ -13,7 +13,7 @@ module Tabula
   # Returns an array of Tabula::Line
   def Tabula.make_table(page, area, options={})
     warn 'Tabula.make_table is DEPRECATED. Use Tabula::Page#make_table instead.'
-    page.make_table(area, options)
+    page.get_area(area).make_table(options)
   end
 
   # extract a table from file +pdf_path+, +pages+ and +area+
@@ -66,9 +66,7 @@ module Tabula
 
     end
 
-    page_obj.make_table(area,
-                        :vertical_rulings => use_detected_lines ? detected_vertical_rulings : options[:vertical_rulings])
-
+    page_obj.get_area(area).make_table(:vertical_rulings => use_detected_lines ? detected_vertical_rulings : options[:vertical_rulings])
 
   end
 end
