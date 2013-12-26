@@ -40,26 +40,11 @@ module Tabula
 
       lines = TextChunk.group_by_lines(text_chunks)
 
-      top = lines.first.text_elements.map(&:top).min
-      right = 0
-      columns = []
-
       unless options[:vertical_rulings].empty?
         columns = options[:vertical_rulings].map(&:left) #pixel locations, not entities
         separators = columns.sort.reverse
       else
-        text_chunks.each do |te|
-          next if te.text =~ ONLY_SPACES_RE
-          if te.top >= top
-            left = te.left
-            if (left > right)
-              columns << right
-              right = te.right
-            elsif te.right > right
-              right = te.right
-            end
-          end
-        end
+        columns = TextChunk.column_positions(text_chunks)
         separators = columns[1..-1].sort.reverse
       end
 
@@ -192,23 +177,23 @@ module Tabula
     def snap_points!
       x_sorted_points = points.sort_by(&:x)
       y_sorted_points = points.sort_by(&:y)
-      
+
       lines_to_points = {}
       points = []
       @ruling_lines.each do |line|
         point1 = line.p1 #comptooters are the wurst
         point2 = line.p2
-        # for a given line, each call to #p1 and #p2 creates a new 
+        # for a given line, each call to #p1 and #p2 creates a new
         # Point2D::Float object, rather than returning the same one over and
         # over again.
         # so we have to get it, store it in memory as `point1` and `point2`
-        # and then store those in various places (and now, modifying one will 
+        # and then store those in various places (and now, modifying one will
         # modify the reference and thereby modify the other)
         lines_to_points[line] = [point1, point2]
         points += [point1, point2]
       end
 
-      # lines are stored separately from their constituent points 
+      # lines are stored separately from their constituent points
       # so you can't modify the points and then modify the lines.
       # ah, but perhaps I can stick the points in a hash AND in an array
       # and then modify the lines by means of the points in the hash.
@@ -238,7 +223,7 @@ module Tabula
       end
     end
 
-    def collapse_oriented_rulings(lines) 
+    def collapse_oriented_rulings(lines)
       # lines must all be of one orientation (i.e. horizontal, vertical)
       lines.sort! {|a, b| a.position != b.position ? a.position <=> b.position : a.start <=> b.start }
 

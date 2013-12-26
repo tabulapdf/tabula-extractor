@@ -30,6 +30,29 @@ module Tabula
     end
 
     ##
+    # calculate estimated columns from an iterable of TextChunk
+    def self.column_positions(text_chunks)
+      right = 0
+      columns = []
+      lines = TextChunk.group_by_lines(text_chunks)
+      top = lines.first.text_elements.map(&:top).min
+
+      text_chunks.each do |te|
+        next if te.text =~ ONLY_SPACES_RE
+        if te.top >= top
+          left = te.left
+          if (left > right)
+            columns << right
+            right = te.right
+          elsif te.right > right
+            right = te.right
+          end
+        end
+      end
+      columns
+    end
+
+    ##
     # add a TextElement to this TextChunk
     def <<(text_element)
       self.text_elements << text_element
