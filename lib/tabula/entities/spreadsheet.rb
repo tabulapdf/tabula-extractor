@@ -63,7 +63,8 @@ module Tabula
     end
 
     def to_a
-      rows.map{|row_cells| row_cells.map(&:text)}
+      fill_in_cells!
+      rows.map{ |row_cells| row_cells.map(&:text) }
     end
 
     def to_csv
