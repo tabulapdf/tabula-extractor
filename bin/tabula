@@ -97,9 +97,8 @@ def main
         if opts[:debug]
           puts "Page #{pdf_page}: #{spreadsheet.dims(:top, :left, :bottom, :right)}"
         else
-          spreadsheet.fill_in_cells!
           Tabula::Writers.send(opts[:format].to_sym,
-                              spreadsheet.rows,
+                              spreadsheet.rows, #rows filled in automatically
                               out)
         end
       end

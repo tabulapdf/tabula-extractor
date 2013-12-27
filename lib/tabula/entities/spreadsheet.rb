@@ -31,7 +31,12 @@ module Tabula
       end
     end
 
-    def rows
+    # call `rows` with `evaluate_cells` as `false` to defer filling in the text in
+    # each cell, which can be computationally intensive.
+    def rows(evaluate_cells=true)
+      if evaluate_cells
+        fill_in_cells!
+      end
       tops = cells.map(&:top).uniq.sort
       array_of_rows = tops.map do |top|
         cells.select{|c| c.top == top }.sort_by(&:left)
@@ -55,7 +60,12 @@ module Tabula
       array_of_rows
     end
 
-    def cols
+    # call `cols` with `evaluate_cells` as `false` to defer filling in the text in
+    # each cell, which can be computationally intensive.
+    def cols(evaluate_cells=true)
+      if evaluate_cells
+        fill_in_cells!
+      end
       lefts = cells.map(&:left).uniq.sort
       lefts.map do |left|
         cells.select{|c| c.left == left }.sort_by(&:top)
@@ -68,14 +78,12 @@ module Tabula
     end
 
     def to_csv
-      fill_in_cells!
       out = StringIO.new
       Tabula::Writers.CSV(rows, out)
       out.string
     end
 
     def to_tsv
-      fill_in_cells!
       out = StringIO.new
       Tabula::Writers.TSV(rows, out)
       out.string
