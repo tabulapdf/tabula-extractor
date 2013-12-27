@@ -511,4 +511,19 @@ class TestExtractor < Minitest::Test
       assert_equal 15, rulings.select(&:vertical?).count
     end
   end
+
+  def test_extract_spreadsheet_within_an_area
+    pdf_file_path = "./test/data/puertos1.pdf"
+    top, left, bottom, right = 273.9035714285714, 30.32142857142857, 554.8821428571429, 546.7964285714286
+
+    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
+      area = pdf_page.get_area([top, left, bottom, right])
+      table = area.spreadsheets.first.to_a
+      assert_equal 15, table.length
+      assert_equal ["", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM"], table.first
+      assert_equal ["TOTAL", "453,515", "895,111", "456,431", "718,382", "487,183", "886,211", "494,220", "816,623", "495,580", "810,565", "627,469", "1,248,804", "540,367"], table.last
+    end
+  end
+
+
 end

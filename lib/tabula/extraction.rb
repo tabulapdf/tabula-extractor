@@ -65,9 +65,9 @@ module Tabula
                                    page.getRotation.to_i,
                                    i, #one-indexed, just like `i` is.
                                    self.characters,
-                                   self.rulings)
-              p.min_char_height = @min_char_height
-              p.min_char_width  = @min_char_width
+                                   self.rulings,
+                                   @min_char_width,
+                                   @min_char_height)
               y.yield p
             end
           ensure

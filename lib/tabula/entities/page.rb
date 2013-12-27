@@ -3,9 +3,10 @@ module Tabula
     include Tabula::HasCells
 
     attr_reader :rotation, :number_one_indexed, :file_path
-    attr_accessor :cells, :min_char_width, :min_char_height
+    attr_writer :min_char_width, :min_char_height
+    attr_accessor :cells
 
-    def initialize(file_path, width, height, rotation, number, texts=[], ruling_lines=[])
+    def initialize(file_path, width, height, rotation, number, texts=[], ruling_lines=[], min_char_width=nil, min_char_height=nil)
       super(0, 0, width, height)
       @rotation = rotation
       if number < 1
@@ -17,7 +18,16 @@ module Tabula
       self.texts = texts
       @cells = []
       @spreadsheets = nil
-      @min_char_width = @min_char_height = 100000
+      @min_char_width = min_char_width
+      @min_char_height = min_char_height
+    end
+
+    def min_char_width
+      @min_char_width ||= texts.map(&:width).min
+    end
+
+    def min_char_height
+      @min_char_height ||= texts.map(&:height).min
     end
 
     def get_area(area)
@@ -27,10 +37,17 @@ module Tabula
                                       right - left, bottom - top)
       end
 
-      PageArea.new(file_path, area.width, area.height, rotation, number,
-                   self.get_text(area),
-                   Ruling.crop_rulings_to_area(self.ruling_lines, area))
-
+      texts = self.get_text(area)
+      page_area = PageArea.new(file_path,
+                               area.width,
+                               area.height,
+                               rotation,
+                               number,
+                               texts,
+                               Ruling.crop_rulings_to_area(@ruling_lines, area),
+                               texts.map(&:width).min,
+                               texts.map(&:height).min)
+      return page_area
     end
 
     def make_table(options={})
@@ -178,9 +195,6 @@ module Tabula
     end
 
     def snap_points!
-      x_sorted_points = points.sort_by(&:x)
-      y_sorted_points = points.sort_by(&:y)
-
       lines_to_points = {}
       points = []
       @ruling_lines.each do |line|
@@ -222,7 +236,8 @@ module Tabula
       end
 
       lines_to_points.each do |l, p1_p2|
-        l.java_send :setLine, [java.awt.geom.Point2D, java.awt.geom.Point2D], p1_p2[0], p1_p2[1]
+        l.java_send :setLine, [java.awt.geom.Point2D, java.awt.geom.Point2D], p1_p2[0],
+ p1_p2[1]
       end
     end
 
@@ -242,7 +257,6 @@ module Tabula
           memo << next_line
         end
       end
-
       lines
     end
   end
