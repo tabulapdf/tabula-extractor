@@ -36,12 +36,13 @@ EOS
     opt :area, 'Portion of the page to analyze (top,left,bottom,right). Example: --area 269.875,12.75,790.5,561. Default is entire page', :type => String, :default => nil
     opt :columns, 'X coordinates of column boundaries. Example --columns 10.1,20.2,30.3', :default => nil, :type => String
     opt :password, 'Password to decrypt document. Default is empty', :default => ''
-    opt :guess, 'Guess the portion of the page to analyze per page. Slow.'
+    opt :guess, 'Guess the portion of the page to analyze per page.'
     opt :debug, 'Print detected table areas instead of processing.'
     opt :format, "Output format (#{FORMATS.join(",")})", :default => 'CSV'
     opt :outfile, 'Write output to <file> instead of STDOUT', :default => '-'
     opt :spreadsheet, "Force PDF to be extracted using spreadsheet-style extraction (if there are ruling lines separating each cell, as in a PDF of an Excel spreadsheet)"
     opt :no_spreadsheet, "Force PDF not to be extracted using spreadsheet-style extraction (if there are ruling lines separating each cell, as in a PDF of an Excel spreadsheet)"
+    opt :silent, 'Suppress all stderr output.'
   end
 
   if !opts[:columns].nil?
@@ -65,10 +66,10 @@ EOS
 end
 
 def rulings_from_columns(page, area, vertical_rulings)
-  area = [page.top, page.left, page.bottom, page.right ] if area.nil?
-  vertical_rulings.map { |vr|
-    Tabula::Ruling.new(area[0], vr, 0, page.height)
-  }
+  top = area.nil? ? page.top : area.top
+  vertical_rulings.map do |vr|
+    Tabula::Ruling.new(top, vr, 0, page.height)
+  end
 end
 
 def heuristic_to_decide_whether_to_use_spreadsheet_extraction
@@ -78,59 +79,50 @@ end
 def main
   opts, filename = parse_command_line
 
-  area = opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)
+  area_input = opts[:area].nil? ? nil : opts[:area].split(',').map(&:to_f)
   vertical_rulings = opts[:columns].nil? ? nil : opts[:columns].split(',').map(&:to_f)
   out = opts[:outfile] == '-' ? $stdout : File.new(opts[:outfile], 'wb')
 
   use_spreadsheet_extraction =  if opts[:spreadsheet]
                                   true
-                                elsif opts[:no_spreadsheet]
+                                elsif opts[:no_spreadsheet] || opts[:columns] || opts[:area] || opts[:guess]
                                   false
                                 else
-                                  heuristic_to_decide_whether_to_use_spreadsheet_extraction
+                                  nil
                                 end
+  extractor = Tabula::Extraction::ObjectExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
+  extractor.extract.each_with_index do |pdf_page, page_index|
 
-  if use_spreadsheet_extraction #TODO: use a heuristic, but allow forcing.
-    extractor = Tabula::Extraction::ObjectExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
-    extractor.extract.each do |pdf_page|
-      pdf_page.spreadsheets.each do |spreadsheet|
-        if opts[:debug]
-          puts "Page #{pdf_page}: #{spreadsheet.dims(:top, :left, :bottom, :right)}"
-        else
-          Tabula::Writers.send(opts[:format].to_sym,
-                              spreadsheet.rows, #rows filled in automatically
-                              out)
-        end
-      end
+    #do the heuristic here
+    if use_spreadsheet_extraction.nil?
+      use_spreadsheet_extraction = pdf_page.is_tabular?
+      #TODO: tell the user what we're doing, so they can force the other way.
+      STDERR.puts "Using #{use_spreadsheet_extraction ? "spreadsheet": "no_spreadsheet"} extraction method.\n" +
+            "If the output looks wrong, re-run tabula with the #{use_spreadsheet_extraction ? "--no-spreadsheet": "--spreadsheet"} switch." unless opts[:silent]
     end
-  else
-    extractor = Tabula::Extraction::ObjectExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
-    extractor.extract.each_with_index do |page, page_index|
-      if opts[:guess]
-        page_areas = page.spreadsheets.map{|rect| rect.dims(:top, :left, :bottom, :right)}
-      elsif area
-        page_areas = [area]
-      end
 
-      if page_areas
-        page_areas.each do |page_area|
-          if opts[:guess] && opts[:debug]
-            puts (page_index + 1).to_s + ', ' + page_area.to_s
-          else
-            table = page.get_area(page_area).make_table(vertical_rulings.nil? ? {} : {:vertical_rulings => rulings_from_columns(page, area, vertical_rulings)})
-            Tabula::Writers.send(opts[:format].to_sym,
-                                 table,
-                                 out)
-          end
-
+    if use_spreadsheet_extraction
+      if opts[:debug]
+        pdf_page.spreadsheets.each do |spreadsheet|
+          STDERR.puts "Page #{pdf_page.number(:one_indexed)}: #{spreadsheet.dims(:top, :left, :bottom, :right)}"
         end
-
-      else
-        table = page.make_table(vertical_rulings.nil? ? {} : {:vertical_rulings => rulings_from_columns(page, area, vertical_rulings)})
-        Tabula::Writers.send(opts[:format].to_sym,
-                             table,
-                             out)
       end
+      tables = pdf_page.spreadsheets.map(&:rows)
+    else
+      STDERR.puts "Page #{pdf_page.number(:one_indexed)}: #{page_area.to_s}" if opts[:debug]
+      if opts[:guess]
+        page_areas = pdf_page.spreadsheets.map{|rect| pdf_page.get_area(rect.dims(:top, :left, :bottom, :right))}
+      elsif area_input
+        page_areas = [pdf_page.get_area(area_input)]
+      else
+        page_areas = [pdf_page]
+      end
+      tables = page_areas.map{|page_area| page_area.make_table(vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(pdf_page, page_area, vertical_rulings) })}
+    end
+    tables.each do |table|
+      Tabula::Writers.send(opts[:format].to_sym,
+                          table,
+                          out)
     end
   end
   out.close
