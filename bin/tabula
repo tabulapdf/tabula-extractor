@@ -108,20 +108,28 @@ def main
     extractor.extract.each_with_index do |page, page_index|
       if opts[:guess]
         page_areas = page.spreadsheets.map{|rect| rect.dims(:top, :left, :bottom, :right)}
-      else
+      elsif area
         page_areas = [area]
       end
 
-      page_areas.each do |page_area|
-        if opts[:guess] && opts[:debug]
-          puts (page_index + 1).to_s + ', ' + page_area.to_s
-        else
-          table = page.make_table(page_area, vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(page, area, vertical_rulings) })
-          Tabula::Writers.send(opts[:format].to_sym,
-                              table,
-                              out)
+      if page_areas
+        page_areas.each do |page_area|
+          if opts[:guess] && opts[:debug]
+            puts (page_index + 1).to_s + ', ' + page_area.to_s
+          else
+            table = page.get_area(page_area).make_table(vertical_rulings.nil? ? {} : {:vertical_rulings => rulings_from_columns(page, area, vertical_rulings)})
+            Tabula::Writers.send(opts[:format].to_sym,
+                                 table,
+                                 out)
+          end
+
         end
 
+      else
+        table = page.make_table(vertical_rulings.nil? ? {} : {:vertical_rulings => rulings_from_columns(page, area, vertical_rulings)})
+        Tabula::Writers.send(opts[:format].to_sym,
+                             table,
+                             out)
       end
     end
   end
