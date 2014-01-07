@@ -9,20 +9,6 @@ module Tabula
     IS_TABULAR_HEURISTIC_RATIO = 0.8
     ANOTHER_MAGIC_NUMBER = 0.75
 
-    #goofy failed attempt at a heuristic to determine which extraction algorithm to use
-    # def is_tabular?
-    #   # [(x, y) => [horizontal, vertical]]
-    #   intersection_points = Ruling.find_intersections(horizontal_ruling_lines, vertical_ruling_lines)
-    #   intersection_counts = {}
-    #   intersection_points.each do |_, ((horizontal, vertical))|
-    #     intersection_counts[horizontal] = intersection_counts.fetch(horizontal, 0) + 1
-    #     intersection_counts[vertical] = intersection_counts.fetch(vertical, 0) + 1
-    #   end
-
-    #   part_of_a_table = intersection_counts.count{|line, count| count >= 3 }
-    #   (part_of_a_table / ruling_lines.count.to_f) > IS_TABULAR_HEURISTIC_RATIO
-    # end
-
     def is_tabular?
       #spreadsheet extraction
       spreadsheet = spreadsheets.first
@@ -30,16 +16,11 @@ module Tabula
       rows_defined_by_lines = spreadsheet.rows.size #rows filled in automatically
       columns_defined_by_lines = spreadsheet.cols.size
 
-      # ordinary
-      # page_area = spreadsheet.dims(:top, :left, :bottom, :right)
-      # table = self.make_table
-      # columns_defined_without_lines = table.map(&:size).max
-      # rows_defined_without_lines = table.size
       table = self.get_table
       columns_defined_without_lines = table.cols.size
       rows_defined_without_lines = table.rows.size
       ratio = ((columns_defined_by_lines.to_f / columns_defined_without_lines) + (rows_defined_by_lines.to_f / rows_defined_without_lines)) / 2
-      # puts ratio
+
       return ratio > ANOTHER_MAGIC_NUMBER && ratio < (1 / ANOTHER_MAGIC_NUMBER)
     end
 
