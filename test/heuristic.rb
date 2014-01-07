@@ -10,12 +10,20 @@ correct = []
 misclassified_as_original = []
 misclassified_as_spreadsheet = []
 
+
+
+def heuristic(page)
+  page.is_tabular?
+end
+
 (should_use_spreadsheet + should_use_original) .each do |filename, expected_to_be_tabular|
-  extractor = Tabula::Extraction::CharacterExtractor.new(filename, [1])
+  extractor = Tabula::Extraction::ObjectExtractor.new(filename, [1])
 
   page = extractor.extract.first
   page.get_ruling_lines!
-  page_is_tabular = page.is_tabular?
+  # puts "#{File.basename(filename)} | #{expected_to_be_tabular}"
+  page_is_tabular = heuristic(page)
+  # puts ""
 
   if page_is_tabular && expected_to_be_tabular  || !page_is_tabular && !expected_to_be_tabular
     correct << filename
@@ -26,19 +34,17 @@ misclassified_as_spreadsheet = []
   end
 end
 
-
-
 puts "#{correct.size} PDFs were correctly classified"
 puts "#{misclassified_as_original.size + misclassified_as_spreadsheet.size} PDFs were incorrectly classified"
 unless misclassified_as_spreadsheet.empty?
   puts "#{misclassified_as_spreadsheet.size} PDFs should use the original extraction algorithm\n\t but was classified as needing the spreadsheet algorithm"
   misclassified_as_spreadsheet.each do |filename|
-    puts " - #{filename}"
+    puts " - #{File.basename(filename)}"
   end
 end
 unless misclassified_as_original.empty?
   puts "#{misclassified_as_original.size} PDFs should use the spreadsheet extraction algorithm\n\t but was classified as needing the original algorithm"
   misclassified_as_original.each do |filename|
-    puts " - #{filename}"
+    puts " - #{File.basename(filename)}"
   end
 end

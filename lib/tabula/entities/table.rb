@@ -17,6 +17,26 @@ module Tabula
       end
     end
 
+    def rpad!
+      max = lines.map{|l| l.text_elements.size}.max
+      lines.each do |line|
+        needed = max - line.text_elements.size
+        needed.times do 
+          line.text_elements << TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+        end
+      end
+    end
+
+    def cols
+      self.rpad!
+      lines.map(&:text_elements).transpose
+    end
+
+    def rows
+      self.rpad!
+      lines.map(&:text_elements)
+    end
+
     # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
     # probably only used for testing
     def self.new_from_array(array_of_rows)

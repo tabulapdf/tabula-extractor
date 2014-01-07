@@ -50,7 +50,8 @@ module Tabula
       return page_area
     end
 
-    def make_table(options={})
+    #returns a Table object
+    def get_table(options={})
       options = {:vertical_rulings => []}.merge(options)
       if texts.empty?
         return []
@@ -77,8 +78,12 @@ module Tabula
       end
 
       table.lstrip_lines!
+      table
+    end
 
-      table.lines.map do |l|
+    #for API backwards-compatibility reasons, this returns an array of arrays.
+    def make_table(options={})
+      get_table(options).lines.map do |l|
         l.text_elements.map! do |te|
           te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
         end
