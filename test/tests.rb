@@ -524,6 +524,36 @@ class TestExtractor < Minitest::Test
       assert_equal ["TOTAL", "453,515", "895,111", "456,431", "718,382", "487,183", "886,211", "494,220", "816,623", "495,580", "810,565", "627,469", "1,248,804", "540,367"], table.last
     end
   end
+end
+
+class TestIsTabularHeuristic < Minitest::Test
+
+  EXPECTED_TO_BE_SPREADSHEET = ['47008204D_USA.page4.pdf', 'GSK_2012_Q4.page437.pdf', 'strongschools.pdf', 'tabla_subsidios.pdf']
+  NOT_EXPECTED_TO_BE_SPREADSHEET = ['560015757GV_China.page1.pdf', 'S2MNCEbirdisland.pdf', 'bo_page24.pdf', 'campaign_donors.pdf']
+
+  File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+
+  def test_heuristic_detects_spreadsheets
+    EXPECTED_TO_BE_SPREADSHEET.each do |f|
+      path = File.expand_path('data/' + f, File.dirname(__FILE__))
+      extractor = Tabula::Extraction::ObjectExtractor.new(path, [1])
+      page = extractor.extract.first
+      page.get_ruling_lines!
+      assert page.is_tabular?
+    end
+  end
+
+  def test_heuristic_detects_non_spreadsheets
+    NOT_EXPECTED_TO_BE_SPREADSHEET.each do |f|
+      path = File.expand_path('data/' + f, File.dirname(__FILE__))
+      extractor = Tabula::Extraction::ObjectExtractor.new(path, [1])
+      page = extractor.extract.first
+      page.get_ruling_lines!
+      assert !page.is_tabular?
+    end
+  end
+
+
 
 
 end
