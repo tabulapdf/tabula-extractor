@@ -22,6 +22,7 @@ Tabula helps you extract tables from PDFs
 Usage:
        tabula [options] <pdf_file>
 where [options] are:
+Tabula helps you extract tables from PDFs
        --pages, -p <s>:   Comma separated list of ranges. Examples: --pages
                           1-3,5-7 or --pages 3. Default is --pages 1 (default:
                           1)
@@ -33,7 +34,6 @@ where [options] are:
     --password, -s <s>:   Password to decrypt document. Default is empty
                           (default: )
            --guess, -g:   Guess the portion of the page to analyze per page.
-                          Slow.
            --debug, -d:   Print detected table areas instead of processing.
       --format, -f <s>:   Output format (CSV,TSV,HTML,JSON) (default: CSV)
      --outfile, -o <s>:   Write output to <file> instead of STDOUT (default: -)
@@ -43,6 +43,7 @@ where [options] are:
   --no-spreadsheet, -n:   Force PDF not to be extracted using spreadsheet-style
                           extraction (if there are ruling lines separating each
                           cell, as in a PDF of an Excel spreadsheet)
+          --silent, -i:   Suppress all stderr output.
          --version, -v:   Print version and exit
             --help, -h:   Show this message
 ```
