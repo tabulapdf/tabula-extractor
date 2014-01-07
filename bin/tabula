@@ -6,6 +6,10 @@ require_relative '../lib/tabula'
 FORMATS = ['CSV', 'TSV', 'HTML', 'JSON']
 
 def parse_pages_arg(pages_arg)
+  if(pages_arg == 'all')
+    return :all
+  end
+  
   ranges = pages_arg.split(',').map(&:strip)
   pages = []
   ranges.each do |range|
