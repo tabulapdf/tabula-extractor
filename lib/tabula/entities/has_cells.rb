@@ -6,7 +6,6 @@ module Tabula
   # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors; ruling_lines reader
   module HasCells
 
-    IS_TABULAR_HEURISTIC_RATIO = 0.8
     ANOTHER_MAGIC_NUMBER = 0.75
 
     def is_tabular?
