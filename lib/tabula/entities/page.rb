@@ -83,11 +83,7 @@ module Tabula
 
     #for API backwards-compatibility reasons, this returns an array of arrays.
     def make_table(options={})
-      get_table(options).lines.map do |l|
-        l.text_elements.map! do |te|
-          te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
-        end
-      end.sort_by { |l| l.map { |te| te.top or 0 }.max }
+      get_table(options).rows
     end
 
     # returns the Spreadsheets; creating them if they're not memoized

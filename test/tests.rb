@@ -4,10 +4,14 @@ require 'minitest/autorun'
 
 require_relative '../lib/tabula'
 
+def table_to_array(table)
+  lines_to_array(table.rows)
+end
+
 def lines_to_array(lines)
-  lines.map { |l|
+  lines.map do |l|
     l.map { |te| te.text.strip }
-  }
+  end
 end
 
 def lines_to_table(lines)
@@ -15,7 +19,7 @@ def lines_to_table(lines)
 end
 
 
-# I don't want to pollute the "real" clasend a funny inspect method. Just for testing comparisons.
+# I don't want to pollute the "real" class with a funny inspect method. Just for testing comparisons.
 module Tabula
   class Table
     def inspect
@@ -27,7 +31,7 @@ end
 module Tabula
   class Line
     def inspect
-      @text_elements.map(&:text).inspect
+      @text_elements.map{|te| te.nil? ? '' : te.text}.inspect
     end
   end
 end
@@ -173,7 +177,7 @@ end
 class TestExtractor < Minitest::Test
 
   def test_table_extraction_1
-    table = lines_to_array Tabula.extract_table(File.expand_path('data/gre.pdf', File.dirname(__FILE__)),
+    table = table_to_array Tabula.extract_table(File.expand_path('data/gre.pdf', File.dirname(__FILE__)),
                                                 1,
                                                 [107.1, 57.9214, 394.5214, 290.7],
                                                 :detect_ruling_lines => false)
@@ -184,7 +188,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_diputados_voting_record
-    table = lines_to_array Tabula.extract_table(File.expand_path('data/argentina_diputados_voting_record.pdf', File.dirname(__FILE__)),
+    table = table_to_array Tabula.extract_table(File.expand_path('data/argentina_diputados_voting_record.pdf', File.dirname(__FILE__)),
                                                 1,
                                                 [269.875, 12.75, 790.5, 561])
 
@@ -199,13 +203,12 @@ class TestExtractor < Minitest::Test
     # and a solution for half-x-height-offset lines.
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
 
-    table = lines_to_table Tabula.extract_table(pdf_file_path,
+    table = Tabula.extract_table(pdf_file_path,
                                                 1,
                                                 [106.01, 48.09, 227.31, 551.89],
                                                 :detect_ruling_lines => true)
 
     expected = Tabula::Table.new_from_array([["AANONSEN, DEBORAH, A", "", "STATEN ISLAND, NY", "MEALS", "$85.00"], ["TOTAL", "", "", "", "$85.00"], ["AARON, CAREN, T", "", "RICHMOND, VA", "EDUCATIONAL ITEMS", "$78.80"], ["AARON, CAREN, T", "", "RICHMOND, VA", "MEALS", "$392.45"], ["TOTAL", "", "", "", "$471.25"], ["AARON, JOHN", "", "CLARKSVILLE, TN", "MEALS", "$20.39"], ["TOTAL", "", "", "", "$20.39"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "MEALS", "$310.33"], ["", "REGIONAL PULMONARY & SLEEP"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE"], ["TOTAL", "", "", "", "$5,010.33"], ["AARON, MAUREEN, M", "", "MARTINSVILLE, VA", "MEALS", "$193.67"], ["TOTAL", "", "", "", "$193.67"], ["AARON, MICHAEL, L", "", "WEST ISLIP, NY", "MEALS", "$19.50"], ["TOTAL", "", "", "", "$19.50"], ["AARON, MICHAEL, R", "", "BROOKLYN, NY", "MEALS", "$65.92"]])
-
 
     assert_equal expected, table
   end
@@ -259,7 +262,7 @@ class TestExtractor < Minitest::Test
 
   # TODO Spaces inserted in words - fails
   def test_bo_page24
-    table = lines_to_array Tabula.extract_table(File.expand_path('data/bo_page24.pdf', File.dirname(__FILE__)),
+    table = table_to_array Tabula.extract_table(File.expand_path('data/bo_page24.pdf', File.dirname(__FILE__)),
                                                 1,
                                                 [425.625, 53.125, 575.714, 810.535],
                                                 :detect_ruling_lines => false)
@@ -312,7 +315,7 @@ class TestExtractor < Minitest::Test
 
     vertical_rulings = [47,147,256,310,375,431,504].map{|n| Tabula::Ruling.new(0, n, 0, 1000)}
 
-    table = lines_to_array Tabula.extract_table(File.expand_path('data/campaign_donors.pdf', File.dirname(__FILE__)),
+    table = table_to_array Tabula.extract_table(File.expand_path('data/campaign_donors.pdf', File.dirname(__FILE__)),
                                                 1,
                                                 [255.57,40.43,398.76,557.35],
                                                 :vertical_rulings => vertical_rulings)
@@ -321,7 +324,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_get_spacing_and_merging_right
-    table = lines_to_array Tabula.extract_table(File.expand_path('data/strongschools.pdf', File.dirname(__FILE__)),
+    table = table_to_array Tabula.extract_table(File.expand_path('data/strongschools.pdf', File.dirname(__FILE__)),
                                                 1,
                                                 [52.32857142857143,15.557142857142859,128.70000000000002,767.9571428571429],
                                                 :detect_ruling_lines => true)
