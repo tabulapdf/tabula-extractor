@@ -29,7 +29,7 @@ module Tabula
       :password => '',
       :detect_ruling_lines => true,
       :vertical_rulings => [],
-      :spreadsheet_extraction_method => false,
+      :extraction_method => "guess",
     }.merge(options)
 
     if area.instance_of?(Array)
@@ -47,7 +47,13 @@ module Tabula
                                                options[:password]) \
       .extract.next
 
-    if options[:spreadsheet_extraction_method]
+    if ["spreadsheet", "original"].include? options[:extraction_method]
+      use_spreadsheet_extraction_method = options[:extraction_method] == "spreadsheet"
+    else
+      use_spreadsheet_extraction_method = pdf_page.is_tabular?
+    end
+
+    if use_spreadsheet_extraction_method
       tables = pdf_page.get_area(area).spreadsheets.inject(&:+)
     else
       use_detected_lines = false
