@@ -531,7 +531,7 @@ end
 
 class TestIsTabularHeuristic < Minitest::Test
 
-  EXPECTED_TO_BE_SPREADSHEET = ['47008204D_USA.page4.pdf', 'GSK_2012_Q4.page437.pdf', 'strongschools.pdf', 'tabla_subsidios.pdf', 's-013163.pdf']
+  EXPECTED_TO_BE_SPREADSHEET = ['47008204D_USA.page4.pdf', 'GSK_2012_Q4.page437.pdf', 'strongschools.pdf', 'tabla_subsidios.pdf']
   NOT_EXPECTED_TO_BE_SPREADSHEET = ['560015757GV_China.page1.pdf', 'S2MNCEbirdisland.pdf', 'bo_page24.pdf', 'campaign_donors.pdf']
 
   File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
