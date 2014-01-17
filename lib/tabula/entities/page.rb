@@ -237,13 +237,17 @@ module Tabula
       end
 
       lines_to_points.each do |l, p1_p2|
-        l.java_send :setLine, [java.awt.geom.Point2D, java.awt.geom.Point2D], p1_p2[0],
- p1_p2[1]
+        l.java_send :setLine, [java.awt.geom.Point2D, java.awt.geom.Point2D], p1_p2[0], p1_p2[1]
       end
     end
 
     def collapse_oriented_rulings(lines)
       # lines must all be of one orientation (i.e. horizontal, vertical)
+
+      if lines.empty?
+        return []
+      end
+
       lines.sort! {|a, b| a.position != b.position ? a.position <=> b.position : a.start <=> b.start }
 
       lines = lines.inject([lines.shift]) do |memo, next_line|
@@ -258,7 +262,6 @@ module Tabula
           memo << next_line
         end
       end
-      lines
     end
   end
 

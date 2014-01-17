@@ -329,7 +329,7 @@ class TestExtractor < Minitest::Test
                                                 [52.32857142857143,15.557142857142859,128.70000000000002,767.9571428571429],
                                                 :detect_ruling_lines => true)
 
-    expected = [["Last Name", "First Name", "Address", "City", "State", "Zip", "Occupation", "Employer", "Date", "Amount"], ["Lidstad", "Dick & Peg", "62 Mississippi River Blvd N", "Saint Paul", "MN", "55104", "retired", "", "10/12/2012", "60.00"], ["Strom", "Pam", "1229 Hague Ave", "St. Paul", "MN", "55104", "", "", "9/12/2012", "60.00"], ["Seeba", "Louise & Paul", "1399 Sheldon St", "Saint Paul", "MN", "55108", "BOE", "City of Saint Paul", "10/12/2012", "60.00"], ["Schumacher / Bales", "Douglas L. / Patricia ", "948 County Rd. D W", "Saint Paul", "MN", "55126", "", "", "10/13/2012", "60.00"], ["Abrams", "Marjorie", "238 8th St east", "St Paul", "MN", "55101", "Retired", "Retired", "8/8/2012", "75.00"], ["Crouse / Schroeder", "Abigail / Jonathan", "1545 Branston St.", "Saint Paul", "MN", "55108", "", "", "10/6/2012", "75.00"]]
+    expected = [["Last Name", "First Name", "Address", "City", "State", "Zip", "Occupation", "Employer", "Date", "Amount"], ["Lidstad", "Dick & Peg", "62 Mississippi River Blvd N", "Saint Paul", "MN", "55104", "retired", "", "10/12/2012", "60.00"], ["Strom", "Pam", "1229 Hague Ave", "St. Paul", "MN", "55104", "", "", "9/12/2012", "60.00"], ["Seeba", "Louise & Paul", "1399 Sheldon St", "Saint Paul", "MN", "55108", "BOE", "City of Saint Paul", "10/12/2012", "60.00"], ["Schumacher / Bales", "Douglas L. / Patricia", "948 County Rd. D W", "Saint Paul", "MN", "55126", "", "", "10/13/2012", "60.00"], ["Abrams", "Marjorie", "238 8th St east", "St Paul", "MN", "55101", "Retired", "Retired", "8/8/2012", "75.00"], ["Crouse / Schroeder", "Abigail / Jonathan", "1545 Branston St.", "Saint Paul", "MN", "55108", "", "", "10/6/2012", "75.00"]]
 
     assert_equal expected, table
 
@@ -531,7 +531,7 @@ end
 
 class TestIsTabularHeuristic < Minitest::Test
 
-  EXPECTED_TO_BE_SPREADSHEET = ['47008204D_USA.page4.pdf', 'GSK_2012_Q4.page437.pdf', 'strongschools.pdf', 'tabla_subsidios.pdf']
+  EXPECTED_TO_BE_SPREADSHEET = ['47008204D_USA.page4.pdf', 'GSK_2012_Q4.page437.pdf', 'strongschools.pdf', 'tabla_subsidios.pdf', 's-013163.pdf']
   NOT_EXPECTED_TO_BE_SPREADSHEET = ['560015757GV_China.page1.pdf', 'S2MNCEbirdisland.pdf', 'bo_page24.pdf', 'campaign_donors.pdf']
 
   File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
@@ -542,7 +542,7 @@ class TestIsTabularHeuristic < Minitest::Test
       extractor = Tabula::Extraction::ObjectExtractor.new(path, [1])
       page = extractor.extract.first
       page.get_ruling_lines!
-      assert page.is_tabular?
+      assert page.is_tabular?, "failed on file #{f}"
     end
   end
 
@@ -552,11 +552,8 @@ class TestIsTabularHeuristic < Minitest::Test
       extractor = Tabula::Extraction::ObjectExtractor.new(path, [1])
       page = extractor.extract.first
       page.get_ruling_lines!
-      assert !page.is_tabular?
+      assert !page.is_tabular?, "failed on file #{f}"
     end
   end
-
-
-
 
 end
