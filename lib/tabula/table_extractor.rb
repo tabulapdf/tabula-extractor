@@ -54,7 +54,7 @@ module Tabula
     end
 
     if use_spreadsheet_extraction_method
-      tables = pdf_page.get_area(area).spreadsheets.inject(&:+)
+      table = pdf_page.get_area(area).spreadsheets.inject(&:+)
     else
       use_detected_lines = false
       if options[:detect_ruling_lines] && options[:vertical_rulings].empty?
@@ -77,9 +77,9 @@ module Tabula
       end
 
       table = pdf_page.get_area(area).get_table(:vertical_rulings => use_detected_lines ? detected_vertical_rulings : options[:vertical_rulings])
-      
+
       # fixes up the table a little bit, replacing nils with empty TextElements
-      # and sorting the lines. 
+      # and sorting the lines.
       table.lines.each do |l|
         l.text_elements = l.text_elements.map do |te|
           te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
