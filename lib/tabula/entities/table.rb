@@ -1,9 +1,11 @@
 module Tabula
   class Table
-    attr_reader :lines
+    attr_reader :extraction_method
+    attr_accessor :lines
     def initialize(line_count, separators)
       @separators = separators
       @lines = (0...line_count).inject([]) { |m| m << Line.new }
+      @extraction_method = "original"
     end
 
     def add_text_element(text_element, i, j)
@@ -28,22 +30,27 @@ module Tabula
     end
 
     def cols
-      self.rpad!
-      lines.map(&:text_elements).transpose
+      rows.transpose
     end
 
     def rows
       self.rpad!
-      lines.map(&:text_elements)
+      lines.map do |l|
+        l.text_elements.map! do |te|
+          te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+        end
+      end.sort_by { |l| l.map { |te| te.top || 0 }.max }    
     end
 
     # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
     # probably only used for testing
     def self.new_from_array(array_of_rows)
       t = Table.new(array_of_rows.size, [])
+      @extraction_method = "testing"
       array_of_rows.each_with_index do |row, index|
-        t.lines[index].text_elements = row.map{|cell| TextElement.new(nil, nil, nil, nil, nil, nil, cell, nil)}
+        t.lines[index].text_elements = row.each_with_index.map{|cell, inner_index| TextElement.new(index, inner_index, 1, 1, nil, nil, cell, nil)}
       end
+      t.rpad!
       t
     end
 
@@ -76,6 +83,14 @@ module Tabula
 
       self.lines.zip(other.lines).all? { |my, yours| my == yours }
 
+    end
+
+    def to_json(*a)
+      {
+        'json_class'   => self.class.name,
+        'extraction_method' => @extraction_method,
+        'data' => rows,
+      }.to_json(*a)
     end
   end
 end
