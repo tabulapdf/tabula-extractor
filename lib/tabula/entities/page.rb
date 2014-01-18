@@ -54,7 +54,7 @@ module Tabula
     def get_table(options={})
       options = {:vertical_rulings => []}.merge(options)
       if texts.empty?
-        return []
+        return Tabula::Table.new(0, [])
       end
 
       text_chunks = TextElement.merge_words(self.texts, options).sort
