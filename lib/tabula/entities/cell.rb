@@ -38,5 +38,16 @@ module Tabula
       end
       output.strip
     end
+
+    def to_json(*a)
+      {
+        'json_class'   => self.class.name,
+        'text' => text,
+        'top' => top,
+        'left' => left,
+        'width' => width,
+        'height' => height
+      }.to_json(*a)
+    end
   end
 end

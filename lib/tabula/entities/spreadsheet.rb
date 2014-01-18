@@ -1,9 +1,13 @@
 module Tabula
   # a counterpart of Table, to be sure.
   # not sure yet what their relationship ought to be.
+
+  # the both should implement `cells`, `rows`, `cols`, `extraction_method`
+
   class Spreadsheet < ZoneEntity
     include Tabula::HasCells
     attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines, :cells_resolved
+    attr_reader :extraction_method, :page
 
     def initialize(top, left, width, height, page, cells, vertical_ruling_lines, horizontal_ruling_lines) #, lines)
       super(top, left, width, height)
@@ -11,6 +15,7 @@ module Tabula
       @page = page
       @vertical_ruling_lines = vertical_ruling_lines
       @horizontal_ruling_lines = horizontal_ruling_lines
+      @extraction_method = "spreadsheet"
     end
 
     def ruling_lines
@@ -87,6 +92,19 @@ module Tabula
       out = StringIO.new
       Tabula::Writers.TSV(rows, out)
       out.string
+    end
+
+    def to_json(*a)
+      {
+        'json_class'   => self.class.name,
+        'extraction_method' => @extraction_method,
+        'data' => rows,
+      }.to_json(*a)
+    end
+
+    def +(other)
+      raise ArgumentError unless other.page == @page
+      Spreadsheet.new(nil, nil, nil, nil, @page, @cells + other.cells, nil, nil )
     end
   end
 end

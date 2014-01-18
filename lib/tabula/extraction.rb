@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.util.TextPosition
 java_import org.apache.pdfbox.pdmodel.PDDocument
@@ -198,7 +199,12 @@ module Tabula
 
       def processTextPosition(text)
         c = text.getCharacter
-        h = c == ' ' ? text.getWidthDirAdj.round(2) : text.getHeightDir.round(2)
+        h = text.getHeightDir.round(2)
+
+        if c == ' ' || c == ' ' # replace non-breaking space for space
+          c = ' '
+          h = text.getWidthDirAdj.round(2)
+        end
 
         te = Tabula::TextElement.new(text.getYDirAdj.round(2) - h,
                                      text.getXDirAdj.round(2),

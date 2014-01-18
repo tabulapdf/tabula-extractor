@@ -83,11 +83,7 @@ module Tabula
 
     #for API backwards-compatibility reasons, this returns an array of arrays.
     def make_table(options={})
-      get_table(options).lines.map do |l|
-        l.text_elements.map! do |te|
-          te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
-        end
-      end.sort_by { |l| l.map { |te| te.top or 0 }.max }
+      get_table(options).rows
     end
 
     # returns the Spreadsheets; creating them if they're not memoized
@@ -241,13 +237,17 @@ module Tabula
       end
 
       lines_to_points.each do |l, p1_p2|
-        l.java_send :setLine, [java.awt.geom.Point2D, java.awt.geom.Point2D], p1_p2[0],
- p1_p2[1]
+        l.java_send :setLine, [java.awt.geom.Point2D, java.awt.geom.Point2D], p1_p2[0], p1_p2[1]
       end
     end
 
     def collapse_oriented_rulings(lines)
       # lines must all be of one orientation (i.e. horizontal, vertical)
+
+      if lines.empty?
+        return []
+      end
+
       lines.sort! {|a, b| a.position != b.position ? a.position <=> b.position : a.start <=> b.start }
 
       lines = lines.inject([lines.shift]) do |memo, next_line|
@@ -262,7 +262,6 @@ module Tabula
           memo << next_line
         end
       end
-      lines
     end
   end
 
