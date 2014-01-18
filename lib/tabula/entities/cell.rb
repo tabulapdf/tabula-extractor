@@ -24,7 +24,7 @@ module Tabula
       Cell.new(topleft.y, topleft.x, width, height, options)
     end
 
-    def text
+    def text(options={})
       return "placeholder" if @placeholder && @options[:cell_debug] >= DEBUG
       output = ""
       text_elements.sort #use the default sort for ZoneEntity
