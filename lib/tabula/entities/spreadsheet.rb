@@ -30,9 +30,7 @@ module Tabula
     def fill_in_cells!
       unless @cells_resolved
         @cells_resolved = true
-        cells.each do |cell|
-          cell.text_elements = @page.get_cell_text(cell)
-        end
+        @page.fill_in_cell_texts!(cells)
       end
     end
 

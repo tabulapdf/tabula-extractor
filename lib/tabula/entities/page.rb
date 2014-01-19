@@ -182,6 +182,16 @@ module Tabula
       end
     end
 
+    def fill_in_cell_texts!(areas)
+      texts.each do |t|
+        area = areas.find{|a| a.contains(t) }
+        area.text_elements << t unless area.nil?
+      end
+      areas.each do |area|
+        area.text_elements = TextElement.merge_words(area.text_elements)
+      end
+    end
+
     def get_cell_text(area=nil)
       TextElement.merge_words(self.get_text(area))
     end
