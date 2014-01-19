@@ -44,6 +44,7 @@ Tabula helps you extract tables from PDFs
                           extraction (if there are ruling lines separating each
                           cell, as in a PDF of an Excel spreadsheet)
           --silent, -i:   Suppress all stderr output.
+--use-line-returns, -u:   Use embedded line returns in cells.
          --version, -v:   Print version and exit
             --help, -h:   Show this message
 ```

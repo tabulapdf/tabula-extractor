@@ -47,7 +47,7 @@ EOS
     opt :spreadsheet, "Force PDF to be extracted using spreadsheet-style extraction (if there are ruling lines separating each cell, as in a PDF of an Excel spreadsheet)"
     opt :no_spreadsheet, "Force PDF not to be extracted using spreadsheet-style extraction (if there are ruling lines separating each cell, as in a PDF of an Excel spreadsheet)"
     opt :silent, 'Suppress all stderr output.'
-    opt :use_line_returns, 'Use embedded line returns in cells.'
+    opt :use_line_returns, 'Use embedded line returns in cells. (Only in spreadsheet mode.)'
   end
 
   if !opts[:columns].nil?
