@@ -44,6 +44,7 @@ Tabula helps you extract tables from PDFs
                           extraction (if there are ruling lines separating each
                           cell, as in a PDF of an Excel spreadsheet)
           --silent, -i:   Suppress all stderr output.
+--use-line-returns, -u:   Use embedded line returns in cells.
          --version, -v:   Print version and exit
             --help, -h:   Show this message
 ```
@@ -51,6 +52,27 @@ Tabula helps you extract tables from PDFs
 ## Scripting examples
 
 `tabula-extractor` is a RubyGem that you can use to programmatically extract tabular data, using the Tabula engine, in your scripts or applications. We don't have docs yet, but [the tests](test/tests.rb) are a good source of information.
+
+Here's a very basic example:
+
+````ruby
+require 'tabula'
+ 
+pdf_file_path = "whatever.pdf"
+outfilename = "whatever.csv"
+ 
+out = open(outfilename, 'w')
+ 
+extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all )
+extractor.extract.each do |pdf_page|
+  pdf_page.spreadsheets.each do |spreadsheet|
+    out << spreadsheet.to_csv
+    out << "\n\n"
+  end
+end
+out.close
+
+````
 
 ## Notes
 
