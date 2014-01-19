@@ -179,7 +179,7 @@ module Tabula
       if area.nil?
         texts
       else
-        @spatial_index.contains(area).sort
+        @spatial_index.contains(area)
       end
     end
 

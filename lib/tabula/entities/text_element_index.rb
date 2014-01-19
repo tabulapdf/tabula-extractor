@@ -4,7 +4,7 @@ module Tabula
     attr_reader :te_dict
 
     class SaveToListProcedure
-      include Java::GnuTrove::TIntProcedure
+      include Java::GnuTroveProcedure::TIntProcedure
 
       attr_reader :list
 
@@ -47,7 +47,17 @@ module Tabula
                                                zone_entity.bottom)
       @save_to_list.reset!
       super(r, @save_to_list)
-      return @save_to_list.list
+
+      # sort in lexicographic (reading) order
+      @save_to_list.list.sort { |a,b|
+        if a.vertically_overlaps?(b)
+          a.left <=> b.left
+        elsif a.top < b.top
+          -1
+        else
+          1
+        end
+      }
     end
   end
 end
