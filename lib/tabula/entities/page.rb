@@ -15,11 +15,14 @@ module Tabula
       @ruling_lines = ruling_lines
       @file_path = file_path
       @number_one_indexed = number
-      self.texts = texts
       @cells = []
       @spreadsheets = nil
       @min_char_width = min_char_width
       @min_char_height = min_char_height
+      @spatial_index = TextElementIndex.new
+
+      self.texts = texts
+      self.texts.each { |te| @spatial_index << te }
     end
 
     def min_char_width
@@ -176,9 +179,7 @@ module Tabula
       if area.nil?
         texts
       else
-        texts.select do |t|
-          area.contains(t)
-        end
+        @spatial_index.contains(area).sort
       end
     end
 
