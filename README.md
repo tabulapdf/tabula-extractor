@@ -55,7 +55,7 @@ Tabula helps you extract tables from PDFs
 
 Here's a very basic example:
 
-````
+````ruby
 require 'tabula'
  
 pdf_file_path = "whatever.pdf"
