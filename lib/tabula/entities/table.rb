@@ -92,5 +92,17 @@ module Tabula
         'data' => rows,
       }.to_json(*a)
     end
+
+    def to_csv
+      out = StringIO.new
+      Tabula::Writers.CSV(rows, out)
+      out.string
+    end
+
+    def to_tsv
+      out = StringIO.new
+      Tabula::Writers.TSV(rows, out)
+      out.string
+    end
   end
 end
