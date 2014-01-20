@@ -542,6 +542,22 @@ class TestExtractor < Minitest::Test
     assert_equal ary[1][1], "$ 18,969,610"
     assert_equal ary[1][2], "$ 18,157,722"
   end
+
+  def test_cells_including_line_returns
+    data = []
+    pdf_file_path = "./test/data/sydney_disclosure_contract.pdf"
+    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
+      pdf_page.spreadsheets.each do |spreadsheet|
+        spreadsheet.cells.each do |cell|
+          cell.text_elements = pdf_page.get_cell_text(cell)
+          cell.options = ({:use_line_returns => true, :cell_debug => 0})
+          data << cell.text
+        end
+      end
+    end
+    assert_equal ["1295", "Name: Reino International Pty Ltd trading as Duncan Solutions \nAddress: 15/39 Herbet Street, St Leonards NSW 2065", "N/A", "Effective Date: 13 May 2013 \nDuration: 15 Weeks", "Supply, Installation and Maintenance of Parking Ticket Machines", "$3,148,800.00exgst", "N/A", "N/A", "Open Tender  \nTender evaluation criteria included: \n- The schedule of prices \n- Compliance with technical specifications/Technical assessment \n- Operational Plan including maintenance procedures"], data
+  end
+
 end
 
 class TestIsTabularHeuristic < Minitest::Test
