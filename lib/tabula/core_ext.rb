@@ -121,7 +121,7 @@ class Line2D::Float
 
 end
 
-class Rectangle2D::Float
+class Rectangle2D
   SIMILARITY_DIVISOR = 20
 
   alias_method :top, :minY
