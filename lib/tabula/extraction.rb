@@ -208,7 +208,7 @@ module Tabula
 
         te = Tabula::TextElement.new(text.getY.round(2) - h,
                                      text.getX.round(2),
-                                     text.getWidth.round(2),
+                                     text.getWidthDirAdj.round(2),
                                      # ugly hack follows: we need spaces to have a height, so we can
                                      # test for vertical overlap. height == width seems a safe bet.
                                      h,

@@ -183,18 +183,47 @@ module Tabula
       end
     end
 
-    def fill_in_cell_texts!(areas)
-      texts.each do |t|
-        area = areas.find{|a| a.contains(t) }
-        area.text_elements << t unless area.nil?
-      end
-      areas.each do |area|
-        area.text_elements = TextElement.merge_words(area.text_elements)
-      end
-    end
-
     def get_cell_text(area=nil)
-      TextElement.merge_words(self.get_text(area))
+      t = self.get_text(area)
+
+      if !t.empty?
+        rotate = false
+
+        if t.all? { |c| c.direction == 90 }
+          bottom_element = t.max_by(&:bottom)
+          rotate_around = [bottom_element.left, bottom_element.bottom]
+          quadrants = 1
+          rotate = true
+        elsif t.all? { |c| c.direction == 270 }
+          top_element = t.min_by(&:top)
+          rotate_around = [top_element.left, top_element.top]
+          quadrants = -1
+          rotate = true
+          puts 270
+        end
+
+        if rotate
+          t.map! { |text|
+            transform = java.awt.geom.AffineTransform \
+              .getQuadrantRotateInstance(quadrants,
+                                         rotate_around[0],
+                                         rotate_around[1])
+
+            transformed = transform \
+              .createTransformedShape(text) \
+              .getBounds2D
+
+            text.top = transformed.top
+            text.left = transformed.left
+            text.height = transformed.height
+            text.width = transformed.width
+            text.direction = 0
+            text
+          }
+          t.sort!
+        end
+      end
+      TextElement.merge_words(t)
     end
 
     def to_json(options={})
