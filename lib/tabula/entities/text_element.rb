@@ -2,16 +2,17 @@ module Tabula
   ##
   # a Glyph
   class TextElement < ZoneEntity
-    attr_accessor :font, :font_size, :text, :width_of_space
+    attr_accessor :font, :font_size, :text, :width_of_space, :direction
 
     TOLERANCE_FACTOR = 0.25
 
-    def initialize(top, left, width, height, font, font_size, text, width_of_space)
+    def initialize(top, left, width, height, font, font_size, text, width_of_space, direction=0)
       super(top, left, width, height)
       self.font = font
       self.font_size = font_size
       self.text = text
       self.width_of_space = width_of_space
+      self.direction = direction
     end
 
     EMPTY = TextElement.new(0, 0, 0, 0, nil, 0, '', 0)
