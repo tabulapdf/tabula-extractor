@@ -60,7 +60,7 @@ module Tabula
         return Tabula::Table.new(0, [])
       end
 
-      text_chunks = TextElement.merge_words(self.texts, options).sort
+      text_chunks = TextElement.merge_words(self.texts.sort, options).sort
 
       lines = TextChunk.group_by_lines(text_chunks)
 

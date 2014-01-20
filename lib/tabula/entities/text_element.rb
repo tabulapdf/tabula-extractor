@@ -32,40 +32,45 @@ module Tabula
         current_chunk = chunks.last
         prev_char = current_chunk.text_elements.last
 
-        # any vertical ruling goes across prev_char and char?
-        across_vertical_ruling = vertical_ruling_locations.any? { |loc|
-          prev_char.left < loc && char.left > loc
-        }
-
-        # should we add a space?
-        if (prev_char.text != " ") && (char.text != " ") \
-          && !across_vertical_ruling \
-          && prev_char.should_add_space?(char)
-
-          sp = self.new(prev_char.top,
-                        prev_char.right,
-                        prev_char.width_of_space,
-                        prev_char.width_of_space, # width == height for spaces
-                        prev_char.font,
-                        prev_char.font_size,
-                        ' ',
-                        prev_char.width_of_space)
-          chunks.last << sp
-          prev_char = sp
-        end
-
-        # should_merge? isn't aware of vertical rulings, so even if two text elements are close enough
-        # that they ought to be merged by that account.
-        # we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
-        # Why are both of those `.left`?, you might ask. The intuition is that a letter
-        # that starts on the left of a vertical ruling ought to remain on the left of it.
-        if !across_vertical_ruling && prev_char.should_merge?(char)
-          chunks.last << char
+        # if same char AND overlapped, skip
+        if prev_char.text == char.text && prev_char.overlaps_with_ratio?(char, 0.85)
+          chunks
         else
-          # create a new chunk
-          chunks << TextChunk.create_from_text_element(char)
+          # any vertical ruling goes across prev_char and char?
+          across_vertical_ruling = vertical_ruling_locations.any? { |loc|
+            prev_char.left < loc && char.left > loc
+          }
+
+          # should we add a space?
+          if (prev_char.text != " ") && (char.text != " ") \
+            && !across_vertical_ruling \
+            && prev_char.should_add_space?(char)
+
+            sp = self.new(prev_char.top,
+                          prev_char.right,
+                          prev_char.width_of_space,
+                          prev_char.width_of_space, # width == height for spaces
+                          prev_char.font,
+                          prev_char.font_size,
+                          ' ',
+                          prev_char.width_of_space)
+            chunks.last << sp
+            prev_char = sp
+          end
+
+          # should_merge? isn't aware of vertical rulings, so even if two text elements are close enough
+          # that they ought to be merged by that account.
+          # we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
+          # Why are both of those `.left`?, you might ask. The intuition is that a letter
+          # that starts on the left of a vertical ruling ought to remain on the left of it.
+          if !across_vertical_ruling && prev_char.should_merge?(char)
+            chunks.last << char
+          else
+            # create a new chunk
+            chunks << TextChunk.create_from_text_element(char)
+          end
+          chunks
         end
-        chunks
       end
     end
 

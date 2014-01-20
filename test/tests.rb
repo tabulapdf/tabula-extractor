@@ -543,6 +543,19 @@ class TestExtractor < Minitest::Test
     assert_equal ary[1][2], "$ 18,157,722"
   end
 
+  def test_remove_overlapping_text
+    # one of those PDFs that put characters on top of another to make text "bold"
+    top,left,bottom,right = 399.98571428571427, 36.06428571428571, 425.1214285714285, 544.2428571428571
+    table = Tabula.extract_table(File.expand_path('data/wc2012.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
+                                 :detect_ruling_lines => false,
+                                 :extraction_method => 'original')
+
+    ary = table_to_array(table)
+    assert_equal ary.first.first, "Community development"
+  end
+
   def test_cells_including_line_returns
     data = []
     pdf_file_path = "./test/data/sydney_disclosure_contract.pdf"
