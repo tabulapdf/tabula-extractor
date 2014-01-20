@@ -126,8 +126,8 @@ module Tabula
       spreadsheets(options).each do |spreadsheet|
         spreadsheet.cells.each do |cell|
           cell.text_elements = page.get_cell_text(cell)
-          spreadsheet.cells_resolved = true
         end
+        spreadsheet.cells_resolved = true
       end
     end
 

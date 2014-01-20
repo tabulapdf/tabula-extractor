@@ -109,5 +109,17 @@ module Tabula
     def ==(other)
       self.text.strip == other.text.strip
     end
+
+    # sort in lexicographic (reading) order
+    def <=>(other)
+      if self.vertically_overlaps?(other)
+        self.left <=> other.left
+      elsif self.top < other.top
+        -1
+      else
+        1
+      end
+    end
+
   end
 end

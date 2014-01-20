@@ -30,7 +30,9 @@ module Tabula
     def fill_in_cells!
       unless @cells_resolved
         @cells_resolved = true
-        @page.fill_in_cell_texts!(cells)
+        cells.each do |cell|
+          cell.text_elements = @page.get_cell_text(cell)
+        end
       end
     end
 
@@ -51,7 +53,7 @@ module Tabula
       if array_of_rows.size > 2
         if array_of_rows[0].map(&:left).uniq.size < array_of_rows[1].map(&:left).uniq.size
           missing_spots = array_of_rows[1].map(&:left) - array_of_rows[0].map(&:left)
-          # puts missing_spots.inspect
+
           missing_spots.each do |missing_spot|
             missing_spot_placeholder = Cell.new(array_of_rows[0][0].top, missing_spot, 0, 0)
             missing_spot_placeholder.placeholder = true

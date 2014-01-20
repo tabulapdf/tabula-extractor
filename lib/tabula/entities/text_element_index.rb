@@ -49,15 +49,7 @@ module Tabula
       super(r, @save_to_list)
 
       # sort in lexicographic (reading) order
-      @save_to_list.list.sort { |a,b|
-        if a.vertically_overlaps?(b)
-          a.left <=> b.left
-        elsif a.top < b.top
-          -1
-        else
-          1
-        end
-      }
+      @save_to_list.list.sort
     end
   end
 end
