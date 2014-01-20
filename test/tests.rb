@@ -528,6 +528,20 @@ class TestExtractor < Minitest::Test
       assert_equal ["TOTAL", "453,515", "895,111", "456,431", "718,382", "487,183", "886,211", "494,220", "816,623", "495,580", "810,565", "627,469", "1,248,804", "540,367"], table.last
     end
   end
+
+  def test_remove_repeated_text
+    top, left, bottom, right = 106.07142857142858, 50.91428571428572, 141.42857142857144, 755.2285714285715
+
+    table = Tabula.extract_table(File.expand_path('data/nyc_2013fiscalreporttables.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
+                                 :detect_ruling_lines => false,
+                                 :extraction_method => 'original')
+
+    ary = table_to_array(table)
+    assert_equal ary[1][1], "$ 18,969,610"
+    assert_equal ary[1][2], "$ 18,157,722"
+  end
 end
 
 class TestIsTabularHeuristic < Minitest::Test

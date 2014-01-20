@@ -31,11 +31,9 @@ module Tabula
 
     ##
     # calculate estimated columns from an iterable of TextChunk
-    def self.column_positions(text_chunks)
+    def self.column_positions(top, text_chunks)
       right = 0
       columns = []
-      lines = TextChunk.group_by_lines(text_chunks)
-      top = lines.first.text_elements.map(&:top).min
 
       text_chunks.each do |te|
         next if te.text =~ ONLY_SPACES_RE
