@@ -15,7 +15,7 @@ module Tabula
       @placeholder = false
       @spanning = false
       @text_elements = []
-      @options = ({:use_line_returns => false, :cell_debug => NORMAL}).merge options
+      @options = ({:use_line_returns => true, :cell_debug => NORMAL}).merge options
     end
 
     def self.new_from_points(topleft, bottomright, options={})
@@ -29,11 +29,13 @@ module Tabula
       output = ""
       text_elements.sort #use the default sort for ZoneEntity
       text_elements.group_by(&:top).values.each do |row|
-        output << row.map{|el| el.text}.join('') + (@options[:use_line_returns] ? "\n" : '')
-      end 
+        output << row.map{|el| el.text}.join('') + (@options[:use_line_returns] ? "\r" : '')
+        # per @bchartoff, https://github.com/jazzido/tabula-extractor/pull/65#issuecomment-32899336
+        # line returns as \r behave better in Excel.
+      end
       if (output.empty? && @options[:cell_debug] >= DEBUG) || @options[:cell_debug] >= SUPERDEBUG
         text_output = output.dup
-        output = "top: #{top} left: #{left} \n w: #{width} h: #{height}" 
+        output = "top: #{top} left: #{left} \n w: #{width} h: #{height}"
         output += " \n #{text_output}"
       end
       output.strip
