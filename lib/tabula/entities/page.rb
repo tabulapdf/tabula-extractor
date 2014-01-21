@@ -68,8 +68,7 @@ module Tabula
         columns = options[:vertical_rulings].map(&:left) #pixel locations, not entities
         separators = columns.sort.reverse
       else
-        columns = TextChunk.column_positions(lines.first.text_elements.min_by(&:top).top,
-                                             text_chunks)
+        columns = TextChunk.column_positions(lines)
         separators = columns[1..-1].sort.reverse
       end
 

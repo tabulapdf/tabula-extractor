@@ -4,6 +4,8 @@ module Tabula
   class TextChunk < ZoneEntity
     attr_accessor :font, :font_size, :text_elements, :width_of_space
 
+    SPACE_RUN_MAX_LENGTH = 3
+
     ##
     # initialize a new TextChunk from a TextElement
     def self.create_from_text_element(text_element)
@@ -26,16 +28,63 @@ module Tabula
         end
         l << te
       end
+
+      # for each line, remove runs of the space char
+      # should not change dimensions of the container +Line+
+      lines.each do |l|
+        l.text_elements = l.text_elements.reduce([]) do |memo, text_chunk|
+          long_space_runs = text_chunk
+            .text_elements
+            .chunk { |te| te.text == ' '}  # detect runs of spaces...
+            .select { |is_space, text_elements| # ...longer than SPACE_RUN_MAX_LENGTH
+              is_space && text_elements.size >= SPACE_RUN_MAX_LENGTH
+            }
+            .map { |_, text_elements| text_elements }
+
+          # no long runs of spaces
+          # keep as it was and end iteration
+          if long_space_runs.empty?
+            memo << text_chunk
+            next memo
+          end
+
+          ranges = long_space_runs.map { |lsr|
+            idx = text_chunk
+              .text_elements
+              .index { |te| te.equal?(lsr.first) } # we need pointer comparison here
+            (idx)..(idx+lsr.size-1)
+          }
+
+          in_run = false
+          text_chunk
+            .text_elements
+            .each_with_index do |te, i|
+            if ranges.any? { |r| r.include?(i) } # te belongs to a run of spaces, skip
+              in_run = true
+            else
+              if in_run || memo.empty?
+                memo << TextChunk.create_from_text_element(te)
+              else
+                memo.last << te
+              end
+              in_run = false
+            end
+          end
+          memo
+        end # reduce
+      end # each
       lines
     end
 
     ##
-    # calculate estimated columns from an iterable of TextChunk
-    def self.column_positions(top, text_chunks)
+    # calculate estimated columns from an iterable of +Tabula::Line+
+    def self.column_positions(lines)
       right = 0
       columns = []
 
-      text_chunks.each do |te|
+      top = lines.min_by(&:top).top
+
+      lines.map(&:text_elements).flatten.each do |te|
         next if te.text =~ ONLY_SPACES_RE
         if te.top >= top
           left = te.left

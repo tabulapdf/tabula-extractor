@@ -571,6 +571,32 @@ class TestExtractor < Minitest::Test
     assert_equal ["1295", "Name: Reino International Pty Ltd trading as Duncan Solutions \nAddress: 15/39 Herbet Street, St Leonards NSW 2065", "N/A", "Effective Date: 13 May 2013 \nDuration: 15 Weeks", "Supply, Installation and Maintenance of Parking Ticket Machines", "$3,148,800.00exgst", "N/A", "N/A", "Open Tender  \nTender evaluation criteria included: \n- The schedule of prices \n- Compliance with technical specifications/Technical assessment \n- Operational Plan including maintenance procedures"], data
   end
 
+  def test_remove_repeated_spaces
+    top,left,bottom,right = 304.9375, 78.625, 334.6875, 501.5
+    table = Tabula.extract_table(File.expand_path('data/repeated_spaces.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
+                                 :detect_ruling_lines => false,
+                                 :extraction_method => 'original')
+
+    table_to_array(table).each { |row|
+      assert_equal row.size, 7
+    }
+  end
+
+  def test_monospaced_table
+    top,left,bottom,right = 149.9142857142857, 89.10000000000001, 243.25714285714287, 721.2857142857143
+    table = Tabula.extract_table(File.expand_path('data/monospaced1.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
+                                 :detect_ruling_lines => false,
+                                 :extraction_method => 'original')
+
+    expected = [["ALBERT LEA, MAYO CLINIC HEALTH SYS- ALBE", "0", "0", "0", "7", "7", ".0", ".0", ".0", "23.3", "10.4"], ["ROCHESTER, MAYO CLINIC METHODIST HOSPITA", "6", "7", "14", "11", "25", "27.3", "100.0", "37.8", "36.7", "37.3"], ["ROCHESTER, MAYO CLINIC ST. MARYS", "9", "0", "11", "7", "18", "40.9", ".0", "29.7", "23.3", "26.9"], ["BLUE EARTH, UNITED HOSPITAL DISTRICT", "3", "0", "4", "0", "4", "13.6", ".0", "10.8", ".0", "6.0"], ["FAIRMONT, MAYO CLINIC HEALTH SYSTEM -FAI", "1", "0", "2", "1", "3", "4.5", ".0", "5.4", "3.3", "4.5"], ["MANKATO, MAYO CLINIC HEALTH SYSTEM- MANK", "3", "0", "5", "3", "8", "13.6", ".0", "13.5", "10.0", "11.9"], ["ALL REGION 4 (TC) HOSPITALS", "0", "0", "1", "1", "2", ".0", ".0", "2.7", "3.3", "3.0"], ["", "22", "7", "37", "30", "67", "100.0", "100.0", "100.0", "100.0", "100.0"]]
+    assert_equal table_to_array(table), expected
+  end
+
+
 end
 
 class TestIsTabularHeuristic < Minitest::Test
