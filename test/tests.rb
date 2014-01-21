@@ -568,7 +568,7 @@ class TestExtractor < Minitest::Test
         end
       end
     end
-    assert_equal ["1295", "Name: Reino International Pty Ltd trading as Duncan Solutions \nAddress: 15/39 Herbet Street, St Leonards NSW 2065", "N/A", "Effective Date: 13 May 2013 \nDuration: 15 Weeks", "Supply, Installation and Maintenance of Parking Ticket Machines", "$3,148,800.00exgst", "N/A", "N/A", "Open Tender  \nTender evaluation criteria included: \n- The schedule of prices \n- Compliance with technical specifications/Technical assessment \n- Operational Plan including maintenance procedures"], data
+    assert_equal ["1295", "Name: Reino International Pty Ltd trading as Duncan Solutions \rAddress: 15/39 Herbet Street, St Leonards NSW 2065", "N/A", "Effective Date: 13 May 2013 \rDuration: 15 Weeks", "Supply, Installation and Maintenance of Parking Ticket Machines", "$3,148,800.00exgst", "N/A", "N/A", "Open Tender  \rTender evaluation criteria included: \r- The schedule of prices \r- Compliance with technical specifications/Technical assessment \r- Operational Plan including maintenance procedures"], data
   end
 
 end
