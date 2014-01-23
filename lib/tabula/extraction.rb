@@ -54,6 +54,9 @@ module Tabula
         Enumerator.new do |y|
           begin
             @pages.each do |i|
+              if i-1 >= @all_pages.size || (i-1) < 0
+                raise IndexError, "Page #{i} doesn't exist. Skipping. Valid pages are 1..#{@all_pages.size}"
+              end
               page = @all_pages.get(i-1)
               contents = page.getContents
               next if contents.nil?
