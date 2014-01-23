@@ -56,18 +56,19 @@ module Tabula
           }
 
           in_run = false
+          new_chunk = true
           text_chunk
             .text_elements
             .each_with_index do |te, i|
             if ranges.any? { |r| r.include?(i) } # te belongs to a run of spaces, skip
               in_run = true
             else
-              if in_run || memo.empty?
+              if in_run || new_chunk
                 memo << TextChunk.create_from_text_element(te)
               else
                 memo.last << te
               end
-              in_run = false
+              in_run = new_chunk = false
             end
           end
           memo

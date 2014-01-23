@@ -596,6 +596,18 @@ class TestExtractor < Minitest::Test
     assert_equal table_to_array(table), expected
   end
 
+  def test_bad_column_detection
+    top,left,bottom,right = 535.5, 70.125, 549.3125, 532.3125
+    table = Tabula.extract_table(File.expand_path('data/indecago10.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
+                                 :detect_ruling_lines => false,
+                                 :extraction_method => 'original')
+
+    assert_equal table_to_array(table).first, ["Comunicaciones", "104,29", "– –", "0,1", "0,6", "1,1", "0,3"]
+
+  end
+
 
 end
 
