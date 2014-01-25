@@ -37,7 +37,6 @@ module Tabula
       bottom - top
     end
 
-
     # attributes that make sense only for non-oblique lines
     # these are used to have a single collapse method (in page, currently)
     def position
@@ -164,30 +163,26 @@ module Tabula
 
       return nil if !self_l.intersectsLine(other_l)
 
-      x1 = self_l.getX1; y1 = self_l.getY1
-      x2 = self_l.getX2; y2 = self_l.getY2
-      x3 = other_l.getX1; y3 = other_l.getY1
-      x4 = other_l.getX2; y4 = other_l.getY2
-
-      det = lambda { |a,b,c,d| a * d - b * c }
-
-      int_x = det.call(det.call(x1, y1, x2, y2), x1 - x2, det.call(x3, y3, x4, y4), x3 - x4) /
-        det.call(x1 - x2, y1 - y2, x3 - x4, y3 - y4)
-
-      int_y = det.call(det.call(x1, y1, x2, y2), y1 - y2,
-                       det.call(x3, y3, x4, y4), y3 - y4) /
-        det.call(x1 - x2, y1 - y2, x3 - x4, y3 - y4)
-
-      return nil if int_x.nan? || int_y.nan? # TODO is this right?
+      horizontal, vertical = if self_l.horizontal? && other_l.vertical?
+                               [self_l, other]
+                             elsif self_l.vertical? && other_l.horizontal?
+                               [other_l, self_l]
+                             else
+                               puts self_l.inspect
+                               puts other_l.inspect
+                               raise ArgumentError, "must be orthogonal, horizontal and vertical"
+                             end
 
 
-      java.awt.geom.Point2D::Float.new(int_x, int_y)
+      java.awt.geom.Point2D::Float.new(vertical.getX1, horizontal.getY1)
+
     end
 
     ##
     # Find all intersection points between two list of +Ruling+
     # (+horizontals+ and +verticals+)
     # TODO: this is O(n^2) - optimize.
+    # SEE: http://people.csail.mit.edu/indyk/6.838-old/handouts/lec2.pdf
     def self.find_intersections(horizontals, verticals)
       horizontals.product(verticals).inject({}) do |memo, (h, v)|
         ip = h.intersection_point(v)
@@ -208,6 +203,29 @@ module Tabula
           memo << r.clone.intersect(area)
         end
         memo
+      end
+    end
+
+    def self.collapse_oriented_rulings(lines)
+      # lines must all be of one orientation (i.e. horizontal, vertical)
+
+      if lines.empty?
+        return []
+      end
+
+      lines.sort! {|a, b| a.position != b.position ? a.position <=> b.position : a.start <=> b.start }
+
+      lines = lines.inject([lines.shift]) do |memo, next_line|
+        last = memo.last
+        if next_line.position == last.position && last.nearlyIntersects?(next_line)
+          memo.last.start = next_line.start < last.start ? next_line.start : last.start
+          memo.last.end = next_line.end < last.end ? last.end : next_line.end
+          memo
+        elsif next_line.length == 0
+          memo
+        else
+          memo << next_line
+        end
       end
     end
 

@@ -156,14 +156,18 @@ module Tabula
 
     #returns ruling lines, memoizes them in
     def get_ruling_lines!(options={})
-      if !@ruling_lines.nil? && !@ruling_lines.empty?
-        self.snap_points!
-        @vertical_ruling_lines ||= self.collapse_oriented_rulings(@ruling_lines.select(&:vertical?))
-        @horizontal_ruling_lines ||= self.collapse_oriented_rulings(@ruling_lines.select(&:horizontal?))
-        @vertical_ruling_lines + @horizontal_ruling_lines
-      else
-        []
+      if @ruling_lines.nil? || @ruling_lines.empty?
+        return []
       end
+      self.snap_points!
+
+      @ruling_lines.select! { |l| !(l.width == 0 && l.height == 0) }
+
+      @vertical_ruling_lines ||= Ruling.collapse_oriented_rulings(@ruling_lines.select(&:vertical?))
+      @horizontal_ruling_lines ||= Ruling.collapse_oriented_rulings(@ruling_lines.select(&:horizontal?))
+
+      @vertical_ruling_lines + @horizontal_ruling_lines
+
     end
 
     ##
@@ -249,29 +253,6 @@ module Tabula
 
       lines_to_points.each do |l, p1_p2|
         l.java_send :setLine, [java.awt.geom.Point2D, java.awt.geom.Point2D], p1_p2[0], p1_p2[1]
-      end
-    end
-
-    def collapse_oriented_rulings(lines)
-      # lines must all be of one orientation (i.e. horizontal, vertical)
-
-      if lines.empty?
-        return []
-      end
-
-      lines.sort! {|a, b| a.position != b.position ? a.position <=> b.position : a.start <=> b.start }
-
-      lines = lines.inject([lines.shift]) do |memo, next_line|
-        last = memo.last
-        if next_line.position == last.position && last.nearlyIntersects?(next_line)
-          memo.last.start = next_line.start < last.start ? next_line.start : last.start
-          memo.last.end = next_line.end < last.end ? last.end : next_line.end
-          memo
-        elsif next_line.length == 0
-          memo
-        else
-          memo << next_line
-        end
       end
     end
   end
