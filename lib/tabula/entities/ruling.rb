@@ -152,6 +152,10 @@ module Tabula
         point.y >= top && point.y <= bottom
     end
 
+    def ==(other)
+      return self.getX1 == other.getX1 && self.getY1 == other.getY1 && self.getX2 == other.getX2 && self.getY2 == other.getY2
+    end
+
     ##
     # calculate the intersection point between +self+ and other Ruling
     def intersection_point(other)
@@ -168,8 +172,6 @@ module Tabula
                              elsif self_l.vertical? && other_l.horizontal?
                                [other_l, self_l]
                              else
-                               puts self_l.inspect
-                               puts other_l.inspect
                                raise ArgumentError, "must be orthogonal, horizontal and vertical"
                              end
 
@@ -178,21 +180,59 @@ module Tabula
 
     end
 
-    ##
-    # Find all intersection points between two list of +Ruling+
-    # (+horizontals+ and +verticals+)
-    # TODO: this is O(n^2) - optimize.
-    # SEE: http://people.csail.mit.edu/indyk/6.838-old/handouts/lec2.pdf
-    def self.find_intersections(horizontals, verticals)
-      horizontals.product(verticals).inject({}) do |memo, (h, v)|
-        ip = h.intersection_point(v)
-        unless ip.nil?
-          memo[ip] ||= []
-          # TODO: stupid hack for FLA pdfs where lines appear to intersect, but don't.
-          memo[ip] << [h.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT), v.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT)]
-        end
-        memo
+    class HSegmentComparator
+      java_implements java.util.Comparator
+      def compare(o1, o2)
+        o1.top <=> o2.top
       end
+    end
+
+    ##
+    # log(n) implementation of find_intersections
+    # based on http://people.csail.mit.edu/indyk/6.838-old/handouts/lec2.pdf
+    def self.find_intersections(horizontals, verticals)
+      #tree = java.util.TreeMap.java_send(:initiailze, [COMP_CLASS], HSegmentComparator.new)
+      tree = java.util.TreeMap.new(HSegmentComparator.new)
+      sort_obj = Struct.new(:type, :pos, :obj)
+
+      (horizontals + verticals)
+        .flat_map { |r|
+          r.vertical? ? sort_obj.new(:v, r.left, r) : [sort_obj.new(:hl, r.left, r),
+                                                       sort_obj.new(:hr, r.right, r)]
+        }
+        .sort { |a,b|
+          if a.pos == b.pos
+            if a.type == :v && b.type == :hl
+              1
+            elsif a.type == :v && b.type == :hr
+              -1
+            elsif a.type == :hl && b.type == :v
+              -1
+            elsif a.type == :hr && b.type == :v
+              1
+            else
+              a.pos <=> b.pos
+            end
+          else
+            a.pos <=> b.pos
+          end
+        }
+        .inject({}) { |memo, e|
+          case e.type
+            when :v
+            tree.each { |h,_|
+              i = h.intersection_point(e.obj)
+              next memo if i.nil?
+              memo[i] = [h.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT),
+                         e.obj.expand(PERPENDICULAR_PIXEL_EXPAND_AMOUNT)]
+            }
+            when :hr
+              tree.remove(e.obj)
+            when :hl
+              tree[e.obj] = 1
+          end
+          memo
+        }
     end
 
     ##

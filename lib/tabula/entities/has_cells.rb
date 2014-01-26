@@ -39,9 +39,10 @@ module Tabula
       # depending on the Point2D default sort here.
       intersection_points_array = intersection_points.keys.sort
 
-      intersection_points.each_with_index do |(topLeft, ((horizontal, vertical))), i|
+      intersection_points_array.each_with_index do |topLeft, i|
         # Fetch all points on the same vertical and horizontal
         # line with current crossing point
+        horizontal, vertical = intersection_points[topLeft]
 
         # this lets us go to the next intersection_point in intersection_points_array
         # it is bad and I feel bad.
@@ -64,19 +65,19 @@ module Tabula
               #                                                    point;
               next unless horizontal.colinear?(y_point)
               #Hypothetical bottom right point of rectangle
-              btmRight = Point2D::Float.new( y_point.x, x_point.y )
+              btmRight = Point2D::Float.new(y_point.x, x_point.y)
               if intersection_points.include?(btmRight)
-                intersection_points[btmRight].each do |btmRightHorizontal, btmRightVertical|
-                  if btmRightHorizontal.colinear?( x_point ) &&
+                btmRightHorizontal, btmRightVertical = intersection_points[btmRight]
+
+                if btmRightHorizontal.colinear?( x_point ) &&
                     btmRightVertical.colinear?( y_point )
-                    # Rectangle is confirmed to have 4 sides
-                    cellsFound << Cell.new_from_points( topLeft, btmRight, options)
-                    # Each crossing point can be the top left corner
-                    # of only a single rectangle
-                    #next crossing-point; we need to "next" out of the outer loop here
-                    # to avoid creating non-minimal cells, I htink.
-                    throw :cellCreated
-                  end
+                  # Rectangle is confirmed to have 4 sides
+                  cellsFound << Cell.new_from_points( topLeft, btmRight, options)
+                  # Each crossing point can be the top left corner
+                  # of only a single rectangle
+                  #next crossing-point; we need to "next" out of the outer loop here
+                  # to avoid creating non-minimal cells, I htink.
+                  throw :cellCreated
                 end
               end
             end
