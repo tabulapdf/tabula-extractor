@@ -37,7 +37,7 @@ module Tabula
             .text_elements
             .chunk { |te| te.text == ' '}  # detect runs of spaces...
             .select { |is_space, text_elements| # ...longer than SPACE_RUN_MAX_LENGTH
-              is_space && text_elements.size >= SPACE_RUN_MAX_LENGTH
+              is_space && !text_elements.nil? && text_elements.size >= SPACE_RUN_MAX_LENGTH
             }
             .map { |_, text_elements| text_elements }
 
