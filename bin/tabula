@@ -1,4 +1,4 @@
-#!/usr/bin/env jruby
+#!/usr/bin/env jruby -J-Djava.awt.headless=true
 # encoding: utf-8
 require 'trollop'
 require_relative '../lib/tabula'
@@ -9,7 +9,7 @@ def parse_pages_arg(pages_arg)
   if(pages_arg == 'all')
     return :all
   end
-  
+
   ranges = pages_arg.split(',').map(&:strip)
   pages = []
   ranges.each do |range|
@@ -100,7 +100,7 @@ def main
 				else
 				  false
 				end
-  
+
   extractor = Tabula::Extraction::ObjectExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
   extractor.extract.each_with_index do |pdf_page, page_index|
 
