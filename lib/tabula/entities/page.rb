@@ -6,7 +6,7 @@ module Tabula
     attr_writer :min_char_width, :min_char_height
     attr_accessor :cells
 
-    def initialize(file_path, width, height, rotation, number, texts=[], ruling_lines=[], min_char_width=nil, min_char_height=nil)
+    def initialize(file_path, width, height, rotation, number, texts=[], ruling_lines=[], min_char_width=nil, min_char_height=nil, spatial_index=nil)
       super(0, 0, width, height)
       @rotation = rotation
       if number < 1
@@ -19,10 +19,16 @@ module Tabula
       @spreadsheets = nil
       @min_char_width = min_char_width
       @min_char_height = min_char_height
-      @spatial_index = TextElementIndex.new
 
       self.texts = texts
-      self.texts.each { |te| @spatial_index << te }
+
+      if spatial_index.nil?
+        @spatial_index = TextElementIndex.new
+        self.texts.each { |te| @spatial_index << te }
+      else
+        @spatial_index = spatial_index
+      end
+
     end
 
     def min_char_width
@@ -49,7 +55,8 @@ module Tabula
                                texts,
                                Ruling.crop_rulings_to_area(@ruling_lines, area),
                                texts.map(&:width).min,
-                               texts.map(&:height).min)
+                               texts.map(&:height).min,
+                               @spatial_index)
       return page_area
     end
 
