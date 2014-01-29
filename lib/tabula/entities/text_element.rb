@@ -1,3 +1,4 @@
+# -*- coding: utf-8 -*-
 module Tabula
   ##
   # a Glyph
@@ -34,50 +35,52 @@ module Tabula
 
         # if same char AND overlapped, skip
         if prev_char.text == char.text && prev_char.overlaps_with_ratio?(char, 0.85)
-          chunks
-        else
-          # any vertical ruling goes across prev_char and char?
-          across_vertical_ruling = vertical_ruling_locations.any? { |loc|
-            prev_char.left < loc && char.left > loc
-          }
-
-          # should we add a space?
-          if (prev_char.text != " ") && (char.text != " ") \
-            && !across_vertical_ruling \
-            && prev_char.should_add_space?(char)
-
-            sp = self.new(prev_char.top,
-                          prev_char.right,
-                          prev_char.width_of_space,
-                          prev_char.width_of_space, # width == height for spaces
-                          prev_char.font,
-                          prev_char.font_size,
-                          ' ',
-                          prev_char.width_of_space)
-            chunks.last << sp
-            prev_char = sp
-          end
-
-          # should_merge? isn't aware of vertical rulings, so even if two text elements are close enough
-          # that they ought to be merged by that account.
-          # we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
-          # Why are both of those `.left`?, you might ask. The intuition is that a letter
-          # that starts on the left of a vertical ruling ought to remain on the left of it.
-          if !across_vertical_ruling && prev_char.should_merge?(char)
-            chunks.last << char
-          else
-            # create a new chunk
-            chunks << TextChunk.create_from_text_element(char)
-          end
-          chunks
+          next chunks
         end
+
+        # any vertical ruling goes across prev_char and char?
+        across_vertical_ruling = vertical_ruling_locations.any? { |loc|
+          prev_char.left < loc && char.left > loc
+        }
+
+        # should we add a space?
+        if (prev_char.text != " ") && (char.text != " ") \
+          && !across_vertical_ruling \
+          && prev_char.should_add_space?(char)
+
+          sp = self.new(prev_char.top,
+                        prev_char.right,
+                        prev_char.width_of_space,
+                        prev_char.width_of_space, # width == height for spaces
+                        prev_char.font,
+                        prev_char.font_size,
+                        ' ',
+                        prev_char.width_of_space)
+          current_chunk << sp
+          prev_char = sp
+        end
+
+        # should_merge? isn't aware of vertical rulings, so even if two text elements are close enough
+        # that they ought to be merged by that account.
+        # we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
+        # Why are both of those `.left`?, you might ask. The intuition is that a letter
+        # that starts on the left of a vertical ruling ought to remain on the left of it.
+        if !across_vertical_ruling && prev_char.should_merge?(char)
+          current_chunk << char
+        else
+          # create a new chunk
+          chunks << TextChunk.create_from_text_element(char)
+        end
+        chunks
       end
     end
 
     # more or less returns True if distance < tolerance
     def should_merge?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-      self.vertically_overlaps?(other) && self.horizontal_distance(other) < width_of_space * (1 + TOLERANCE_FACTOR) && !self.should_add_space?(other)
+      #margin = [self.width, other.width].max * 0.2
+      margin = (self.width_of_space + other.width_of_space) / 2
+      self.vertically_overlaps?(other) && self.horizontal_distance(other) <= margin && !self.should_add_space?(other)
     end
 
     # more or less returns True if (tolerance <= distance < CHARACTER_DISTANCE_THRESHOLD*tolerance)
@@ -86,16 +89,22 @@ module Tabula
 
       return false if self.width_of_space.nan?
 
+      margin = 0.3 * [other.width, other.height].max
+
       (self.vertically_overlaps?(other) &&
-        self.horizontal_distance(other).abs.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))) ||
-      (self.vertical_distance(other) > self.height)
+       self.right < other.left - margin)
+
+      # (self.vertically_overlaps?(other) &&
+      #   self.horizontal_distance(other).abs.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))) ||
+      # (self.vertical_distance(other) > self.height)
     end
 
     ##
     # merge this TextElement with another (adjust size and text content accordingly)
     def merge!(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-      if self.horizontally_overlaps?(other) and other.top < self.top
+
+      if (self <=> other) < 0
         self.text = other.text + self.text
       else
         self.text << other.text
@@ -115,16 +124,15 @@ module Tabula
       self.text.strip == other.text.strip
     end
 
-    # sort in lexicographic (reading) order
     def <=>(other)
-      if self.vertically_overlaps?(other)
+      yDifference = (self.bottom - other.bottom).abs
+      if yDifference < 0.1 ||
+          (other.bottom >= self.top && other.bottom <= self.bottom) ||
+          (self.bottom >= other.top && self.bottom <= other.bottom)
         self.left <=> other.left
-      elsif self.top < other.top
-        -1
       else
-        1
+        self.bottom <=> other.bottom
       end
     end
-
   end
 end

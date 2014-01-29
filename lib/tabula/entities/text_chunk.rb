@@ -18,15 +18,16 @@ module Tabula
     ##
     # group an iterable of TextChunk into a list of Line
     def self.group_by_lines(text_chunks)
-      lines = []
-      text_chunks.each do |te|
-        next if te.text =~ ONLY_SPACES_RE
-        l = lines.find { |line| line.horizontal_overlap_ratio(te) >= 0.01 }
+
+      lines = text_chunks.inject([]) do |memo, te|
+        next memo if te.text =~ ONLY_SPACES_RE
+        l = memo.find { |line| line.horizontal_overlap_ratio(te) >= 0.01 }
         if l.nil?
           l = Line.new
-          lines << l
+          memo << l
         end
         l << te
+        memo
       end
 
       # for each line, remove runs of the space char
@@ -77,6 +78,17 @@ module Tabula
       lines
     end
 
+    def <=>(other)
+      yDifference = (self.bottom - other.bottom).abs
+      if yDifference < 0.1 ||
+          (other.bottom >= self.top && other.bottom <= self.bottom) ||
+          (self.bottom >= other.top && self.bottom <= other.bottom)
+        self.left <=> other.left
+      else
+        self.bottom <=> other.bottom
+      end
+    end
+
     ##
     # calculate estimated columns from an iterable of +Tabula::Line+
     def self.column_positions(lines)
@@ -86,7 +98,6 @@ module Tabula
       top = lines.min_by(&:top).top
 
       lines.map(&:text_elements).flatten.each do |te|
-        next if te.text =~ ONLY_SPACES_RE
         if te.top >= top
           left = te.left
           if (left > right)
@@ -109,10 +120,10 @@ module Tabula
 
     def merge!(other)
       if other.instance_of?(TextChunk)
-        if self.horizontally_overlaps?(other) && other.top < self.top
-          self.text_elements = other.text_elements + self.text_elements
-        else
+        if (self <=> other) < 0
           self.text_elements = self.text_elements + other.text_elements
+        else
+          self.text_elements = other.text_elements + self.text_elements
         end
       end
       super(other)

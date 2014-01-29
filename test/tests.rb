@@ -608,6 +608,20 @@ class TestExtractor < Minitest::Test
 
   end
 
+  def test_character_merging_that_wasnt_working_previously
+    expected_data_path = "./test/data/french1.tsv"
+    expected = File.open(expected_data_path, 'rb') { |f| f.read }
+
+    top,left,bottom,right = 32.87142857142857,41.72142857142857,486.75,694.0928571428572
+    table = Tabula.extract_table(File.expand_path('data/french1.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
+                                 :detect_ruling_lines => false,
+                                 :extraction_method => 'original')
+
+    assert_equal expected, table.to_tsv
+  end
+
 
 end
 

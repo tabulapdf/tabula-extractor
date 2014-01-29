@@ -16,12 +16,8 @@ module Tabula
         self.width = t.width
         self.height = t.height
       else
-        if in_same_column = @text_elements.find { |te| te.horizontally_overlaps?(t) }
-          in_same_column.merge!(t)
-        else
-          self.text_elements << t
-          self.merge!(t)
-        end
+        self.text_elements << t
+        self.merge!(t)
       end
     end
 
