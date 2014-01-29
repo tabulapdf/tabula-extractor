@@ -124,15 +124,5 @@ module Tabula
       self.text.strip == other.text.strip
     end
 
-    def <=>(other)
-      yDifference = (self.bottom - other.bottom).abs
-      if yDifference < 0.1 ||
-          (other.bottom >= self.top && other.bottom <= self.bottom) ||
-          (self.bottom >= other.top && self.bottom <= other.bottom)
-        self.left <=> other.left
-      else
-        self.bottom <=> other.bottom
-      end
-    end
   end
 end

@@ -27,12 +27,14 @@ module Tabula
     # default sorting order for ZoneEntity objects
     # is lexicographical (left to right, top to bottom)
     def <=>(other)
-      return  1 if self.left > other.left
-      return -1 if self.left < other.left
-      return  0 if self.vertically_overlaps?(other)
-      return  1 if self.top  > other.top
-      return -1 if self.top  < other.top
-      return  0
+      yDifference = (self.bottom - other.bottom).abs
+      if yDifference < 0.1 ||
+          (other.bottom >= self.top && other.bottom <= self.bottom) ||
+          (self.bottom >= other.top && self.bottom <= other.bottom)
+        self.left <=> other.left
+      else
+        self.bottom <=> other.bottom
+      end
     end
 
     def to_json(options={})
