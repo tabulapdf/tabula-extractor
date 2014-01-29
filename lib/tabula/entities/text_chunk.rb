@@ -86,7 +86,8 @@ module Tabula
 
       top = lines.min_by(&:top).top
 
-      lines.map(&:text_elements).flatten.each do |te|
+      lines.flat_map(&:text_elements).each do |te|
+        next if te.text =~ ONLY_SPACES_RE
         if te.top >= top
           left = te.left
           if (left > right)

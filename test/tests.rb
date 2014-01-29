@@ -180,7 +180,8 @@ class TestExtractor < Minitest::Test
     table = table_to_array Tabula.extract_table(File.expand_path('data/gre.pdf', File.dirname(__FILE__)),
                                                 1,
                                                 [107.1, 57.9214, 394.5214, 290.7],
-                                                :detect_ruling_lines => false)
+                                                :detect_ruling_lines => false,
+                                                :extraction_method => 'original')
 
     expected = [["Prior Scale","New Scale","% Rank*"], ["800","170","99"], ["790","170","99"], ["780","170","99"], ["770","170","99"], ["760","170","99"], ["750","169","99"], ["740","169","99"], ["730","168","98"], ["720","168","98"], ["710","167","97"], ["700","166","96"], ["690","165","95"], ["680","165","95"], ["670","164","93"], ["660","164","93"], ["650","163","91"]]
 
@@ -437,7 +438,7 @@ class TestExtractor < Minitest::Test
       @cells = []
       @vertical_ruling_lines = vertical_ruling_lines
       @horizontal_ruling_lines = horizontal_ruling_lines
-      find_cells!
+      find_cells!(horizontal_ruling_lines, vertical_ruling_lines)
     end
   end
 
@@ -472,8 +473,8 @@ class TestExtractor < Minitest::Test
 
   #this is the real deal!!
   def test_extract_tabular_data_using_lines_and_spreadsheets
-    pdf_file_path = "./test/data/frx_2012_disclosure.pdf"
-    expected_data_path = "./test/data/frx_2012_disclosure.tsv"
+    pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    expected_data_path = File.expand_path('data/frx_2012_disclosure.tsv', File.dirname(__FILE__))
     expected = open(expected_data_path, 'r').read #.split("\n").map{|line| line.split("\t")}
 
     Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all).extract.each do |pdf_page|
@@ -483,7 +484,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_cope_with_a_tableless_page
-    pdf_file_path = "./test/data/no_tables.pdf"
+    pdf_file_path = File.expand_path('data/no_tables.pdf', File.dirname(__FILE__))
 
     spreadsheets = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all, '',
         :line_color_filter => lambda{|components| components.all?{|c| c < 0.1}}
@@ -493,8 +494,8 @@ class TestExtractor < Minitest::Test
   end
 
   def test_spanning_cells
-    pdf_file_path = "./test/data/spanning_cells.pdf"
-    expected_data_path = "./test/data/spanning_cells.csv"
+    pdf_file_path = File.expand_path('data/spanning_cells.pdf', File.dirname(__FILE__))
+    expected_data_path = File.expand_path('data/spanning_cells.csv', File.dirname(__FILE__))
     expected = open(expected_data_path, 'r').read
 
     Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
@@ -504,7 +505,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_almost_vertical_lines
-    pdf_file_path = "./test/data/puertos1.pdf"
+    pdf_file_path = File.expand_path('data/puertos1.pdf', File.dirname(__FILE__))
     top, left, bottom, right = 273.9035714285714, 30.32142857142857, 554.8821428571429, 546.7964285714286
     area = Tabula::ZoneEntity.new(top, left,
                                   right - left, bottom - top)
@@ -517,7 +518,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_extract_spreadsheet_within_an_area
-    pdf_file_path = "./test/data/puertos1.pdf"
+    pdf_file_path = File.expand_path('data/puertos1.pdf', File.dirname(__FILE__))
     top, left, bottom, right = 273.9035714285714, 30.32142857142857, 554.8821428571429, 546.7964285714286
 
     Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
@@ -539,6 +540,8 @@ class TestExtractor < Minitest::Test
                                  :extraction_method => 'original')
 
     ary = table_to_array(table)
+    puts ary.inspect
+
     assert_equal ary[1][1], "$ 18,969,610"
     assert_equal ary[1][2], "$ 18,157,722"
   end
@@ -558,7 +561,7 @@ class TestExtractor < Minitest::Test
 
   def test_cells_including_line_returns
     data = []
-    pdf_file_path = "./test/data/sydney_disclosure_contract.pdf"
+    pdf_file_path = File.expand_path('data/sydney_disclosure_contract.pdf', File.dirname(__FILE__))
     Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
       pdf_page.spreadsheets.each do |spreadsheet|
         spreadsheet.cells.each do |cell|
@@ -609,7 +612,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_character_merging_that_wasnt_working_previously
-    expected_data_path = "./test/data/french1.tsv"
+    expected_data_path = File.expand_path('data/french1.tsv', File.dirname(__FILE__))
     expected = File.open(expected_data_path, 'rb') { |f| f.read }
 
     top,left,bottom,right = 32.87142857142857,41.72142857142857,486.75,694.0928571428572

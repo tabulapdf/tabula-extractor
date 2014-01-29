@@ -26,7 +26,7 @@ module Tabula
     # finds cells from the ruling lines on the page.
     # implements Nurminen thesis algorithm cf. https://github.com/jazzido/tabula-extractor/issues/16
     # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
-    def find_cells!(options={})
+    def find_cells!(horizontal_ruling_lines, vertical_ruling_lines, options={})
       # All lines need to been sorted from up to down,
       # and left to right in ascending order
 

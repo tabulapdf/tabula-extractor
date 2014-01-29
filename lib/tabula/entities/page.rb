@@ -70,7 +70,7 @@ module Tabula
       texts = self.texts.sort
       text_chunks = TextElement.merge_words(texts, options)
 
-      lines = TextChunk.group_by_lines(text_chunks)
+      lines = TextChunk.group_by_lines(text_chunks).sort_by(&:top)
 
       unless options[:vertical_rulings].empty?
         columns = options[:vertical_rulings].map(&:left) #pixel locations, not entities
@@ -79,6 +79,29 @@ module Tabula
         columns = TextChunk.column_positions(lines)
         separators = columns[1..-1].sort.reverse
       end
+
+      # Why not use the spreadsheet extraction method? :)
+      # TODO: just a test now.
+
+      # miny,  minx   = texts.first.top, texts.first.left
+      # width, height = texts.last.right - texts.first.left, texts.last.bottom - texts.first.top
+      # horizontal_lines = lines.map { |l| Tabula::Ruling.new(l.top, minx, width, 0) } \
+      #   + [Tabula::Ruling.new(lines.last.bottom, minx, width, 0)]
+      # vertical_lines = columns.map { |c| Tabula::Ruling.new(miny, c, 0, height)}
+
+      # spr = Spreadsheet.new(miny, minx,
+      #                       width, height,
+      #                       self,
+      #                       [],
+      #                       vertical_lines,
+      #                       horizontal_lines)
+
+      # self.find_cells!(horizontal_lines, vertical_lines)
+      # spr.cells = @cells.select{ |c| spr.overlaps?(c) }
+      # spr.cells.each do |cell|
+      #   cell.text_elements = self.get_cell_text(cell)
+      # end
+      # puts spr.to_csv
 
       table = Table.new(lines.count, separators)
       lines.each_with_index do |line, i|
@@ -103,7 +126,7 @@ module Tabula
         return @spreadsheets
       end
       get_ruling_lines!(options)
-      self.find_cells!(options)
+      self.find_cells!(self.horizontal_ruling_lines, self.vertical_ruling_lines, options)
 
       spreadsheet_areas = find_spreadsheets_from_cells #literally, java.awt.geom.Area objects. lol sorry. polygons.
 
