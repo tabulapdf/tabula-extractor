@@ -21,6 +21,7 @@ module Tabula
       self.height = [self.bottom, other.bottom].max - top
 
       self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.left, self.top, self.width, self.height
+      self
     end
 
     ##
