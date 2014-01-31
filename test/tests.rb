@@ -1,6 +1,7 @@
 # -*- coding: utf-8 -*-
 require 'minitest'
 require 'minitest/autorun'
+require 'csv'
 
 require_relative '../lib/tabula'
 
@@ -540,7 +541,6 @@ class TestExtractor < Minitest::Test
                                  :extraction_method => 'original')
 
     ary = table_to_array(table)
-    puts ary.inspect
 
     assert_equal ary[1][1], "$ 18,969,610"
     assert_equal ary[1][2], "$ 18,157,722"
@@ -613,7 +613,8 @@ class TestExtractor < Minitest::Test
 
   def test_character_merging_that_wasnt_working_previously
     expected_data_path = File.expand_path('data/french1.tsv', File.dirname(__FILE__))
-    expected = File.open(expected_data_path, 'rb') { |f| f.read }
+    expected = CSV.read(expected_data_path, { :col_sep => "\t" })
+    expected.map! { |r| r.map(&:strip) }
 
     top,left,bottom,right = 32.87142857142857,41.72142857142857,486.75,694.0928571428572
     table = Tabula.extract_table(File.expand_path('data/french1.pdf', File.dirname(__FILE__)),
@@ -622,7 +623,7 @@ class TestExtractor < Minitest::Test
                                  :detect_ruling_lines => false,
                                  :extraction_method => 'original')
 
-    assert_equal expected, table.to_tsv
+    assert_equal expected, table_to_array(table)
   end
 
 
