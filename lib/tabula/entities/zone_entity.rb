@@ -50,6 +50,10 @@ module Tabula
       [top, left, bottom, right]
     end
 
+    def tlwh
+      [top, left, width, height]
+    end
+
     def points
       [ Point2D::Float.new(left, top),
         Point2D::Float.new(right, top),
