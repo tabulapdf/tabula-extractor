@@ -18,6 +18,7 @@ module Tabula
 
     EMPTY = TextElement.new(0, 0, 0, 0, nil, 0, '', 0)
 
+
     ##
     # heuristically merge an iterable of TextElement into a list of TextChunk
     def self.merge_words(text_elements, options={})
@@ -44,7 +45,9 @@ module Tabula
         }
 
         # should we add a space?
-        if (prev_char.text != " ") && (char.text != " ") \
+        # if (prev_char.text != " ") && (char.text != " ") \
+        #   && !across_vertical_ruling \
+        if prev_char.text != " " && char.text != " " \
           && !across_vertical_ruling \
           && prev_char.should_add_space?(char)
 
@@ -78,7 +81,7 @@ module Tabula
     # more or less returns True if distance < tolerance
     def should_merge?(other)
       raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-      #margin = [self.width, other.width].max * 0.2
+      # margin = [self.width, other.width].max * 0.3
       margin = (self.width_of_space + other.width_of_space) / 2
       self.vertically_overlaps?(other) && self.horizontal_distance(other) <= margin && !self.should_add_space?(other)
     end

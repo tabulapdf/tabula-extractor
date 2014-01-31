@@ -72,42 +72,17 @@ module Tabula
 
       lines = TextChunk.group_by_lines(text_chunks).sort_by(&:top)
 
-      unless options[:vertical_rulings].empty?
-        columns = options[:vertical_rulings].map(&:left) #pixel locations, not entities
-        separators = columns.sort.reverse
-      else
-        columns = TextChunk.column_positions(lines)
-        separators = columns[1..-1].sort.reverse
-      end
+      columns = unless options[:vertical_rulings].empty?
+                  options[:vertical_rulings].map(&:left).sort #pixel locations, not entities
+                else
+                  TextChunk.column_positions(lines).sort
+                end
 
-      # Why not use the spreadsheet extraction method? :)
-      # TODO: just a test now.
-
-      # miny,  minx   = texts.first.top, texts.first.left
-      # width, height = texts.last.right - texts.first.left, texts.last.bottom - texts.first.top
-      # horizontal_lines = lines.map { |l| Tabula::Ruling.new(l.top, minx, width, 0) } \
-      #   + [Tabula::Ruling.new(lines.last.bottom, minx, width, 0)]
-      # vertical_lines = columns.map { |c| Tabula::Ruling.new(miny, c, 0, height)}
-
-      # spr = Spreadsheet.new(miny, minx,
-      #                       width, height,
-      #                       self,
-      #                       [],
-      #                       vertical_lines,
-      #                       horizontal_lines)
-
-      # self.find_cells!(horizontal_lines, vertical_lines)
-      # spr.cells = @cells.select{ |c| spr.overlaps?(c) }
-      # spr.cells.each do |cell|
-      #   cell.text_elements = self.get_cell_text(cell)
-      # end
-      # puts spr.to_csv
-
-      table = Table.new(lines.count, separators)
+      table = Table.new(lines.count, columns)
       lines.each_with_index do |line, i|
         line.text_elements.each do |te|
-          j = separators.find_index { |s| te.left > s } || separators.count
-          table.add_text_element(te, i, separators.count - j)
+          j = columns.find_index { |s| te.left <= s } || columns.count
+          table.add_text_element(te, i, j)
         end
       end
 

@@ -532,7 +532,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_remove_repeated_text
-    top, left, bottom, right = 106.07142857142858, 50.91428571428572, 141.42857142857144, 755.2285714285715
+    top, left, bottom, right = 101.82857142857144,48.08571428571429,497.8285714285715,765.1285714285715
 
     table = Tabula.extract_table(File.expand_path('data/nyc_2013fiscalreporttables.pdf', File.dirname(__FILE__)),
                                  1,

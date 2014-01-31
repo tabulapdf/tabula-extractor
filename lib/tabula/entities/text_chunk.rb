@@ -4,8 +4,6 @@ module Tabula
   class TextChunk < ZoneEntity
     attr_accessor :font, :font_size, :text_elements, :width_of_space
 
-    SPACE_RUN_MAX_LENGTH = 3
-
     ##
     # initialize a new TextChunk from a TextElement
     def self.create_from_text_element(text_element)
@@ -18,7 +16,6 @@ module Tabula
     ##
     # group an iterable of TextChunk into a list of Line
     def self.group_by_lines(text_chunks)
-
       lines = text_chunks.inject([]) do |memo, te|
         next memo if te.text =~ ONLY_SPACES_RE
         l = memo.find { |line| line.horizontal_overlap_ratio(te) >= 0.01 }
@@ -30,75 +27,38 @@ module Tabula
         memo
       end
 
-      # for each line, remove runs of the space char
-      # should not change dimensions of the container +Line+
-      lines.each do |l|
-        l.text_elements = l.text_elements.reduce([]) do |memo, text_chunk|
-          long_space_runs = text_chunk
-            .text_elements
-            .chunk { |te| te.text == ' '}  # detect runs of spaces...
-            .select { |is_space, text_elements| # ...longer than SPACE_RUN_MAX_LENGTH
-              is_space && !text_elements.nil? && text_elements.size >= SPACE_RUN_MAX_LENGTH
-            }
-            .map { |_, text_elements| text_elements }
-
-          # no long runs of spaces
-          # keep as it was and end iteration
-          if long_space_runs.empty?
-            memo << text_chunk
-            next memo
-          end
-
-          ranges = long_space_runs.map { |lsr|
-            idx = text_chunk
-              .text_elements
-              .index { |te| te.equal?(lsr.first) } # we need pointer comparison here
-            (idx)..(idx+lsr.size-1)
-          }
-
-          in_run = false
-          new_chunk = true
-          text_chunk
-            .text_elements
-            .each_with_index do |te, i|
-            if ranges.any? { |r| r.include?(i) } # te belongs to a run of spaces, skip
-              in_run = true
-            else
-              if in_run || new_chunk
-                memo << TextChunk.create_from_text_element(te)
-              else
-                memo.last << te
-              end
-              in_run = new_chunk = false
-            end
-          end
-          memo
-        end # reduce
-      end # each
-      lines
+      lines.map!(&:remove_sequential_spaces!)
     end
 
     ##
-    # calculate estimated columns from an iterable of +Tabula::Line+
+    # returns a list of column boundaries (x axis)
+    # +lines+ must be an array of lines sorted by their +top+ attribute
     def self.column_positions(lines)
-      right = 0
-      columns = []
+      init = lines.first.text_elements.map { |text_chunk|
+        Tabula::ZoneEntity.new(*text_chunk.tlwh)
+      }
 
-      top = lines.min_by(&:top).top
+      regions = lines[1..-1]
+        .inject(init) do |column_regions, line|
 
-      lines.flat_map(&:text_elements).each do |te|
-        next if te.text =~ ONLY_SPACES_RE
-        if te.top >= top
-          left = te.left
-          if (left > right)
-            columns << right
-            right = te.right
-          elsif te.right > right
-            right = te.right
+        line_text_elements = line.text_elements.clone
+
+        column_regions.each do |cr|
+
+          overlaps = line_text_elements
+            .select { |te| te.text !~ ONLY_SPACES_RE && cr.horizontally_overlaps?(te) }
+
+          overlaps.inject(cr) do |memo, te|
+            cr.merge!(te)
           end
+
+          line_text_elements = line_text_elements - overlaps
         end
+
+        column_regions += line_text_elements.map { |te| Tabula::ZoneEntity.new(*te.tlwh) }
       end
-      columns
+
+      regions.map { |r| r.right.round(2) }.uniq
     end
 
     ##
