@@ -23,7 +23,7 @@ module Tabula
       max = lines.map{|l| l.text_elements.size}.max
       lines.each do |line|
         needed = max - line.text_elements.size
-        needed.times do 
+        needed.times do
           line.text_elements << TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
         end
       end
@@ -39,7 +39,7 @@ module Tabula
         l.text_elements.map! do |te|
           te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
         end
-      end.sort_by { |l| l.map { |te| te.top || 0 }.max }    
+      end.sort_by { |l| l.map { |te| te.top || 0 }.max }
     end
 
     # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
@@ -89,6 +89,7 @@ module Tabula
       {
         'json_class'   => self.class.name,
         'extraction_method' => @extraction_method,
+        'vertical_separators' => @separators,
         'data' => rows,
       }.to_json(*a)
     end
