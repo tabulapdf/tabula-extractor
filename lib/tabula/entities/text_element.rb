@@ -1,5 +1,6 @@
 # -*- coding: utf-8 -*-
 module Tabula
+
   ##
   # a Glyph
   class TextElement < ZoneEntity
@@ -18,9 +19,20 @@ module Tabula
 
     EMPTY = TextElement.new(0, 0, 0, 0, nil, 0, '', 0)
 
+    def self.within(first, second, variance )
+      second < first + variance && second > first - variance
+    end
+
+    def self.overlap(y1, height1, y2, height2)
+      within( y1, y2, 0.1) || (y2 <= y1 && y2 >= y1 - height1) \
+      || (y1 <= y2 && y1 >= y2-height2)
+    end
+
 
     ##
     # heuristically merge an iterable of TextElement into a list of TextChunk
+    # lots of ideas taken from PDFBox's PDFTextStripper.writePage
+    # here be dragons
     def self.merge_words(text_elements, options={})
       default_options = {:vertical_rulings => []}
       options = default_options.merge(options)
@@ -28,14 +40,34 @@ module Tabula
 
       return [] if text_elements.empty?
 
+
       text_chunks = [TextChunk.create_from_text_element(text_elements.shift)]
+      previousAveCharWidth = text_chunks.first.width
+      endOfLastTextX = text_chunks.first.right
+      maxYForLine = text_chunks.first.bottom
+      maxHeightForLine = text_chunks.first.height
+      minYTopForLine = text_chunks.first.top
+      lastWordSpacing = -1
+      sp = nil
 
       text_elements.inject(text_chunks) do |chunks, char|
+
         current_chunk = chunks.last
         prev_char = current_chunk.text_elements.last
 
+        # Resets the average character width when we see a change in font
+        # or a change in the font size
+        if (char.font != prev_char.font) || (char.font_size != prev_char.font_size)
+          previousAveCharWidth = -1;
+        end
+
         # if same char AND overlapped, skip
-        if prev_char.text == char.text && prev_char.overlaps_with_ratio?(char, 0.85)
+        if (prev_char.text == char.text) && prev_char.overlaps_with_ratio?(char, 0.5)
+          next chunks
+        end
+
+        # if char is a space that overlaps with the prev_char, skip
+        if char.text == ' ' && prev_char.left == char.left && prev_char.top == char.top
           next chunks
         end
 
@@ -44,62 +76,92 @@ module Tabula
           prev_char.left < loc && char.left > loc
         }
 
+        # Estimate the expected width of the space based on the
+        # space character with some margin.
+        wordSpacing = char.width_of_space
+        deltaSpace  = 0
+        deltaSpace = if (wordSpacing.nan? || wordSpacing == 0)
+                       ::Float::MAX
+                     elsif lastWordSpacing < 0
+                       wordSpacing * 0.5 # 0.5 == spacingTolerance
+                     else
+                       ((wordSpacing + lastWordSpacing) / 2.0) * 0.5
+                     end
+
+        # Estimate the expected width of the space based on the
+        # average character width with some margin. This calculation does not
+        # make a true average (average of averages) but we found that it gave the
+        # best results after numerous experiments. Based on experiments we also found that
+        # .3 worked well.
+        averageCharWidth = if previousAveCharWidth < 0
+                             char.width / char.text.size
+                           else
+                             (previousAveCharWidth + (char.width / char.text.size)) / 2.0
+                           end
+        deltaCharWidth = averageCharWidth * 0.3 # 0.3 == averageCharTolerance
+
+        # Compares the values obtained by the average method and the wordSpacing method and picks
+        # the smaller number.
+        expectedStartOfNextWordX = -::Float::MAX
+
+        if endOfLastTextX != -1
+          expectedStartOfNextWordX = endOfLastTextX + [deltaCharWidth, deltaSpace].min
+        end
+
+        sameLine = true
+        if !overlap(char.bottom, char.height, maxYForLine, maxHeightForLine)
+          endOfLastTextX = -1
+          expectedStartOfNextWordX = -::Float::MAX
+          maxYForLine = -::Float::MAX
+          maxHeightForLine = -1
+          minYTopForLine = ::Float::MAX
+          sameLine = false
+        end
+
+        endOfLastTextX = char.right
         # should we add a space?
-        # if (prev_char.text != " ") && (char.text != " ") \
-        #   && !across_vertical_ruling \
-        if prev_char.text != " " && char.text != " " \
-          && !across_vertical_ruling \
-          && prev_char.should_add_space?(char)
+        if !across_vertical_ruling \
+          && sameLine \
+          && expectedStartOfNextWordX < char.left \
+          && !prev_char.text.end_with?(' ')
 
           sp = self.new(prev_char.top,
                         prev_char.right,
-                        prev_char.width_of_space,
-                        prev_char.width_of_space, # width == height for spaces
+                        expectedStartOfNextWordX - prev_char.right,
+                        maxHeightForLine, # width == height for spaces
                         prev_char.font,
                         prev_char.font_size,
                         ' ',
                         prev_char.width_of_space)
           current_chunk << sp
-          prev_char = sp
+        else
+          sp = nil
         end
 
-        # should_merge? isn't aware of vertical rulings, so even if two text elements are close enough
-        # that they ought to be merged by that account.
-        # we still shouldn't merge them if the two elements are on opposite sides of a vertical ruling.
-        # Why are both of those `.left`?, you might ask. The intuition is that a letter
-        # that starts on the left of a vertical ruling ought to remain on the left of it.
-        if !across_vertical_ruling && prev_char.should_merge?(char)
+        maxYForLine = [char.bottom, maxYForLine].max
+        maxHeightForLine = [maxHeightForLine, char.height].max
+        minYTopForLine = [minYTopForLine, char.top].min
+
+        # if sameLine
+        #   puts "prev: #{prev_char.text} - char: #{char.text} - diff: #{char.left - prev_char.right} - space: #{[deltaCharWidth, deltaSpace].min} - spacing: #{wordSpacing} - sp: #{!sp.nil?}"
+        # else
+        #   puts
+        # end
+
+        if !across_vertical_ruling \
+          && sameLine \
+          && (char.left - (sp ? sp.right : prev_char.right)) < wordSpacing
           current_chunk << char
         else
           # create a new chunk
           chunks << TextChunk.create_from_text_element(char)
         end
+
+        lastWordSpacing = wordSpacing
+        previousAveCharWidth = sp ? (averageCharWidth + sp.width) / 2.0 : averageCharWidth
+
         chunks
       end
-    end
-
-    # more or less returns True if distance < tolerance
-    def should_merge?(other)
-      raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-      # margin = [self.width, other.width].max * 0.3
-      margin = (self.width_of_space + other.width_of_space) / 2
-      self.vertically_overlaps?(other) && self.horizontal_distance(other) <= margin && !self.should_add_space?(other)
-    end
-
-    # more or less returns True if (tolerance <= distance < CHARACTER_DISTANCE_THRESHOLD*tolerance)
-    def should_add_space?(other)
-      raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-
-      return false if self.width_of_space.nan?
-
-      margin = 0.3 * [other.width, other.height].max
-
-      (self.vertically_overlaps?(other) &&
-       self.right < other.left - margin)
-
-      # (self.vertically_overlaps?(other) &&
-      #   self.horizontal_distance(other).abs.between?(self.width_of_space * (1 - TOLERANCE_FACTOR), self.width_of_space * (1 + TOLERANCE_FACTOR))) ||
-      # (self.vertical_distance(other) > self.height)
     end
 
     ##

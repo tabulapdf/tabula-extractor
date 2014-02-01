@@ -204,22 +204,21 @@ module Tabula
         c = text.getCharacter
         h = text.getHeightDir.round(2)
 
-        if c == ' ' || c == ' ' # replace non-breaking space for space
+        if c == ' ' # replace non-breaking space for space
           c = ' '
-          h = text.getWidth.round(2)
         end
 
         te = Tabula::TextElement.new(text.getY.round(2) - h,
                                      text.getX.round(2),
-                                     text.getWidth.round(2),
+                                     text.getWidthDirAdj,
                                      # ugly hack follows: we need spaces to have a height, so we can
                                      # test for vertical overlap. height == width seems a safe bet.
-                                     h,
+                                     text.getHeightDir,
                                      text.getFont,
-                                     text.getFontSize.round(2),
+                                     text.getFontSize,
                                      c,
                                      # workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
-                                     text.getWidthOfSpace == 0 ? self.currentSpaceWidth : text.getWidthOfSpace,
+                                     (text.getWidthOfSpace.nan? || text.getWidthOfSpace == 0) ? self.currentSpaceWidth : text.getWidthOfSpace,
                                      text.getDir)
 
         ccp_bounds = self.currentClippingPath

@@ -8,7 +8,7 @@ module Tabula
     # initialize a new TextChunk from a TextElement
     def self.create_from_text_element(text_element)
       raise TypeError, "argument is not a TextElement" unless text_element.instance_of?(TextElement)
-      tc = self.new(text_element.top, text_element.left, text_element.width, text_element.height)
+      tc = self.new(*text_element.tlwh)
       tc.text_elements = [text_element]
       return tc
     end
@@ -84,28 +84,6 @@ module Tabula
     # (in place, returns the remaining chunk)
     def split_vertically!(y)
       raise "Not Implemented"
-    end
-
-    ##
-    # remove leading and trailing whitespace
-    # (changes geometry accordingly)
-    # TODO horrible implementation - fix.
-    def strip!
-      acc = 0
-      new_te = self.text_elements.drop_while { |te|
-        te.text == ' ' && acc += 1
-      }
-      self.left += self.text_elements.take(acc).inject(0) { |m, te| m += te.width }
-      self.text_elements = new_te
-
-      self.text_elements.reverse!
-      acc = 0
-      new_te = self.text_elements.drop_while { |te|
-        te.text == ' ' && acc += 1
-      }
-      self.right -= self.text_elements.take(acc).inject(0) { |m, te| m += te.width }
-      self.text_elements = new_te.reverse
-      self
     end
 
     def text
