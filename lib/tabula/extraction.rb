@@ -50,29 +50,36 @@ module Tabula
         @min_char_width = @min_char_height = 1000000
       end
 
+      ##
+      # extract objects from a page. Returns an instance of +Tabula::Page+
+      # (+page_number+ is 1-based. i.e., first page is number 1)
+      def extract_page(page_number)
+        if page_number-1 >= @all_pages.size || (page_number) < 0
+          raise IndexError, "Page #{page_number} doesn't exist. Skipping. Valid pages are 1..#{@all_pages.size}"
+        end
+
+        page = @all_pages.get(page_number-1)
+        contents = page.getContents
+        next if contents.nil?
+
+        self.clear!
+        self.drawPage(page)
+        Tabula::Page.new(@pdf_filename,
+                         page.findCropBox.width,
+                         page.findCropBox.height,
+                         page.getRotation.to_i,
+                         page_number, #one-indexed, just like +page_number+ is.
+                         self.characters,
+                         self.rulings,
+                         @min_char_width,
+                         @min_char_height)
+      end
+
       def extract
         Enumerator.new do |y|
           begin
             @pages.each do |i|
-              if i-1 >= @all_pages.size || (i-1) < 0
-                raise IndexError, "Page #{i} doesn't exist. Skipping. Valid pages are 1..#{@all_pages.size}"
-              end
-              page = @all_pages.get(i-1)
-              contents = page.getContents
-              next if contents.nil?
-
-              self.clear!
-              self.drawPage(page)
-              p = Tabula::Page.new(@pdf_filename,
-                                   page.findCropBox.width,
-                                   page.findCropBox.height,
-                                   page.getRotation.to_i,
-                                   i, #one-indexed, just like `i` is.
-                                   self.characters,
-                                   self.rulings,
-                                   @min_char_width,
-                                   @min_char_height)
-              y.yield p
+              y.yield self.extract_page(i)
             end
           ensure
             @pdf_file.close

@@ -54,39 +54,32 @@ module Tabula
     end
 
     if use_spreadsheet_extraction_method
-      table = pdf_page.get_area(area).spreadsheets.inject(&:+)
-    else
-      use_detected_lines = false
-      if options[:detect_ruling_lines] && options[:vertical_rulings].empty?
-        detected_vertical_rulings = Ruling.crop_rulings_to_area(pdf_page.vertical_ruling_lines,
-                                                                area)
-
-        # only use lines if at least 80% of them cover at least 90%
-        # of the height of area of interest
-
-        # TODO this heuristic SUCKS
-        # what if only a couple columns is delimited with vertical rulings?
-        # ie: https://www.dropbox.com/s/lpydler5c3pn408/S2MNCEbirdisland.pdf (see 7th column)
-        # idea: detect columns without considering rulings, detect vertical rulings
-        # calculate ratio and try to come up with a threshold
-        use_detected_lines = detected_vertical_rulings.size > 2 \
-        && (detected_vertical_rulings.count { |vl|
-              vl.height / area.height > 0.9
-            } / detected_vertical_rulings.size.to_f) >= 0.8
-
-      end
-
-      table = pdf_page.get_area(area).get_table(:vertical_rulings => use_detected_lines ? detected_vertical_rulings : options[:vertical_rulings])
-
-      # fixes up the table a little bit, replacing nils with empty TextElements
-      # and sorting the lines.
-      table.lines.each do |l|
-        l.text_elements = l.text_elements.map do |te|
-          te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
-        end
-      end
-      table.lines.sort_by! { |l| l.text_elements.map { |te| te.top or 0 }.max }
-      table
+      return pdf_page.get_area(area).spreadsheets.inject(&:+)
     end
+
+    use_detected_lines = false
+    if options[:detect_ruling_lines] && options[:vertical_rulings].empty?
+      detected_vertical_rulings = Ruling.crop_rulings_to_area(pdf_page.vertical_ruling_lines,
+                                                              area)
+
+      # only use lines if at least 80% of them cover at least 90%
+      # of the height of area of interest
+
+      # TODO this heuristic SUCKS
+      # what if only a couple columns is delimited with vertical rulings?
+      # ie: https://www.dropbox.com/s/lpydler5c3pn408/S2MNCEbirdisland.pdf (see 7th column)
+      # idea: detect columns without considering rulings, detect vertical rulings
+      # calculate ratio and try to come up with a threshold
+      use_detected_lines = detected_vertical_rulings.size > 2 \
+      && (detected_vertical_rulings.count { |vl|
+            vl.height / area.height > 0.9
+          } / detected_vertical_rulings.size.to_f) >= 0.8
+
+    end
+
+    pdf_page
+      .get_area(area)
+      .get_table(:vertical_rulings => use_detected_lines ? detected_vertical_rulings : options[:vertical_rulings])
+
   end
 end
