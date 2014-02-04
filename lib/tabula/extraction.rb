@@ -47,7 +47,7 @@ module Tabula
         @transformed_clipping_path = nil
         self.clipping_paths = []
         @rulings = []
-        @min_char_width = @min_char_height = 1000000
+        @min_char_width = @min_char_height = Float::MAX
       end
 
       ##
@@ -60,7 +60,7 @@ module Tabula
 
         page = @all_pages.get(page_number-1)
         contents = page.getContents
-        next if contents.nil?
+        return nil if contents.nil?
 
         self.clear!
         self.drawPage(page)
@@ -75,10 +75,18 @@ module Tabula
                          @min_char_height)
       end
 
-      def extract
+      def extract(pages=nil)
+        pages = if pages == :all
+                  (1..@all_pages.size)
+                elsif pages.nil?
+                  @pages
+                else
+                  pages
+                end
+
         Enumerator.new do |y|
           begin
-            @pages.each do |i|
+            pages.each do |i|
               y.yield self.extract_page(i)
             end
           ensure
@@ -90,6 +98,7 @@ module Tabula
       def clear!
         self.characters.clear
         self.clipping_paths.clear
+        @min_char_width = @min_char_height = Float::MAX
         @page_transform = nil
         @rulings.clear
       end
@@ -255,7 +264,6 @@ module Tabula
       end
 
       def rulings
-        return [] if @rulings.empty?
         @rulings.reject { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }
       end
 

@@ -40,7 +40,6 @@ module Tabula
 
       return [] if text_elements.empty?
 
-
       text_chunks = [TextChunk.create_from_text_element(text_elements.shift)]
       previousAveCharWidth = text_chunks.first.width
       endOfLastTextX = text_chunks.first.right

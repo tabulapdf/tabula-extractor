@@ -70,6 +70,7 @@ module Tabula
       texts = self.texts.sort
       text_chunks = TextElement.merge_words(texts, options)
 
+      # TODO move to Page#lines
       lines = TextChunk.group_by_lines(text_chunks).sort_by(&:top)
 
       columns = unless options[:vertical_rulings].empty?
