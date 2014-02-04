@@ -1,3 +1,4 @@
+#!/usr/bin/env jruby -J-Djava.awt.headless=true
 # -*- coding: utf-8 -*-
 require 'minitest'
 require 'minitest/autorun'
@@ -147,12 +148,14 @@ class TestDumper < Minitest::Test
   def test_extractor
     extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
     page = extractor.extract.next
+    extractor.close!
     assert_instance_of Tabula::Page, page
   end
 
   def test_get_by_area
     extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
     characters = extractor.extract.next.get_text([107.1, 57.9214, 394.5214, 290.7])
+    extractor.close!
     assert_equal characters.size, 206
   end
 end
@@ -232,6 +235,7 @@ class TestExtractor < Minitest::Test
       ])
 
     assert_equal expected, lines_to_table(page_obj.get_area(area).make_table(:vertical_rulings => vertical_rulings))
+    character_extractor.close!
   end
 
   def test_forest_disclosure_report
@@ -260,6 +264,7 @@ class TestExtractor < Minitest::Test
           ['AARON, MICHAEL, L', '', 'WEST ISLIP, NY', 'MEALS', '', '$19.50']
         ])
 
+    character_extractor.close!
     assert_equal expected, lines_to_table(Tabula.make_table(characters, :vertical_rulings => vertical_rulings))
   end
 
@@ -311,6 +316,7 @@ class TestExtractor < Minitest::Test
       end
       assert_equal expected, lines_to_table(tables.first)
     end
+    extractor.close!
   end
 
   def test_vertical_rulings_prevent_merging_of_columns
@@ -478,19 +484,22 @@ class TestExtractor < Minitest::Test
     expected_data_path = File.expand_path('data/frx_2012_disclosure.tsv', File.dirname(__FILE__))
     expected = open(expected_data_path, 'r').read #.split("\n").map{|line| line.split("\t")}
 
-    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all).extract.each do |pdf_page|
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all)
+    extractor.extract.each do |pdf_page|
       spreadsheet = pdf_page.spreadsheets.first
       assert_equal expected, spreadsheet.to_tsv
     end
+    extractor.close!
   end
 
   def test_cope_with_a_tableless_page
     pdf_file_path = File.expand_path('data/no_tables.pdf', File.dirname(__FILE__))
 
-    spreadsheets = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all, '',
-        :line_color_filter => lambda{|components| components.all?{|c| c < 0.1}}
-      ).extract.to_a.first.spreadsheets
-
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all, '',
+                                                        :line_color_filter => lambda{|components| components.all?{|c| c < 0.1}}
+                                                       )
+    spreadsheets = extractor.extract.to_a.first.spreadsheets
+    extractor.close!
     assert_equal 0, spreadsheets.size
   end
 
@@ -498,11 +507,12 @@ class TestExtractor < Minitest::Test
     pdf_file_path = File.expand_path('data/spanning_cells.pdf', File.dirname(__FILE__))
     expected_data_path = File.expand_path('data/spanning_cells.csv', File.dirname(__FILE__))
     expected = open(expected_data_path, 'r').read
-
-    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
+    extractor.extract.each do |pdf_page|
       spreadsheet = pdf_page.spreadsheets.first
       assert_equal expected, spreadsheet.to_csv
     end
+    extractor.close!
   end
 
   def test_almost_vertical_lines
@@ -511,24 +521,28 @@ class TestExtractor < Minitest::Test
     area = Tabula::ZoneEntity.new(top, left,
                                   right - left, bottom - top)
 
-    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
+    extractor.extract.each do |pdf_page|
       rulings = Tabula::Ruling.crop_rulings_to_area(pdf_page.ruling_lines, area)
       # TODO assertion not entirely correct, should do the trick for now
       assert_equal 15, rulings.select(&:vertical?).count
     end
+    extractor.close!
   end
 
   def test_extract_spreadsheet_within_an_area
     pdf_file_path = File.expand_path('data/puertos1.pdf', File.dirname(__FILE__))
     top, left, bottom, right = 273.9035714285714, 30.32142857142857, 554.8821428571429, 546.7964285714286
 
-    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
+    extractor.extract.each do |pdf_page|
       area = pdf_page.get_area([top, left, bottom, right])
       table = area.spreadsheets.first.to_a
       assert_equal 15, table.length
       assert_equal ["", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM"], table.first
       assert_equal ["TOTAL", "453,515", "895,111", "456,431", "718,382", "487,183", "886,211", "494,220", "816,623", "495,580", "810,565", "627,469", "1,248,804", "540,367"], table.last
     end
+    extractor.close!
   end
 
   def test_remove_repeated_text
@@ -562,7 +576,8 @@ class TestExtractor < Minitest::Test
   def test_cells_including_line_returns
     data = []
     pdf_file_path = File.expand_path('data/sydney_disclosure_contract.pdf', File.dirname(__FILE__))
-    Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1]).extract.each do |pdf_page|
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
+    extractor.extract.each do |pdf_page|
       pdf_page.spreadsheets.each do |spreadsheet|
         spreadsheet.cells.each do |cell|
           cell.text_elements = pdf_page.get_cell_text(cell)
@@ -571,6 +586,7 @@ class TestExtractor < Minitest::Test
         end
       end
     end
+    extractor.close!
     assert_equal ["1295", "Name: Reino International Pty Ltd trading as Duncan Solutions \rAddress: 15/39 Herbet Street, St Leonards NSW 2065", "N/A", "Effective Date: 13 May 2013 \rDuration: 15 Weeks", "Supply, Installation and Maintenance of Parking Ticket Machines", "$3,148,800.00exgst", "N/A", "N/A", "Open Tender  \rTender evaluation criteria included: \r- The schedule of prices \r- Compliance with technical specifications/Technical assessment \r- Operational Plan including maintenance procedures"], data
   end
 
@@ -642,6 +658,7 @@ class TestIsTabularHeuristic < Minitest::Test
       extractor = Tabula::Extraction::ObjectExtractor.new(path, [1])
       page = extractor.extract.first
       page.get_ruling_lines!
+      extractor.close!
       assert page.is_tabular?, "failed on file #{f}"
     end
   end
@@ -652,6 +669,7 @@ class TestIsTabularHeuristic < Minitest::Test
       extractor = Tabula::Extraction::ObjectExtractor.new(path, [1])
       page = extractor.extract.first
       page.get_ruling_lines!
+      extractor.close!
       assert !page.is_tabular?, "failed on file #{f}"
     end
   end

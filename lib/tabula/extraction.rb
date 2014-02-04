@@ -31,6 +31,8 @@ module Tabula
         :extract_ruling_lines => true
       }
 
+      # TODO: the +pages+ constructor argument does not make sense
+      # now that we have +extract_page+ and +extract_pages+
       def initialize(pdf_filename, pages=[1], password='', options={})
         raise Errno::ENOENT unless File.exists?(pdf_filename)
         @pdf_filename = pdf_filename
@@ -50,10 +52,22 @@ module Tabula
         @min_char_width = @min_char_height = Float::MAX
       end
 
+      def close!
+        self.ensure_open!
+        @pdf_file.close
+        @pdf_file_closed = true
+      end
+
+      def ensure_open!
+        raise "Document is closed" if @pdf_file_closed
+      end
+
       ##
       # extract objects from a page. Returns an instance of +Tabula::Page+
       # (+page_number+ is 1-based. i.e., first page is number 1)
       def extract_page(page_number)
+        self.ensure_open!
+
         if page_number-1 >= @all_pages.size || (page_number) < 0
           raise IndexError, "Page #{page_number} doesn't exist. Skipping. Valid pages are 1..#{@all_pages.size}"
         end
@@ -76,6 +90,7 @@ module Tabula
       end
 
       def extract(pages=nil)
+        self.ensure_open!
         pages = if pages == :all
                   (1..@all_pages.size)
                 elsif pages.nil?
@@ -85,13 +100,9 @@ module Tabula
                 end
 
         Enumerator.new do |y|
-          begin
-            pages.each do |i|
-              y.yield self.extract_page(i)
-            end
-          ensure
-            @pdf_file.close
-          end # begin
+          pages.each do |i|
+            y.yield self.extract_page(i)
+          end
         end
       end
 

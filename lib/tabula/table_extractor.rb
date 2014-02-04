@@ -42,10 +42,12 @@ module Tabula
       page = [page]
     end
 
-    pdf_page = Extraction::ObjectExtractor.new(pdf_path,
-                                               page,
-                                               options[:password]) \
-      .extract.next
+    extractor = Extraction::ObjectExtractor.new(pdf_path,
+                                                page,
+                                                options[:password])
+
+    pdf_page = extractor.extract.next
+    extractor.close!
 
     if ["spreadsheet", "original"].include? options[:extraction_method]
       use_spreadsheet_extraction_method = options[:extraction_method] == "spreadsheet"
