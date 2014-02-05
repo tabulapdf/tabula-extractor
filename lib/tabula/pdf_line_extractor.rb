@@ -1,6 +1,3 @@
-require 'java'
-require File.join(File.dirname(__FILE__), '../../target/', Tabula::PDFBOX)
-
 java_import org.apache.pdfbox.util.operator.OperatorProcessor
 java_import org.apache.pdfbox.pdfparser.PDFParser
 java_import org.apache.pdfbox.util.PDFStreamEngine
@@ -12,9 +9,7 @@ java_import java.awt.geom.GeneralPath
 java_import java.awt.geom.AffineTransform
 java_import java.awt.Color
 
-require_relative './core_ext'
-require_relative './line_segment_detector'
-require_relative './entities'
+warn 'Tabula::Extraction::LineExtractor is DEPRECATED and will be removed'
 
 class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
 
@@ -28,26 +23,58 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     :snapping_grid_cell_size => 2
   }
 
+  def self.collapse_vertical_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
+    lines.sort!{|a, b| a.left != b.left ? a.left <=> b.left : a.top <=> b.top }
+    lines.inject([]) do |memo, next_line|
+      if memo.last && next_line.left == memo.last.left && memo.last.nearlyIntersects?(next_line)
+        memo.last.top = [next_line.top, memo.last.top].min
+        memo.last.bottom = [next_line.bottom, memo.last.bottom].max
+        memo
+      else
+        memo << next_line
+      end
+    end
+  end
+
+  def self.collapse_horizontal_rulings(lines) #lines should all be of one orientation (i.e. horizontal, vertical)
+    lines.sort!{|a, b| a.top != b.top ? a.top <=> b.top : a.left <=> b.left }
+    lines.inject([]) do |memo, next_line|
+      if memo.last && next_line.top == memo.last.top && memo.last.nearlyIntersects?(next_line)
+        memo.last.left = [next_line.left, memo.last.left].min
+        memo.last.right = [next_line.right, memo.last.right].max
+        memo
+      else
+        memo << next_line
+      end
+    end
+  end
+
+  #N.B. for merge `spreadsheets` into `text-extractor-refactor` --
+  # only substantive change here is calling Tabula::Ruling::clean_rulings on LSD output in this method
+  # the rest is readability changes.
   #page_number here is zero-indexed
   def self.lines_in_pdf_page(pdf_path, page_number, options={})
     options = options.merge!(DETECT_LINES_DEFAULTS)
-    rulings = unless options[:render_pdf]
-                pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
-                page = pdf_file.getDocumentCatalog.getAllPages[page_number]
-                le = self.new(options)
-                le.processStream(page, page.findResources, page.getContents.getStream)
-                pdf_file.close
-                le.rulings.map do |l|
-                  top = [l.getP1.getY, l.getP2.getY].min
-                  left = [l.getP1.getX, l.getP1.getX].min
-                  ::Tabula::Ruling.new(top,
-                                       left,
-                                       (l.getP2.getX - l.getP1.getX).abs,
-                                       (l.getP2.getY - l.getP1.getY).abs)
-                end
-              else
-                Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options)
-              end
+    if options[:render_pdf]
+      # only LSD rulings need to be "cleaned" with clean_rulings; might as well do this here
+      # since there's no good reason want unclean lines
+      Tabula::Ruling::clean_rulings(Tabula::LSD::detect_lines_in_pdf_page(pdf_path, page_number, options))
+    else
+      pdf_file = ::Tabula::Extraction.openPDF(pdf_path)
+      page = pdf_file.getDocumentCatalog.getAllPages[page_number]
+      le = self.new(options)
+      le.processStream(page, page.findResources, page.getContents.getStream)
+      pdf_file.close
+      rulings = le.rulings.map do |l, color|
+        ::Tabula::Ruling.new(l.getP1.getY,
+                             l.getP1.getX,
+                             l.getP2.getX - l.getP1.getX,
+                             l.getP2.getY - l.getP1.getY,
+                             color)
+      end
+      rulings.reject! { |l| (l.left == l.right && l.top == l.bottom) || [l.top, l.left, l.bottom, l.right].any? { |p| p < 0 } }
+      collapse_vertical_rulings(rulings.select(&:vertical?)) + collapse_horizontal_rulings(rulings.select(&:horizontal?))
+    end
   end
 
   class LineToOperator < OperatorProcessor
@@ -112,14 +139,11 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   class StrokePathOperator < OperatorProcessor
     def process(operator, arguments)
       drawer = self.context
-
-      # pretty lame, but i've never seen white lines
-      # should be safe to discard
-      # NOTE: temporarily disabled.
-      # strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
-      #if strokeColorComps.any? { |c| c < 0.9 }
-        drawer.currentPath.each { |segment| drawer.addRuling(segment) }
-      #end
+      strokeColorComps = drawer.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
+      color_filter = drawer.options[:line_color_filter] || lambda{|c| true } #by default, use all lines, regardless of color
+      if color_filter.call(strokeColorComps)
+        drawer.currentPath.each { |segment| drawer.addRuling(segment, strokeColorComps.to_a) }
+      end
 
       drawer.currentPath = []
     end
@@ -128,11 +152,13 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
   class CloseFillNonZeroAndStrokePathOperator < OperatorProcessor
     def process(operator, arguments)
       drawer = self.context
-      # NOTE: color check temporarily disabled
-      #fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
-#      if fillColorComps.any? { |c| c < 0.9 }
-        drawer.currentPath.each { |segment| drawer.addRuling(segment) }
-#      end
+
+      fillColorComps = drawer.getGraphicsState.getNonStrokingColor.getJavaColor.getRGBColorComponents(nil)
+      color_filter = drawer.options[:line_color_filter] || lambda{|c| true } #by default, use all lines, regardless of color
+      if color_filter.call(fillColorComps)
+        drawer.currentPath.each { |segment| drawer.addRuling(segment, fillColorComps.to_a) }
+      end
+
       drawer.currentPath = []
     end
   end
@@ -222,7 +248,8 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
     @pageSize = nil
   end
 
-  def addRuling(ruling)
+  def addRuling(ruling, color=nil)
+    color = color.nil? ? [0,0,0] : color
     if !page.getRotation.nil? && [90, -270, -90, 270].include?(page.getRotation)
 
       mb = page.findMediaBox
@@ -234,25 +261,13 @@ class Tabula::Extraction::LineExtractor < org.apache.pdfbox.util.PDFStreamEngine
               else
                 AffineTransform.getTranslateInstance(0, mb.getWidth)
               end
-      scale = AffineTransform.getScaleInstance(mb.getWidth / mb.getHeight,
-
-                                             mb.getWidth / mb.getHeight)
-      scale.concatenate(trans)
-      ruling.transform!(scale)
+      ruling.transform!(trans)
     end
 
     # snapping to grid and joining lines that are close together
     ruling.snap!(options[:snapping_grid_cell_size])
 
-    # merge lines, still not finished
-    # close_rulings = self.rulings.find_all { |r|
-    #   (ruling.vertical? && r.vertical? || ruling.horizontal? && r.horizontal?) \
-    #   && (r.getP2.distance(ruling.getP1) <= options[:snapping_grid_cell_size] \
-    #       || r.getP1.distance(ruling.getP2) <= options[:snapping_grid_cell_size])
-    # }
-
-    self.rulings << ruling
-
+    self.rulings << [ruling, color]
   end
 
   ##

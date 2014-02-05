@@ -25,6 +25,7 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'bundler', '>= 1.3.4'
   s.add_development_dependency 'ruby-debug'
   s.add_development_dependency 'nokogiri'
+  s.add_development_dependency 'pry'
 
   s.add_runtime_dependency "trollop", ["~> 2.0"]
 end

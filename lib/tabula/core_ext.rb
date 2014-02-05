@@ -1,6 +1,7 @@
 java_import java.awt.geom.Point2D
 java_import java.awt.geom.Line2D
 java_import java.awt.geom.Rectangle2D
+java_import java.awt.Rectangle
 
 class Array
   def rpad(padding, target_size)
@@ -39,9 +40,48 @@ module Enumerable
 
 end
 
+class Point2D::Float
+  def inspect
+    toString
+  end
+
+  def to_json(*args)
+    [self.getX, self.getY].to_json(*args)
+  end
+
+  def hash
+    "#{self.getX},#{self.getY}".hash
+  end
+
+  def <=>(other)
+    return  1 if self.y > other.y
+    return -1 if self.y < other.y
+    return  1 if self.x  > other.x
+    return -1 if self.x  < other.x
+    return  0
+  end
+
+  def x_first_cmp(other)
+    return  1 if self.x  > other.x
+    return -1 if self.x  < other.x
+    return  1 if self.y > other.y
+    return -1 if self.y < other.y
+    return  0
+  end
+
+  def ==(other)
+    return self.x == other.x && self.y == other.y
+  end
+
+end
+
 class Line2D::Float
   def to_json(*args)
     [self.getX1, self.getY1, self.getX2, self.getY2].to_json(*args)
+  end
+
+  def inspect
+    "<Line2D::Float[(#{self.getX1},#{self.getY1}),(#{self.getX2},#{self.getY2})]>"
   end
 
   def rotate!(pointX, pointY, amount)
@@ -49,12 +89,9 @@ class Line2D::Float
     py1 = self.getY1 - pointY; py2 = self.getY2 - pointY
 
     if amount == 90 || amount == -270
-      setLine(pointX - py2, pointY + px1,
-              pointX - py1, pointY + px2)
+      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], pointX - py2, pointY + px1, pointX - py1, pointY + px2
     elsif amount == 270 || amount == -90
-      setLine(pointX + py1, pointY - px2,
-              pointX + py2, pointY - px1)
-
+      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], pointX + py1, pointY - px2, pointX + py2, pointY - px1
     end
 
   end
@@ -69,10 +106,8 @@ class Line2D::Float
 
   def snap!(cell_size)
     newP1, newP2 = Point2D::Float.new, Point2D::Float.new
-    newP1.setLocation((self.getX1 / cell_size).round * cell_size,
-                      (self.getY1 / cell_size).round * cell_size)
-    newP2.setLocation((self.getX2 / cell_size).round * cell_size,
-                      (self.getY2 / cell_size).round * cell_size)
+    newP1.java_send :setLocation, [Java::float, Java::float], (self.getX1 / cell_size).round * cell_size, (self.getY1 / cell_size).round * cell_size
+    newP2.java_send :setLocation, [Java::float, Java::float], (self.getX2 / cell_size).round * cell_size, (self.getY2 / cell_size).round * cell_size
     setLine(newP1, newP2)
   end
 
@@ -86,7 +121,7 @@ class Line2D::Float
 
 end
 
-class Rectangle2D::Float
+class Rectangle2D
   SIMILARITY_DIVISOR = 20
 
   alias_method :top, :minY
@@ -107,15 +142,22 @@ class Rectangle2D::Float
   end
 
   def top=(new_y)
-    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, new_y, self.width, self.height
-  end
+    delta_height = new_y - self.y
+    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, new_y, self.width, (self.height - delta_height)
 
-  def left=(new_x)
-    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], new_x, self.y, self.width, self.height
+    #used to be: (fixes test_vertical_rulings_splitting_words)
+    # self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, new_y, self.width, self.height
   end
 
   def bottom=(new_y2)
     self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, self.width, new_y2 - self.y
+  end
+
+  def left=(new_x)
+    delta_width = new_x - self.x
+    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], new_x, self.y, (self.width - delta_width), self.height
+    #used to be: (fixes test_vertical_rulings_splitting_words)
+    # self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], new_x, self.y, self.width, self.height
   end
 
   def right=(new_x2)
@@ -128,7 +170,15 @@ class Rectangle2D::Float
 
   # [x, y]
   def midpoint
-    [self.left + (self.width / 2), self.top + (self.height / 2)]
+    [horizontal_midpoint, vertical_midpoint]
+  end
+
+  def horizontal_midpoint
+    self.left + (self.width / 2)
+  end
+
+  def vertical_midpoint
+    self.top + (self.height / 2)
   end
 
   def horizontal_distance(other)
@@ -226,4 +276,11 @@ class Rectangle2D::Float
     "#<Rectangle2D dims:[#{top}, #{left}, #{bottom}, #{right}]>"
   end
 
+end
+
+# used only in GetBounds2D in an intermediate step in HasCells#find_spreadsheets_from_cells
+class Rectangle #java.awt.Rectangle
+  def inspect
+    "#<Rectangle dims:[x:#{x}, y:#{y}, w:#{width}, h:#{height}]>"
+  end
 end

@@ -1,7 +1,6 @@
-require 'java'
 require 'json'
-require_relative './pdf_render'
-require_relative './core_ext'
+
+warn 'Tabula::TableGuesser is DEPRECATED and will be removed'
 
 module Tabula
   module TableGuesser
@@ -9,7 +8,7 @@ module Tabula
     def TableGuesser.find_and_write_rects(filename, output_dir)
       #writes to JSON the rectangles on each page in the specified PDF.
       open(File.join(output_dir, "tables.json"), 'w') do |f|
-        f.write( JSON.dump(find_rects(filename).map{|a| a.map{|r| r.dims.map &:to_i }} ))
+        f.write( JSON.dump(find_rects(filename).map{|a| a.map{|r| r.dims.map(&:to_i) }} ))
       end
     end
 
@@ -46,8 +45,8 @@ module Tabula
       lines
     end
 
-    def TableGuesser.find_lines_on_page(pdf, page_index)
-      Tabula::LSD.detect_lines_in_pdf_page(pdf, page_index)
+    def TableGuesser.find_lines_on_page(pdf, page_number_zero_indexed)
+      Tabula::Extraction::LineExtractor.lines_in_pdf_page(pdf, page_number_zero_indexed, {:render_pdf => false})
     end
 
     def TableGuesser.find_rects_on_page(pdf, page_index)
@@ -80,7 +79,7 @@ module Tabula
       #
       # TODO: generalize this.
       #
-      corner_proximity_threshold = 0.10;
+      corner_proximity_threshold = 0.005;
 
       rectangles = []
       #find rectangles with one horizontal line and two vertical lines that end within $threshold to the ends of the horizontal line.
@@ -135,9 +134,10 @@ module Tabula
             #in case we eventually tolerate not-quite-vertical lines, this computers the distance in Y directly, rather than depending on the vertical lines' lengths.
             height = [left_vertical_line.bottom - left_vertical_line.top, right_vertical_line.bottom - right_vertical_line.top].max
 
-            y = [left_vertical_line.top, right_vertical_line.top].min
+            top = [left_vertical_line.top, right_vertical_line.top].min
             width = horizontal_line.right - horizontal_line.left
-            r = java.awt.geom.Rectangle2D::Float.new( horizontal_line.left, y, width, height ) #x, y, w, h
+            left = horizontal_line.left
+            r = java.awt.geom.Rectangle2D::Float.new( left, top, width, height ) #x, y, w, h
             #rectangles.put(hashRectangle(r), r); #TODO: I dont' think I need this now that I'm in Rubyland
             rectangles << r
           end
