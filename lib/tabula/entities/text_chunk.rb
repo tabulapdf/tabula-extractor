@@ -13,21 +13,31 @@ module Tabula
       return tc
     end
 
-    require 'ruby-debug'
     #
     # group an iterable of TextChunk into a list of Line
+    # def self.group_by_lines(text_chunks)
+    #   lines = text_chunks.inject([]) do |memo, te|
+    #     next memo if te.text =~ ONLY_SPACES_RE
+    #     l = memo.find { |line| line.horizontal_overlap_ratio(te) >= 0.01 }
+    #     if l.nil?
+    #       l = Line.new
+    #       memo << l
+    #     end
+    #     l << te
+    #     memo
+    #   end
+    #   lines.map!(&:remove_sequential_spaces!)
+    # end
+
     def self.group_by_lines(text_chunks)
-      lines = text_chunks.inject([]) do |memo, te|
-        # if te.text.start_with?('Otras carnes rojas')
-        #   debugger
-        # end
-        next memo if te.text =~ ONLY_SPACES_RE
-        l = memo.find { |line| line.horizontal_overlap_ratio(te) >= 0.5 }
-        if l.nil?
-          l = Line.new
-          memo << l
+      l = Line.new
+      l << text_chunks.first
+
+      lines = text_chunks[1..-1].inject([l]) do |memo, te|
+        if memo.last.horizontal_overlap_ratio(te) < 0.01
+          memo << Line.new
         end
-        l << te
+        memo.last << te
         memo
       end
 

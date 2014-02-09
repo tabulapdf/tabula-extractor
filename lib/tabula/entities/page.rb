@@ -70,8 +70,7 @@ module Tabula
       texts = self.texts.sort
       text_chunks = TextElement.merge_words(texts, options)
 
-      # TODO move to Page#lines
-      lines = TextChunk.group_by_lines(text_chunks).sort_by(&:top)
+      lines = TextChunk.group_by_lines(text_chunks.sort).sort_by(&:top)
 
       columns = unless options[:vertical_rulings].empty?
                   options[:vertical_rulings].map(&:left).sort #pixel locations, not entities
@@ -96,7 +95,6 @@ module Tabula
         end
       end
       table.lines.sort_by! { |l| l.text_elements.map { |te| te.top or 0 }.max }
-
       table
     end
 
