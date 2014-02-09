@@ -48,8 +48,10 @@ module Tabula
     # returns a list of column boundaries (x axis)
     # +lines+ must be an array of lines sorted by their +top+ attribute
     def self.column_positions(lines)
-      init = lines.first.text_elements.map { |text_chunk|
-        Tabula::ZoneEntity.new(*text_chunk.tlwh)
+      init = lines.first.text_elements.inject([]) { |memo, text_chunk|
+        next memo if text_chunk.text =~ ONLY_SPACES_RE
+        memo << Tabula::ZoneEntity.new(*text_chunk.tlwh)
+        memo
       }
 
       regions = lines[1..-1]
