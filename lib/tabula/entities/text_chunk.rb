@@ -13,7 +13,6 @@ module Tabula
       return tc
     end
 
-    require 'ruby-debug'
     #
     # group an iterable of TextChunk into a list of Line
     def self.group_by_lines(text_chunks)
