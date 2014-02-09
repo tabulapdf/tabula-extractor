@@ -33,13 +33,18 @@ module Tabula
       rows.transpose
     end
 
+    # TODO: this is awful, refactor
     def rows
       self.rpad!
-      lines.map do |l|
-        l.text_elements.map! do |te|
+      li = lines.map { |l|
+        l.text_elements.map! { |te|
           te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
-        end
-      end.sort_by { |l| l.map { |te| te.top || 0 }.max }
+        }
+      }.select {
+        |l| !l.all? { |te| te.text.empty? }
+      }.sort_by { |l|
+        l.map { |te| te.top || 0 }.max
+      }
     end
 
     # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
@@ -61,7 +66,8 @@ module Tabula
       min_leading_empty_strings = Float::INFINITY
       @lines.each do |line|
         empties = line.text_elements.map{|t| t.nil? || t.text.empty? }
-        min_leading_empty_strings = [min_leading_empty_strings, empties.index(false)].min
+        min_leading_empty_strings = [min_leading_empty_strings,
+                                     empties.index(false) || 0].min
       end
       if min_leading_empty_strings == 0
         @lines

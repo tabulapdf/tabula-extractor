@@ -57,7 +57,7 @@ module Tabula
       regions = lines[1..-1]
         .inject(init) do |column_regions, line|
 
-        line_text_elements = line.text_elements.clone
+        line_text_elements = line.text_elements.clone.select { |te| te.text !~ ONLY_SPACES_RE }
 
         column_regions.each do |cr|
 
