@@ -6,21 +6,24 @@ module Tabula
   # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors; ruling_lines reader
   module HasCells
 
-    ANOTHER_MAGIC_NUMBER = 0.75
+    ARBITRARY_MAGIC_HEURISTIC_NUMBER = 0.65
 
     def is_tabular?
+      ratio = heuristic_ratio
+      return ratio > ARBITRARY_MAGIC_HEURISTIC_NUMBER && ratio < (1 / ARBITRARY_MAGIC_HEURISTIC_NUMBER)
+    end
+
+    def heuristic_ratio
       #spreadsheet extraction
       spreadsheet = spreadsheets.first
-      return false if spreadsheet.nil?
+      return Float::NAN if spreadsheet.nil?
       rows_defined_by_lines = spreadsheet.rows.size #rows filled in automatically
       columns_defined_by_lines = spreadsheet.cols.size
 
       table = self.get_table
       columns_defined_without_lines = table.cols.size
       rows_defined_without_lines = table.rows.size
-      ratio = ((columns_defined_by_lines.to_f / columns_defined_without_lines) + (rows_defined_by_lines.to_f / rows_defined_without_lines)) / 2
-
-      return ratio > ANOTHER_MAGIC_NUMBER && ratio < (1 / ANOTHER_MAGIC_NUMBER)
+      ((columns_defined_by_lines.to_f / columns_defined_without_lines) + (rows_defined_by_lines.to_f / rows_defined_without_lines)) / 2
     end
 
     # finds cells from the ruling lines on the page.
