@@ -13,32 +13,32 @@ module Tabula
       return tc
     end
 
-    #
-    # group an iterable of TextChunk into a list of Line
-    # def self.group_by_lines(text_chunks)
-    #   lines = text_chunks.inject([]) do |memo, te|
-    #     next memo if te.text =~ ONLY_SPACES_RE
-    #     l = memo.find { |line| line.horizontal_overlap_ratio(te) >= 0.01 }
-    #     if l.nil?
-    #       l = Line.new
-    #       memo << l
-    #     end
-    #     l << te
-    #     memo
-    #   end
-    #   lines.map!(&:remove_sequential_spaces!)
-    # end
-
     def self.group_by_lines(text_chunks)
+
+      tl, br  = text_chunks.minmax
+      bbwidth = br.right - tl.left
+
       l = Line.new
       l << text_chunks.first
 
-      lines = text_chunks[1..-1].inject([l]) do |memo, te|
-        if memo.last.horizontal_overlap_ratio(te) < 0.01
-          memo << Line.new
+      lines = text_chunks[1..-1].inject([l]) do |lines, te|
+        if lines.last.horizontal_overlap_ratio(te) < 0.01
+          # skip lines such that:
+          # - are wider than the 90% of the width of the text_chunks bounding box
+          # - it contains a single repeated character
+          if lines.last.width / bbwidth > 0.9 \
+            && l.text_elements.all? { |te| te.text =~  SAME_CHAR_RE }
+            lines.pop
+          end
+          lines << Line.new
         end
-        memo.last << te
-        memo
+        lines.last << te
+        lines
+      end
+
+      if lines.last.width / bbwidth > 0.9 \
+         && l.text_elements.all? { |te| te.text =~ SAME_CHAR_RE }
+        lines.pop
       end
 
       lines.map!(&:remove_sequential_spaces!)

@@ -615,6 +615,16 @@ class TestExtractor < Minitest::Test
     assert_equal table_to_array(table), expected
   end
 
+  def test_monospaced_table_ascii_line_separator
+    extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/monospaced_ascii_sep.pdf', File.dirname(__FILE__)),
+                                                        [1])
+    expected = [["Column A", "* ColB1", "ColB2  ColB3", "* Column C"], ["Value 1", "*  23.5", "66.811.0", "* Name 1"], ["Value 2", "*  33.2", "56.312.0", "* Name 2"], ["Value 3", "* 123.3", "200.4  123.9", "* Name 3"], ["Value 4", "*  24.5", "66.811.0", "* Name 1"], ["Value 5", "*  43.2", "80.114.5", "* Name 2"], ["Value 6", "* 100.6", "190.4  120.3", "* Name 3"], ["Value 7", "*  11.5", "66.811.0", "* Name 1"], ["Value 8", "*  37.4", "77.420.1", "* Name 2"], ["Value 9", "* 883.3", "110.4  111.2", "* Name 3"]]
+
+    table = extractor.extract_page(1).get_table
+    assert_equal table_to_array(table), expected
+  end
+
+
   def test_bad_column_detection
     top,left,bottom,right = 535.5, 70.125, 549.3125, 532.3125
     table = Tabula.extract_table(File.expand_path('data/indecago10.pdf', File.dirname(__FILE__)),
