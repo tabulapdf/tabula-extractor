@@ -70,8 +70,7 @@ module Tabula
       texts = self.texts.sort
       text_chunks = TextElement.merge_words(texts, options)
 
-      # TODO move to Page#lines
-      lines = TextChunk.group_by_lines(text_chunks).sort_by(&:top)
+      lines = TextChunk.group_by_lines(text_chunks.sort).sort_by(&:top)
 
       columns = unless options[:vertical_rulings].empty?
                   options[:vertical_rulings].map(&:left).sort #pixel locations, not entities
@@ -81,7 +80,7 @@ module Tabula
 
       table = Table.new(lines.count, columns)
       lines.each_with_index do |line, i|
-        line.text_elements.each do |te|
+        line.text_elements.select { |te| te.text !~ ONLY_SPACES_RE }.each do |te|
           j = columns.find_index { |s| te.left <= s } || columns.count
           table.add_text_element(te, i, j)
         end
@@ -95,8 +94,7 @@ module Tabula
           te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
         end
       end
-      table.lines.sort_by! { |l| l.text_elements.map { |te| te.top or 0 }.max }
-
+      table.lines.sort_by!(&:top)
       table
     end
 

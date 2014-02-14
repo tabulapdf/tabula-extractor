@@ -23,8 +23,8 @@ module Tabula
       second < first + variance && second > first - variance
     end
 
-    def self.overlap(y1, height1, y2, height2)
-      within( y1, y2, 0.1) || (y2 <= y1 && y2 >= y1 - height1) \
+    def self.overlap(y1, height1, y2, height2, variance=0.1)
+      within( y1, y2, variance) || (y2 <= y1 && y2 >= y1 - height1) \
       || (y1 <= y2 && y1 >= y2-height2)
     end
 
@@ -41,6 +41,8 @@ module Tabula
       return [] if text_elements.empty?
 
       text_chunks = [TextChunk.create_from_text_element(text_elements.shift)]
+
+
       previousAveCharWidth = text_chunks.first.width
       endOfLastTextX = text_chunks.first.right
       maxYForLine = text_chunks.first.bottom
@@ -127,7 +129,7 @@ module Tabula
           sp = self.new(prev_char.top,
                         prev_char.right,
                         expectedStartOfNextWordX - prev_char.right,
-                        maxHeightForLine, # width == height for spaces
+                        prev_char.height,
                         prev_char.font,
                         prev_char.font_size,
                         ' ',
@@ -147,9 +149,12 @@ module Tabula
         #   puts
         # end
 
+
+        dist = (char.left - (sp ? sp.right : prev_char.right))
+
         if !across_vertical_ruling \
-          && sameLine \
-          && (char.left - (sp ? sp.right : prev_char.right)) < wordSpacing
+           && sameLine \
+           && (dist < 0 ? current_chunk.vertically_overlaps?(char) : dist < wordSpacing)
           current_chunk << char
         else
           # create a new chunk

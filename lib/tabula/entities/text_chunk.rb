@@ -13,18 +13,32 @@ module Tabula
       return tc
     end
 
-    ##
-    # group an iterable of TextChunk into a list of Line
     def self.group_by_lines(text_chunks)
-      lines = text_chunks.inject([]) do |memo, te|
-        next memo if te.text =~ ONLY_SPACES_RE
-        l = memo.find { |line| line.horizontal_overlap_ratio(te) >= 0.01 }
-        if l.nil?
-          l = Line.new
-          memo << l
+
+      tl, br  = text_chunks.minmax
+      bbwidth = br.right - tl.left
+
+      l = Line.new
+      l << text_chunks.first
+
+      lines = text_chunks[1..-1].inject([l]) do |lines, te|
+        if lines.last.horizontal_overlap_ratio(te) < 0.01
+          # skip lines such that:
+          # - are wider than the 90% of the width of the text_chunks bounding box
+          # - it contains a single repeated character
+          if lines.last.width / bbwidth > 0.9 \
+            && l.text_elements.all? { |te| te.text =~  SAME_CHAR_RE }
+            lines.pop
+          end
+          lines << Line.new
         end
-        l << te
-        memo
+        lines.last << te
+        lines
+      end
+
+      if lines.last.width / bbwidth > 0.9 \
+         && l.text_elements.all? { |te| te.text =~ SAME_CHAR_RE }
+        lines.pop
       end
 
       lines.map!(&:remove_sequential_spaces!)
@@ -34,14 +48,16 @@ module Tabula
     # returns a list of column boundaries (x axis)
     # +lines+ must be an array of lines sorted by their +top+ attribute
     def self.column_positions(lines)
-      init = lines.first.text_elements.map { |text_chunk|
-        Tabula::ZoneEntity.new(*text_chunk.tlwh)
+      init = lines.first.text_elements.inject([]) { |memo, text_chunk|
+        next memo if text_chunk.text =~ ONLY_SPACES_RE
+        memo << Tabula::ZoneEntity.new(*text_chunk.tlwh)
+        memo
       }
 
       regions = lines[1..-1]
         .inject(init) do |column_regions, line|
 
-        line_text_elements = line.text_elements.clone
+        line_text_elements = line.text_elements.clone.select { |te| te.text !~ ONLY_SPACES_RE }
 
         column_regions.each do |cr|
 

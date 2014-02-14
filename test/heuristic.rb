@@ -30,6 +30,7 @@ end
   elsif page_is_tabular && !expected_to_be_tabular
     misclassified_as_spreadsheet << filename
   elsif !page_is_tabular && expected_to_be_tabular
+    puts page.heuristic_ratio
     misclassified_as_original << filename
   end
 end
