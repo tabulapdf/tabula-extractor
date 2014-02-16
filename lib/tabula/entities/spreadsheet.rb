@@ -6,6 +6,7 @@ module Tabula
 
   class Spreadsheet < ZoneEntity
     include Tabula::HasCells
+    include Tabula::TableInterface
     attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines, :cells_resolved
     attr_reader :extraction_method, :page
 
@@ -103,7 +104,7 @@ module Tabula
     end
 
     def +(other)
-      raise ArgumentError unless other.page == @page
+      raise ArgumentError, "Data can only be added if it's from the same PDF page" unless other.page == @page
       Spreadsheet.new(nil, nil, nil, nil, @page, @cells + other.cells, nil, nil )
     end
   end
