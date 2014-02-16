@@ -14,9 +14,7 @@ module Tabula
     end
 
     def self.group_by_lines(text_chunks)
-
-      tl, br  = text_chunks.minmax
-      bbwidth = br.right - tl.left
+      bbwidth = text_chunks.max_by(&:right).right - text_chunks.min_by(&:left).left
 
       l = Line.new
       l << text_chunks.first
