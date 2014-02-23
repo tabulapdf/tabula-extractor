@@ -26,6 +26,7 @@ module Tabula
       ((columns_defined_by_lines.to_f / columns_defined_without_lines) + (rows_defined_by_lines.to_f / rows_defined_without_lines)) / 2
     end
 
+
     # finds cells from the ruling lines on the page.
     # implements Nurminen thesis algorithm cf. https://github.com/jazzido/tabula-extractor/issues/16
     # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors

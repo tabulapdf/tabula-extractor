@@ -32,15 +32,6 @@ module Tabula
       @horizontal_ruling_lines = lines.select{|hl| hl.horizontal? && spr.intersectsLine(hl) }
     end
 
-    def fill_in_cells!
-      unless @cells_resolved
-        @cells_resolved = true
-        cells.each do |cell|
-          cell.text_elements = @page.get_cell_text(cell)
-        end
-      end
-    end
-
     # call `rows` with `evaluate_cells` as `false` to defer filling in the text in
     # each cell, which can be computationally intensive.
     def rows(evaluate_cells=true)
@@ -110,6 +101,16 @@ module Tabula
     def +(other)
       raise ArgumentError, "Data can only be added if it's from the same PDF page" unless other.page == @page
       Spreadsheet.new(nil, nil, nil, nil, @page, @cells + other.cells, nil, nil )
+    end
+
+    protected
+    def fill_in_cells!
+      unless @cells_resolved
+        @cells_resolved = true
+        cells.each do |cell|
+          cell.text_elements = @page.get_cell_text(cell)
+        end
+      end
     end
   end
 end
