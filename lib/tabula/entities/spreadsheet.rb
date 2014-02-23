@@ -19,6 +19,10 @@ module Tabula
       @extraction_method = "spreadsheet"
     end
 
+    def self.empty(page)
+      Spreadsheet.new(0, 0, 0, 0, page, [], nil, nil) 
+    end
+
     def ruling_lines
       @vertical_ruling_lines + @horizontal_ruling_lines
     end
