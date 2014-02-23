@@ -1,5 +1,6 @@
 module Tabula
   class Table
+    include Tabula::Tabular
     attr_reader :extraction_method
     attr_accessor :lines
     def initialize(line_count, separators)

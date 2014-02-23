@@ -5,8 +5,8 @@ module Tabula
   # the both should implement `cells`, `rows`, `cols`, `extraction_method`
 
   class Spreadsheet < ZoneEntity
+    include Tabula::Tabular
     include Tabula::HasCells
-    include Tabula::TableInterface
     attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines, :cells_resolved
     attr_reader :extraction_method, :page
 
