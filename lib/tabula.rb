@@ -25,30 +25,13 @@ end
 require_relative './tabula/version'
 require_relative './tabula/core_ext'
 
+require_relative './tabula/entities'
+require_relative './tabula/extraction'
+require_relative './tabula/table_extractor'
+require_relative './tabula/writers'
+
 module Tabula
-  # entities
-  autoload :ZoneEntity        , File.expand_path('tabula/entities/zone_entity.rb', File.dirname(__FILE__))
-  autoload :TextElement       , File.expand_path('tabula/entities/text_element.rb', File.dirname(__FILE__))
-  autoload :TextChunk         , File.expand_path('tabula/entities/text_chunk.rb', File.dirname(__FILE__))
-  autoload :Cell              , File.expand_path('tabula/entities/cell.rb', File.dirname(__FILE__))
-  autoload :Line              , File.expand_path('tabula/entities/line.rb', File.dirname(__FILE__))
-  autoload :Ruling            , File.expand_path('tabula/entities/ruling.rb', File.dirname(__FILE__))
-  autoload :Page              , File.expand_path('tabula/entities/page.rb', File.dirname(__FILE__))
-  autoload :PageArea          , File.expand_path('tabula/entities/page_area.rb', File.dirname(__FILE__))
-  autoload :HasCells          , File.expand_path('tabula/entities/has_cells.rb', File.dirname(__FILE__))
-  autoload :Spreadsheet       , File.expand_path('tabula/entities/spreadsheet.rb', File.dirname(__FILE__))
-  autoload :Table             , File.expand_path('tabula/entities/table.rb', File.dirname(__FILE__))
-  autoload :TextElementIndex  , File.expand_path('tabula/entities/text_element_index.rb', File.dirname(__FILE__))
-  autoload :AbstractInterface , File.expand_path('tabula/entities/tabular.rb', File.dirname(__FILE__))
-  autoload :Tabular           , File.expand_path('tabula/entities/tabular.rb', File.dirname(__FILE__))
-
-
-  autoload :Extraction        , File.expand_path('tabula/extraction.rb', File.dirname(__FILE__))
-
   autoload :LSD               , File.expand_path('tabula/line_segment_detector.rb', File.dirname(__FILE__))
-
-  autoload :Writers           , File.expand_path('tabula/writers.rb', File.dirname(__FILE__))
-
   autoload :Render            , File.expand_path('tabula/pdf_render.rb', File.dirname(__FILE__))
 end
 
