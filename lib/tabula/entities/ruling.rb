@@ -181,7 +181,7 @@ module Tabula
     end
 
     class HSegmentComparator
-      java_implements java.util.Comparator
+      include java.util.Comparator
       def compare(o1, o2)
         o1.top <=> o2.top
       end
@@ -191,7 +191,8 @@ module Tabula
     # log(n) implementation of find_intersections
     # based on http://people.csail.mit.edu/indyk/6.838-old/handouts/lec2.pdf
     def self.find_intersections(horizontals, verticals)
-      tree = java.util.TreeMap.new(HSegmentComparator.new)
+      #tree = java.util.TreeMap.new(HSegmentComparator.new)
+      tree = java.util.TreeMap.new(java.util.Comparator.impl { |m, o1, o2| o1.top <=> o2.top })
       sort_obj = Struct.new(:type, :pos, :obj)
 
       (horizontals + verticals)
