@@ -39,6 +39,9 @@ module Tabula
 
     # attributes that make sense only for non-oblique lines
     # these are used to have a single collapse method (in page, currently)
+
+    ##
+    # `x` (left) coordinate if line vertical, `y` (top) if horizontal
     def position
       raise NoMethodError, "Oblique line #{self.inspect} has no #position method." if oblique?
       vertical? ? left : top
@@ -256,12 +259,16 @@ module Tabula
 
       lines = lines.inject([lines.shift]) do |memo, next_line|
         last = memo.last
+
+        # if current line colinear with next, and are "close enough": expand current line
         if next_line.position == last.position && last.nearlyIntersects?(next_line)
           memo.last.start = next_line.start < last.start ? next_line.start : last.start
           memo.last.end = next_line.end < last.end ? last.end : next_line.end
           memo
+        # if next line has no length, ignore it
         elsif next_line.length == 0
           memo
+        # otherwise, add it to the returned collection
         else
           memo << next_line
         end
