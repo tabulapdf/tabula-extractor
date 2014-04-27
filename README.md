@@ -7,7 +7,7 @@ Extract tables from PDF files. `tabula-extractor` is the table extraction engine
 
 ## Installation
 
-At the moment, `tabula-extractor` only works with JRuby. [Install JRuby](http://jruby.org/getting-started) and run
+`tabula-extractor` only works with JRuby 1.7 or newer. [Install JRuby](http://jruby.org/getting-started) and run
 
 ``
 jruby -S gem install tabula-extractor
