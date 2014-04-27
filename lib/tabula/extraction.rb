@@ -148,8 +148,14 @@ module Tabula
 
         path = self.pathToList(self.getLinePath)
 
+        # skip paths whose first operation is not a MOVETO
+        # or contains operations other than LINETO, MOVETO or CLOSE
         if path[0][0] != java.awt.geom.PathIterator::SEG_MOVETO \
-          || path[1..-1].any? { |p| p.first != java.awt.geom.PathIterator::SEG_LINETO && p.first != java.awt.geom.PathIterator::SEG_MOVETO && p.first != java.awt.geom.PathIterator::SEG_CLOSE }
+           || path[1..-1].any? { |p|
+            p.first != java.awt.geom.PathIterator::SEG_LINETO \
+            && p.first != java.awt.geom.PathIterator::SEG_MOVETO \
+            && p.first != java.awt.geom.PathIterator::SEG_CLOSE
+          }
           self.getLinePath.reset
           return
         end
@@ -159,26 +165,57 @@ module Tabula
         strokeColorComps = filter_by_color || self.getGraphicsState.getStrokingColor.getJavaColor.getRGBColorComponents(nil)
         color_filter = self.options[:line_color_filter]
 
+        if !color_filter.nil? && !color_filter.call(strokeColorComps)
+          self.getLinePath.reset
+          return
+        end
+
+        # skip the first path operation save it as the starting position
         first = path.shift
-        start_pos = java.awt.geom.Point2D::Float.new(first[1][0], first[1][1])
+        # last_move
+        start_pos = last_move = java.awt.geom.Point2D::Float.new(first[1][0], first[1][1])
+
+        end_pos = nil
 
         path.each do |p|
-          end_pos = java.awt.geom.Point2D::Float.new(p[1][0], p[1][1])
-          line = (start_pos <=> end_pos) == -1 \
-            ? java.awt.geom.Line2D::Float.new(start_pos, end_pos) \
-            : java.awt.geom.Line2D::Float.new(end_pos, start_pos)
+          case p[0]
+          when java.awt.geom.PathIterator::SEG_LINETO
+            end_pos = java.awt.geom.Point2D::Float.new(p[1][0], p[1][1])
+            line = (start_pos <=> end_pos) == -1 \
+                   ? java.awt.geom.Line2D::Float.new(start_pos, end_pos) \
+                   : java.awt.geom.Line2D::Float.new(end_pos, start_pos)
 
-          if p[0] == java.awt.geom.PathIterator::SEG_LINETO \
-            && (color_filter.nil? ? true : color_filter.call(strokeColorComps)) \
-            && line.intersects(ccp_bounds)
-            # convert line to rectangle for clipping it to the current clippath
-            # sucks, but awt doesn't have methods for this
-            tmp = line.getBounds2D.createIntersection(ccp_bounds).getBounds2D
-            @rulings << ::Tabula::Ruling.new(tmp.getY,
-                                             tmp.getX,
-                                             tmp.getWidth,
-                                             tmp.getHeight,
-                                             filter_by_color.to_a)
+            if line.intersects(ccp_bounds)
+              # convert line to rectangle for clipping it to the current clippath
+              # sucks, but awt doesn't have methods for this
+              tmp = line.getBounds2D.createIntersection(ccp_bounds).getBounds2D
+              @rulings << ::Tabula::Ruling.new(tmp.getY,
+                                               tmp.getX,
+                                               tmp.getWidth,
+                                               tmp.getHeight,
+                                               filter_by_color.to_a)
+            end
+          when java.awt.geom.PathIterator::SEG_MOVETO
+            last_move = java.awt.geom.Point2D::Float.new(p[1][0], p[1][1])
+          when java.awt.geom.PathIterator::SEG_CLOSE
+            # according to PathIterator docs:
+            # "the preceding subpath should be closed by appending a line segment
+            # back to the point corresponding to the most recent SEG_MOVETO."
+
+            line = (end_pos <=> last_move) == -1 \
+                   ? java.awt.geom.Line2D::Float.new(end_pos, last_move) \
+                   : java.awt.geom.Line2D::Float.new(last_move, end_pos)
+
+            if line.intersects(ccp_bounds)
+              # convert line to rectangle for clipping it to the current clippath
+              # sucks, but awt doesn't have methods for this
+              tmp = line.getBounds2D.createIntersection(ccp_bounds).getBounds2D
+              @rulings << ::Tabula::Ruling.new(tmp.getY,
+                                               tmp.getX,
+                                               tmp.getWidth,
+                                               tmp.getHeight,
+                                               filter_by_color.to_a)
+            end
           end
           start_pos = end_pos
         end
