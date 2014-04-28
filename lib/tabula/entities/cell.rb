@@ -2,7 +2,7 @@ module Tabula
 
   #cells are components of spreadsheets
 
-  class Cell < ZoneEntity
+  class Cell < java.awt.geom.Rectangle2D::Float
 
     NORMAL = 0
     DEBUG = 1
@@ -11,7 +11,8 @@ module Tabula
     attr_accessor :text_elements, :placeholder, :spanning, :options
 
     def initialize(top, left, width, height, options={})
-      super(top, left, width, height)
+      super()
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], left, top, width, height
       @placeholder = false
       @spanning = false
       @text_elements = []

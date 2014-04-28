@@ -1,13 +1,14 @@
 module Tabula
-  class Page < ZoneEntity
+  class Page < java.awt.geom.Rectangle2D::Float
     include Tabula::HasCells
 
     attr_reader :rotation, :number_one_indexed, :file_path
     attr_writer :min_char_width, :min_char_height
-    attr_accessor :cells
+    attr_accessor :cells, :texts
 
     def initialize(file_path, width, height, rotation, number, texts=[], ruling_lines=[], min_char_width=nil, min_char_height=nil, spatial_index=nil)
-      super(0, 0, width, height)
+      super()
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], 0, 0, width, height
       @rotation = rotation
       if number < 1
         raise ArgumentError, "Tabula::Page numbers are one-indexed; numbers < 1 are invalid."

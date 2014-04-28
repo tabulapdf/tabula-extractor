@@ -1,8 +1,13 @@
 module Tabula
   ##
   # a "collection" of TextElements
-  class TextChunk < ZoneEntity
+  class TextChunk < java.awt.geom.Rectangle2D::Float
     attr_accessor :font, :font_size, :text_elements, :width_of_space
+
+    def initialize(top, left, width, height)
+      super()
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], left, top, width, height
+    end
 
     ##
     # initialize a new TextChunk from a TextElement

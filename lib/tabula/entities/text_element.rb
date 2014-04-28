@@ -3,13 +3,14 @@ module Tabula
 
   ##
   # a Glyph
-  class TextElement < ZoneEntity
+  class TextElement < java.awt.geom.Rectangle2D::Float
     attr_accessor :font, :font_size, :text, :width_of_space, :direction
 
     TOLERANCE_FACTOR = 0.25
 
     def initialize(top, left, width, height, font, font_size, text, width_of_space, direction=0)
-      super(top, left, width, height)
+      super()
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], left, top, width, height
       self.font = font
       self.font_size = font_size
       self.text = text
