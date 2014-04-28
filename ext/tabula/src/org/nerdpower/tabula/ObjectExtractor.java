@@ -6,9 +6,20 @@ import org.apache.pdfbox.pdfviewer.PageDrawer;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.util.TextPosition;
 
+import java.util.ArrayList;
+import java.util.regex.Pattern;
+
 
 public class ObjectExtractor extends PageDrawer {
 
+
+	private static final Pattern printable = Pattern.compile("\\p{Print}");
+	
+	private BasicStroke basicStroke;	
+	private float minCharWidth, maxCharWidth;
+	private ArrayList<TextElement> characters = new ArrayList<TextElement>();
+	
+	
 	public ObjectExtractor(String pdf_filename) throws IOException {
 		super();
 		// TODO Auto-generated constructor stub
@@ -21,12 +32,12 @@ public class ObjectExtractor extends PageDrawer {
 	
 	@Override
 	public void setStroke(BasicStroke basicStroke) {
-		
+		this.basicStroke = basicStroke;
 	}
 	
 	@Override
 	public BasicStroke getStroke() {
-		return null;	
+		return this.basicStroke;
 	}
 	
 	@Override
@@ -34,9 +45,45 @@ public class ObjectExtractor extends PageDrawer {
 		
 	}
 	
+	private float currentSpaceWidth() {
+		
+		return 0;
+	}
+	
 	@Override
     protected void processTextPosition(TextPosition textPosition) {
+		String c = textPosition.getCharacter();
+		Float  h = textPosition.getHeightDir();
+		
+		if (c == "Ê") { // replace non-breaking space for space
+		   c = " ";
+		}
+		
+		float wos = textPosition.getWidthOfSpace();
+		
+		TextElement te = new TextElement(textPosition.getY(),
+										 textPosition.getX(),
+										 textPosition.getWidthDirAdj(),
+										 textPosition.getHeightDir(),
+										 textPosition.getFont(),
+										 textPosition.getFontSize(),
+										 c,
+										 // workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
+										 (wos == Float.NaN || wos == 0) ? this.currentSpaceWidth() : wos,
+										 textPosition.getDir());
+		
+		
 		
 	}
+
+
+	public float getMaxCharWidth() {
+		return maxCharWidth;
+	}
+
+	public float getMinCharWidth() {
+		return minCharWidth;
+	}
+
 
 }
