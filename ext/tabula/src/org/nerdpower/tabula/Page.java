@@ -1,5 +1,9 @@
 package org.nerdpower.tabula;
 
-public class Page {
+
+import java.awt.geom.Rectangle2D;
+
+@SuppressWarnings("serial")
+public class Page extends Rectangle2D.Float{
 
 }
