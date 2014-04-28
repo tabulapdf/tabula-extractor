@@ -288,10 +288,10 @@ module Tabula
         ccp_bounds = self.currentClippingPath
 
         if self.debug_clipping_paths && !self.clipping_paths.include?(ccp_bounds)
-          self.clipping_paths << ::Tabula::ZoneEntity.new(ccp_bounds.getMinY,
-                                                          ccp_bounds.getMinX,
-                                                          ccp_bounds.getWidth,
-                                                          ccp_bounds.getHeight)
+          self.clipping_paths << java.awt.geom.Rectangle2D::Float.new_from_tlwh(ccp_bounds.getMinY,
+                                                                                ccp_bounds.getMinX,
+                                                                                ccp_bounds.getWidth,
+                                                                                ccp_bounds.getHeight)
         end
 
         if te.width < @min_char_width

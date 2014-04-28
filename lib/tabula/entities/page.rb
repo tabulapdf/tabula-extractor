@@ -43,8 +43,8 @@ module Tabula
     def get_area(area)
       if area.is_a?(Array)
         top, left, bottom, right = area
-        area = Tabula::ZoneEntity.new(top, left,
-                                      right - left, bottom - top)
+        area = java.awt.geom.Rectangle2D::Float.new_from_tlwh(top, left,
+                                                              right - left, bottom - top)
       end
 
       texts = self.get_text(area)
@@ -191,8 +191,8 @@ module Tabula
     def get_text(area=nil)
       if area.instance_of?(Array)
         top, left, bottom, right = area
-        area = Tabula::ZoneEntity.new(top, left,
-                                      right - left, bottom - top)
+        area = java.awt.geom.Rectangle2D::Float.new_from_tlwh(top, left,
+                                                              right - left, bottom - top)
       end
       if area.nil?
         texts

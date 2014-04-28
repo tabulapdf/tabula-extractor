@@ -129,6 +129,11 @@ class Rectangle2D
   alias_method :left, :minX
   alias_method :bottom, :maxY
 
+  def self.new_from_tlwh(top, left, width, height)
+    r = self.new()
+    r.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], left, top, width, height
+    r
+  end
 
   # Implement geometry stuff
   #-------------------------
