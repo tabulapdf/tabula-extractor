@@ -88,13 +88,12 @@ module Tabula
 
       # fixes up the table a little bit, replacing nils with empty TextElements
       # and sorting the lines.
-      table.lstrip_lines!
-      table.lines.each do |l|
-        l.text_elements = l.text_elements.map do |te|
-          te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
-        end
-      end
-      table.lines.sort_by!(&:top)
+      # table.rows.each do |l|
+      #   l.text_elements = l.text_elements.map do |te|
+      #     te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+      #   end
+      # end
+      # table.rows.sort_by!(&:top)
       table
     end
 

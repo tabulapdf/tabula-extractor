@@ -16,16 +16,15 @@ Gem::Specification.new do |s|
   s.platform = 'java'
 
   shared_libs = ['liblsd.dylib', 'liblsd-linux64.so', 'liblsd-linux32.so', 'liblsd.dll', 'liblsd64.dll'].map { |f| 'ext/' + f }
-  s.files         = `git ls-files`.split("\n") + shared_libs.map.reject { |f| !File.exists?(f) }
-  s.test_files    = `git ls-files -- {test,features}/*`.split("\n")
+  s.files         = `git ls-files`.split("\n").reject { |f| f =~ /^test\// } + shared_libs.map.reject { |f| !File.exists?(f) }
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_development_dependency 'minitest'
   s.add_development_dependency 'bundler', '>= 1.3.4'
   s.add_development_dependency 'ruby-debug'
   s.add_development_dependency 'nokogiri'
   s.add_development_dependency 'pry'
+  s.add_development_dependency 'minitest'
 
   s.add_runtime_dependency "trollop", ["~> 2.0"]
 end

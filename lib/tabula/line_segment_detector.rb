@@ -1,11 +1,6 @@
-require 'java'
 require 'rbconfig'
-
 require 'ffi'
 
-require_relative './entities'
-require_relative './pdf_render'
-require_relative './extraction'
 
 java_import javax.imageio.ImageIO
 java_import java.awt.image.BufferedImage

@@ -39,6 +39,9 @@ module Tabula
 
     # attributes that make sense only for non-oblique lines
     # these are used to have a single collapse method (in page, currently)
+
+    ##
+    # `x` (left) coordinate if line vertical, `y` (top) if horizontal
     def position
       raise NoMethodError, "Oblique line #{self.inspect} has no #position method." if oblique?
       vertical? ? left : top
@@ -181,7 +184,7 @@ module Tabula
     end
 
     class HSegmentComparator
-      java_implements java.util.Comparator
+      include java.util.Comparator
       def compare(o1, o2)
         o1.top <=> o2.top
       end
@@ -191,7 +194,6 @@ module Tabula
     # log(n) implementation of find_intersections
     # based on http://people.csail.mit.edu/indyk/6.838-old/handouts/lec2.pdf
     def self.find_intersections(horizontals, verticals)
-      #tree = java.util.TreeMap.java_send(:initiailze, [COMP_CLASS], HSegmentComparator.new)
       tree = java.util.TreeMap.new(HSegmentComparator.new)
       sort_obj = Struct.new(:type, :pos, :obj)
 
@@ -257,102 +259,20 @@ module Tabula
 
       lines = lines.inject([lines.shift]) do |memo, next_line|
         last = memo.last
+
+        # if current line colinear with next, and are "close enough": expand current line
         if next_line.position == last.position && last.nearlyIntersects?(next_line)
           memo.last.start = next_line.start < last.start ? next_line.start : last.start
           memo.last.end = next_line.end < last.end ? last.end : next_line.end
           memo
+        # if next line has no length, ignore it
         elsif next_line.length == 0
           memo
+        # otherwise, add it to the returned collection
         else
           memo << next_line
         end
       end
-    end
-
-    # TODO do we really need this one anymore?
-    def self.clean_rulings(rulings, max_distance=4)
-
-      # merge horizontal and vertical lines
-      # TODO this should be iterative
-
-      skip = false
-
-      horiz = rulings.select { |r| r.horizontal? }
-        .group_by(&:top)
-        .values.reduce([]) do |memo, rs|
-
-        rs = rs.sort_by(&:left)
-        if rs.size > 1
-          memo +=
-            rs.each_cons(2)
-            .chunk { |p| p[1].left - p[0].right < 7 }
-            .select { |c| c[0] }
-            .map { |group|
-            group = group.last.flatten.uniq
-            Tabula::Ruling.new(group[0].top,
-                               group[0].left,
-                               group[-1].right - group[0].left,
-                               0)
-          }
-          Tabula::Ruling.new(rs[0].top, rs[0].left, rs[-1].right - rs[0].left, 0)
-        else
-          memo << rs.first
-        end
-        memo
-      end
-        .sort_by(&:top)
-
-      h = []
-      horiz.size.times do |i|
-
-        if i == horiz.size - 1
-          h << horiz[-1]
-          break
-        end
-
-        if skip
-          skip = false;
-          next
-        end
-        d = (horiz[i+1].top - horiz[i].top).abs
-
-        h << if d < max_distance # THRESHOLD DISTANCE between horizontal lines
-               skip = true
-               Tabula::Ruling.new(horiz[i].top + d / 2, [horiz[i].left, horiz[i+1].left].min, [horiz[i+1].width.abs, horiz[i].width.abs].max, 0)
-             else
-               horiz[i]
-             end
-      end
-      horiz = h
-
-      vert = rulings.select { |r| r.vertical? }
-        .group_by(&:left)
-        .values
-        .reduce([]) do |memo, rs|
-
-        rs = rs.sort_by(&:top)
-
-        if rs.size > 1
-          # Here be dragons:
-          # merge consecutive segments of lines that are close enough
-          memo +=
-            rs.each_cons(2)
-            .chunk { |p| p[1].top - p[0].bottom < 7 }
-            .select { |c| c[0] }
-            .map { |group|
-            group = group.last.flatten.uniq
-            Tabula::Ruling.new(group[0].top,
-                               group[0].left,
-                               0,
-                               group[-1].bottom - group[0].top)
-          }
-        else
-          memo << rs.first
-        end
-        memo
-      end.sort_by(&:left)
-
-      return horiz += vert
     end
   end
 end

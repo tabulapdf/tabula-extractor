@@ -4,6 +4,7 @@ module Tabula
 
   class ZoneEntity < java.awt.geom.Rectangle2D::Float
 
+    # TODO used? remove if not.
     attr_accessor :texts
 
     def initialize(top, left, width, height)
@@ -11,6 +12,7 @@ module Tabula
       if left && top && width && height
         self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], left, top, width, height
       end
+      # TODO used? remove if not.
       self.texts = []
     end
 

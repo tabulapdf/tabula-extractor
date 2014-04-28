@@ -56,7 +56,7 @@ module Tabula
     end
 
     if use_spreadsheet_extraction_method
-      return pdf_page.get_area(area).spreadsheets.inject(&:+)
+      return (spreadsheets = pdf_page.get_area(area).spreadsheets).empty? ? Spreadsheet.empty(pdf_page) : spreadsheets.inject(&:+)
     end
 
     use_detected_lines = false

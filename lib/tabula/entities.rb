@@ -1,3 +1,4 @@
+require_relative './entities/tabular'
 require_relative './entities/zone_entity'
 require_relative './entities/cell'
 require_relative './entities/has_cells'
