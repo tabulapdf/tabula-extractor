@@ -10,7 +10,7 @@ task :test do
 end
 
 Rake::JavaExtensionTask.new('tabula') do |ext|
-  jars = FileList['target/*.jar']
+  jars = FileList['lib/jar/*.jar']
   ext.classpath = jars.map { |x| File.expand_path(x) }.join(':')
   ext.name = 'tabula-extractor'
   ext.lib_dir = 'lib/jar'
