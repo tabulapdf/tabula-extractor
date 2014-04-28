@@ -9,24 +9,24 @@ java_import org.apache.pdfbox.pdmodel.PDDocument
 module Tabula
   module LSD
     extend FFI::Library
-    ffi_lib File.expand_path('../../ext/' + case RbConfig::CONFIG['host_os']
-                                            when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
-                                              if RbConfig::CONFIG['host_cpu'] == 'x86_64'
-                                                'liblsd64.dll'
-                                              else
-                                                'liblsd.dll'
-                                              end
-                                            when /darwin|mac os/
-                                              'liblsd.dylib'
-                                            when /linux/
-                                              if RbConfig::CONFIG['target_cpu'] == 'x86_64'
-                                                'liblsd-linux64.so'
-                                              else
-                                                'liblsd-linux32.so'
-                                              end
-                                            else
-                                              raise "unknown os: #{RbConfig::CONFIG['host_os']}"
-                                            end,
+    ffi_lib File.expand_path('../../ext/lsd/' + case RbConfig::CONFIG['host_os']
+                                                when /mswin|msys|mingw|cygwin|bccwin|wince|emc/
+                                                  if RbConfig::CONFIG['host_cpu'] == 'x86_64'
+                                                    'liblsd64.dll'
+                                                  else
+                                                    'liblsd.dll'
+                                                  end
+                                                when /darwin|mac os/
+                                                  'liblsd.dylib'
+                                                when /linux/
+                                                  if RbConfig::CONFIG['target_cpu'] == 'x86_64'
+                                                    'liblsd-linux64.so'
+                                                  else
+                                                    'liblsd-linux32.so'
+                                                  end
+                                                else
+                                                  raise "unknown os: #{RbConfig::CONFIG['host_os']}"
+                                                end,
                              File.dirname(__FILE__))
 
     attach_function :lsd, [ :pointer, :buffer_in, :int, :int ], :pointer
