@@ -4,10 +4,10 @@ module Tabula
   SAME_CHAR_RE = Regexp.new('^(.)\1+$')
 end
 
-require File.join(File.dirname(__FILE__), '../target/', Tabula::PDFBOX)
-require File.join(File.dirname(__FILE__), '../target/', 'slf4j-api-1.6.3.jar')
-require File.join(File.dirname(__FILE__), '../target/', 'trove4j-3.0.3.jar')
-require File.join(File.dirname(__FILE__), '../target/', 'jsi-1.1.0-SNAPSHOT.jar')
+require File.join(File.dirname(__FILE__), 'jar/', Tabula::PDFBOX)
+require File.join(File.dirname(__FILE__), 'jar/', 'slf4j-api-1.6.3.jar')
+require File.join(File.dirname(__FILE__), 'jar/', 'trove4j-3.0.3.jar')
+require File.join(File.dirname(__FILE__), 'jar/', 'jsi-1.1.0-SNAPSHOT.jar')
 
 import 'java.util.logging.LogManager'
 import 'java.util.logging.Level'
