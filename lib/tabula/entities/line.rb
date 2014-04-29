@@ -1,11 +1,12 @@
 module Tabula
-  class Line < ZoneEntity
+  class Line < java.awt.geom.Rectangle2D::Float
     attr_accessor :text_elements
     attr_reader :index
 
     SPACE_RUN_MAX_LENGTH = 3
 
     def initialize(index=nil)
+      super()
       @text_elements = []
       @index = index
     end

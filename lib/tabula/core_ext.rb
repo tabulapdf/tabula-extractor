@@ -129,6 +129,11 @@ class Rectangle2D
   alias_method :left, :minX
   alias_method :bottom, :maxY
 
+  def self.new_from_tlwh(top, left, width, height)
+    r = self.new()
+    r.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], left, top, width, height
+    r
+  end
 
   # Implement geometry stuff
   #-------------------------
@@ -163,6 +168,50 @@ class Rectangle2D
   def right=(new_x2)
     self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.x, self.y, new_x2 - self.x, self.height
   end
+
+  def merge!(other)
+    self.top    = [self.top, other.top].min
+    self.left   = [self.left, other.left].min
+    self.width  = [self.right, other.right].max - left
+    self.height = [self.bottom, other.bottom].max - top
+
+    self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float,], self.left, self.top, self.width, self.height
+    self
+  end
+
+  ##
+  # default sorting order for ZoneEntity objects
+  # is lexicographical (left to right, top to bottom)
+  def <=>(other)
+    yDifference = (self.bottom - other.bottom).abs
+    if yDifference < 0.1 ||
+       (other.bottom >= self.top && other.bottom <= self.bottom) ||
+       (self.bottom >= other.top && self.bottom <= other.bottom)
+      self.left <=> other.left
+    else
+      self.bottom <=> other.bottom
+    end
+  end
+
+  def to_json(options={})
+    self.to_h.to_json
+  end
+
+  def tlbr
+    [top, left, bottom, right]
+  end
+
+  def tlwh
+    [top, left, width, height]
+  end
+
+  def points
+    [ Point2D::Float.new(left, top),
+      Point2D::Float.new(right, top),
+      Point2D::Float.new(right, bottom),
+      Point2D::Float.new(left, bottom) ]
+  end
+
 
   def area
     self.width * self.height
@@ -250,7 +299,7 @@ class Rectangle2D
   def self.unionize(non_overlapping_rectangles, next_rect)
     #if next_rect doesn't overlap any of non_overlapping_rectangles
     if !(overlapping = non_overlapping_rectangles.compact.select{|r| next_rect.overlaps? r}).empty? &&
-         !non_overlapping_rectangles.empty?
+       !non_overlapping_rectangles.empty?
       #remove all of those that it overlaps from non_overlapping_rectangles and
       non_overlapping_rectangles -= overlapping
       #add to non_overlapping_rectangles the bounding box of the overlapping rectangles.

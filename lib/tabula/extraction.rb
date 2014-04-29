@@ -17,7 +17,6 @@ module Tabula
       document
     end
 
-
     class PagesInfoExtractor
       def initialize(pdf_filename, password='')
         @pdf_filename = pdf_filename

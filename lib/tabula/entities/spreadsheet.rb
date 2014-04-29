@@ -4,13 +4,14 @@ module Tabula
 
   # the both should implement `cells`, `rows`, `cols`, `extraction_method`
 
-  class Spreadsheet < ZoneEntity
+  class Spreadsheet < java.awt.geom.Rectangle2D::Float
     include Tabula::Tabular
     attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines, :cells_resolved
     attr_reader :extraction_method, :page
 
-    def initialize(top, left, width, height, page, cells, vertical_ruling_lines, horizontal_ruling_lines) #, lines)
-      super(top, left, width, height)
+    def initialize(top, left, width, height, page, cells, vertical_ruling_lines, horizontal_ruling_lines)
+      super()
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], left, top, width, height
       @cells = cells
       @page = page
       @vertical_ruling_lines = vertical_ruling_lines
@@ -19,7 +20,7 @@ module Tabula
     end
 
     def self.empty(page)
-      Spreadsheet.new(0, 0, 0, 0, page, [], nil, nil) 
+      Spreadsheet.new(0, 0, 0, 0, page, [], nil, nil)
     end
 
     def ruling_lines

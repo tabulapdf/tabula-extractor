@@ -518,8 +518,8 @@ class TestExtractor < Minitest::Test
   def test_almost_vertical_lines
     pdf_file_path = File.expand_path('data/puertos1.pdf', File.dirname(__FILE__))
     top, left, bottom, right = 273.9035714285714, 30.32142857142857, 554.8821428571429, 546.7964285714286
-    area = Tabula::ZoneEntity.new(top, left,
-                                  right - left, bottom - top)
+    area = java.awt.geom.Rectangle2D::Float.new_from_tlwh(top, left,
+                                                          right - left, bottom - top)
 
     extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
     extractor.extract.each do |pdf_page|

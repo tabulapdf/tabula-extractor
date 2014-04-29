@@ -165,8 +165,8 @@ class Page
   def get_text(area=nil)
     if area.instance_of?(Array)
       top, left, bottom, right = area
-      area = Tabula::ZoneEntity.new(top, left,
-                                    right - left, bottom - top)
+      area = java.awt.geom.Rectangle2D::Float.new_from_tlwh(top, left,
+                                                              right - left, bottom - top)
     end
     if area.nil?
       texts
@@ -247,35 +247,4 @@ end
 
 module Tabula
   Page = ::Page
-  # class Page < ZoneEntity
-  #   include Tabula::HasCells
-
-  #   attr_reader :rotation, :number_one_indexed, :file_path
-  #   attr_writer :min_char_width, :min_char_height
-  #   attr_accessor :cells
-
-  #   def initialize(file_path, width, height, rotation, number, texts=[], ruling_lines=[], min_char_width=nil, min_char_height=nil, spatial_index=nil)
-  #     super(0, 0, width, height)
-  #     @rotation = rotation
-  #     if number < 1
-  #       raise ArgumentError, "Tabula::Page numbers are one-indexed; numbers < 1 are invalid."
-  #     end
-  #     @ruling_lines = ruling_lines
-  #     @file_path = file_path
-  #     @number_one_indexed = number
-  #     @cells = []
-  #     @spreadsheets = nil
-  #     @min_char_width = min_char_width
-  #     @min_char_height = min_char_height
-
-  #     self.texts = texts
-
-  #     if spatial_index.nil?
-  #       @spatial_index = TextElementIndex.new
-  #       self.texts.each { |te| @spatial_index << te }
-  #     else
-  #       @spatial_index = spatial_index
-  #     end
-  #   end
-  # end
 end

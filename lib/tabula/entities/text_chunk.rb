@@ -1,8 +1,13 @@
 module Tabula
   ##
   # a "collection" of TextElements
-  class TextChunk < ZoneEntity
+  class TextChunk < java.awt.geom.Rectangle2D::Float
     attr_accessor :font, :font_size, :text_elements, :width_of_space
+
+    def initialize(top, left, width, height)
+      super()
+      self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], left, top, width, height
+    end
 
     ##
     # initialize a new TextChunk from a TextElement
@@ -48,7 +53,7 @@ module Tabula
     def self.column_positions(lines)
       init = lines.first.text_elements.inject([]) { |memo, text_chunk|
         next memo if text_chunk.text =~ ONLY_SPACES_RE
-        memo << Tabula::ZoneEntity.new(*text_chunk.tlwh)
+        memo << java.awt.geom.Rectangle2D::Float.new_from_tlwh(*text_chunk.tlwh)
         memo
       }
 
@@ -69,7 +74,9 @@ module Tabula
           line_text_elements = line_text_elements - overlaps
         end
 
-        column_regions += line_text_elements.map { |te| Tabula::ZoneEntity.new(*te.tlwh) }
+        column_regions += line_text_elements.map { |te|
+          java.awt.geom.Rectangle2D::Float.new_from_tlwh(*te.tlwh)
+        }
       end
 
       regions.map { |r| r.right.round(2) }.uniq
