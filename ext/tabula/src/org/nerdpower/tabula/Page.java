@@ -1,30 +1,48 @@
 package org.nerdpower.tabula;
 
 import java.awt.geom.Rectangle2D;
-import java.util.ArrayList;
+import java.util.List;
 
 @SuppressWarnings("serial")
 public class Page extends Rectangle2D.Float {
 
 	private Integer rotation;
 	private int page_number;
-	private ArrayList<TextElement> characters;
-	private ArrayList<Ruling> rulings;
+	private List<TextElement> texts;
+	private List<Ruling> rulings;
 	private float minCharWidth;
 	private float minCharHeight;
 
+	public Page(float width, float height, Integer rotation, int page_number) {
+		super();
+		this.setRect(0, 0, width, height);
+		this.rotation = rotation;
+		this.page_number = page_number;
+	}
+	
 	public Page(float width, float height, Integer rotation, int page_number,
-			ArrayList<TextElement> characters, ArrayList<Ruling> rulings,
+			List<TextElement> characters, List<Ruling> rulings,
 			float minCharWidth, float minCharHeight) {
 		
 		super();
 		this.setRect(0, 0, width, height);
 		this.rotation = rotation;
 		this.page_number = page_number;
-		this.characters = characters;
+		this.texts = characters;
 		this.rulings = rulings;
 		this.minCharHeight = minCharHeight;
 		this.minCharWidth = minCharWidth;
+	}
+	
+	public Page(float width, float height, Integer rotation, int page_number,
+			List<TextElement> characters, List<Ruling> rulings) {
+		
+		super();
+		this.setRect(0, 0, width, height);
+		this.rotation = rotation;
+		this.page_number = page_number;
+		this.texts = characters;
+		this.rulings = rulings;
 	}
 
 	public Integer getRotation() {
@@ -35,11 +53,11 @@ public class Page extends Rectangle2D.Float {
 		return page_number;
 	}
 
-	public ArrayList<TextElement> getCharacters() {
-		return characters;
+	public List<TextElement> getTexts() {
+		return texts;
 	}
 
-	public ArrayList<Ruling> getRulings() {
+	public List<Ruling> getRulings() {
 		return rulings;
 	}
 
