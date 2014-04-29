@@ -3,8 +3,8 @@
 	<classpathentry kind="src" path="src"/>
 	<classpathentry kind="con" path="org.eclipse.jdt.launching.JRE_CONTAINER"/>
 	<classpathentry kind="lib" path="/Users/manuel/Work/tabula/tabula-extractor/lib/jar/jsi-1.1.0-SNAPSHOT.jar"/>
-	<classpathentry kind="lib" path="/Users/manuel/Work/tabula/tabula-extractor/lib/jar/pdfbox-app-2.0.0-SNAPSHOT.jar"/>
 	<classpathentry kind="lib" path="/Users/manuel/Work/tabula/tabula-extractor/lib/jar/slf4j-api-1.6.3.jar"/>
 	<classpathentry kind="lib" path="/Users/manuel/Work/tabula/tabula-extractor/lib/jar/trove4j-3.0.3.jar"/>
+	<classpathentry kind="lib" path="/Users/manuel/Work/tabula/tabula-extractor/lib/jar/pdfbox-app-2.0.0-SNAPSHOT.jar"/>
 	<classpathentry kind="output" path="bin"/>
 </classpath>

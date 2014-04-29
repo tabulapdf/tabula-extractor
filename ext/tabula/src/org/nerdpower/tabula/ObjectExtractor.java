@@ -1,5 +1,6 @@
 package org.nerdpower.tabula;
 import java.awt.BasicStroke;
+import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Shape;
 import java.awt.geom.AffineTransform;
@@ -9,16 +10,16 @@ import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
 
-import org.apache.pdfbox.pdfviewer.PageDrawer;
+import org.apache.pdfbox.rendering.PageDrawer;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.common.PDStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType3Font;
-import org.apache.pdfbox.pdmodel.graphics.PDGraphicsState;
-import org.apache.pdfbox.pdmodel.text.PDTextState;
-import org.apache.pdfbox.util.TextPosition;
+import org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState;
+import org.apache.pdfbox.pdmodel.graphics.state.PDTextState;
+import org.apache.pdfbox.text.TextPosition;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
@@ -56,9 +57,11 @@ public class ObjectExtractor extends PageDrawer {
     private boolean extractRulingLines = true;
     private PDDocument pdf_document;
     private List<PDPage> pdf_document_pages;
+    private PDPage page;
+    private Dimension pageSize;
 
     public ObjectExtractor(PDDocument pdf_document) throws IOException {
-        super();
+        super(null);
         this.pdf_document = pdf_document;
         this.pdf_document_pages = this.pdf_document.getDocumentCatalog().getAllPages();
     }
@@ -139,7 +142,7 @@ public class ObjectExtractor extends PageDrawer {
         PDStream contents = p.getContents(); 
         if (contents != null) {
             ensurePageSize();
-            this.processStream(p, p.findResources(), contents.getStream());
+            this.processStream(p.findResources(), contents.getStream(), p.findCropBox(), p.findRotation());
         }
     }
 
@@ -164,15 +167,15 @@ public class ObjectExtractor extends PageDrawer {
 
     }
 
-    @Override
-    public void setStroke(BasicStroke basicStroke) {
-        this.basicStroke = basicStroke;
-    }
-
-    @Override
-    public BasicStroke getStroke() {
-        return this.basicStroke;
-    }
+//    @Override
+//    public void setStroke(BasicStroke basicStroke) {
+//        this.basicStroke = basicStroke;
+//    }
+//
+//    @Override
+//    public BasicStroke getStroke() {
+//        return this.basicStroke;
+//    }
 
     @Override
     public void strokePath()  throws IOException {
@@ -264,7 +267,7 @@ public class ObjectExtractor extends PageDrawer {
 
     @Override
     public void fillPath(int windingRule) throws IOException {
-        float[] color_comps = this.getGraphicsState().getNonStrokingColor().getJavaColor().getRGBColorComponents(null);
+        //float[] color_comps = this.getGraphicsState().getNonStrokingColor().getJavaColor().getRGBColorComponents(null);
         // TODO use color_comps as filter_by_color
         this.strokePath();
     }
