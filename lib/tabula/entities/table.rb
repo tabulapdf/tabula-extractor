@@ -31,7 +31,7 @@ module Tabula
       lstrip_lines!
       li = lines.map do |l|
         l.text_elements.map! do |te|
-          te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+          te || TextElement::EMPTY # TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
         end
       end.select do
         |l| !l.all? { |te| te.text.empty? }
@@ -48,7 +48,9 @@ module Tabula
       tlines = []
       array_of_rows.each_with_index do |row, index|
         l = Line.new
-        l.text_elements = row.each_with_index.map{|cell, inner_index| TextElement.new(index, inner_index, 1, 1, nil, nil, cell, nil)}
+        l.text_elements = row.each_with_index.map { |cell, inner_index|
+          TextElement.new(index.to_java(:float), inner_index.to_java(:float), 1, 1, nil, 0, cell, 0)
+        }
         tlines << l
       end
       t.instance_variable_set(:@lines, tlines)
@@ -95,7 +97,7 @@ module Tabula
       lines.each do |line|
         needed = max - line.text_elements.size
         needed.times do
-          line.text_elements << TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+          line.text_elements << TextElement::EMPTY # TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
         end
       end
     end

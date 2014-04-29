@@ -11,6 +11,14 @@ public class TextElement extends Rectangle2D.Float implements Comparable<TextEle
 	private PDFont font;
 	private float fontSize, widthOfSpace, dir;
 	
+	public TextElement(float y, float x, float width, float height,
+	           PDFont font, float fontSize, String c, float widthOfSpace) {
+		super();
+		this.setRect(x, y, width, height);
+		this.text = c;
+		this.widthOfSpace = widthOfSpace;
+		this.fontSize = fontSize;
+	} 
 
 	public TextElement(float y, float x, float width, float height,
 			           PDFont font, float fontSize, String c, float widthOfSpace, float dir) {

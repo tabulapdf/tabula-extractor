@@ -29,8 +29,9 @@ class TextElement
 
     return [] if text_elements.empty?
 
-    text_chunks = [::Tabula::TextChunk.create_from_text_element(text_elements.shift)]
-
+    first_te = text_elements[0]
+    text_elements[1..-1]
+    text_chunks = [::Tabula::TextChunk.create_from_text_element(first_te)]
 
     previousAveCharWidth = text_chunks.first.width
     endOfLastTextX = text_chunks.first.right

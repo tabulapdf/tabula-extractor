@@ -147,14 +147,14 @@ class TestDumper < Minitest::Test
 
   def test_extractor
     extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
-    page = extractor.extract.next
+    page = extractor.extract.first
     extractor.close!
     assert_instance_of Tabula::Page, page
   end
 
   def test_get_by_area
     extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
-    characters = extractor.extract.next.get_text([107.1, 57.9214, 394.5214, 290.7])
+    characters = extractor.extract.first.get_text([107.1, 57.9214, 394.5214, 290.7])
     extractor.close!
     assert_equal characters.size, 206
   end
@@ -222,7 +222,7 @@ class TestExtractor < Minitest::Test
   def test_missing_spaces_around_an_ampersand
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     character_extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
-    page_obj = character_extractor.extract.next
+    page_obj = character_extractor.extract.first
     lines = page_obj.ruling_lines
     vertical_rulings = lines.select(&:vertical?)
 
@@ -556,8 +556,8 @@ class TestExtractor < Minitest::Test
 
     ary = table_to_array(table)
 
-    assert_equal ary[1][1], "$ 18,969,610"
-    assert_equal ary[1][2], "$ 18,157,722"
+    assert_equal "$ 18,969,610", ary[1][1]
+    assert_equal "$ 18,157,722", ary[1][2]
   end
 
   def test_remove_overlapping_text
@@ -633,7 +633,8 @@ class TestExtractor < Minitest::Test
                                  :detect_ruling_lines => false,
                                  :extraction_method => 'original')
 
-    assert_equal table_to_array(table).first, ["Comunicaciones", "104,29", "– –", "0,1", "0,6", "1,1", "0,3"]
+    assert_equal ["Comunicaciones", "104,29", "– –", "0,1", "0,6", "1,1", "0,3"],
+                 table_to_array(table).first
 
   end
 

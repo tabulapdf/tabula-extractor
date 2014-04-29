@@ -297,13 +297,13 @@ public class ObjectExtractor extends PageDrawer {
 		String c = textPosition.getCharacter();
 		
 		// if c not printable, return
-		 if (!printable.matcher(c).matches()) {
-			return;
-		}
+//		 if (!printable.matcher(c).matches()) {
+//			return;
+//		}
 		
 		Float  h = textPosition.getHeightDir();
 		
-		if (c == "Ê") { // replace non-breaking space for space
+		if (c == "\u00A0") { // replace non-breaking space for space
 		   c = " ";
 		}
 		

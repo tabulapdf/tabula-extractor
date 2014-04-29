@@ -8,8 +8,8 @@ class Page
   def get_area(area)
     if area.is_a?(Array)
       top, left, bottom, right = area
-      area = Tabula::ZoneEntity.new(top, left,
-                                    right - left, bottom - top)
+      area = java.awt.geom.Rectangle2D::Float.new_from_tlwh(top, left,
+                                                            right - left, bottom - top)
     end
 
     texts = self.get_text(area)
@@ -42,32 +42,24 @@ class Page
     end
 
     texts = self.texts.sort
-    text_chunks = TextElement.merge_words(texts, options)
+    text_chunks = Tabula::TextElement.merge_words(texts, options)
 
-    lines = TextChunk.group_by_lines(text_chunks.sort).sort_by(&:top)
+    lines = Tabula::TextChunk.group_by_lines(text_chunks.sort).sort_by(&:top)
 
     columns = unless options[:vertical_rulings].empty?
                 options[:vertical_rulings].map(&:left).sort #pixel locations, not entities
               else
-                TextChunk.column_positions(lines).sort
+                Tabula::TextChunk.column_positions(lines).sort
               end
 
-    table = Table.new(lines.count, columns)
+    table = Tabula::Table.new(lines.count, columns)
     lines.each_with_index do |line, i|
-      line.text_elements.select { |te| te.text !~ ONLY_SPACES_RE }.each do |te|
+      line.text_elements.select { |te| te.text !~ Tabula::ONLY_SPACES_RE }.each do |te|
         j = columns.find_index { |s| te.left <= s } || columns.count
         table.add_text_element(te, i, j)
       end
     end
 
-    # fixes up the table a little bit, replacing nils with empty TextElements
-    # and sorting the lines.
-    # table.rows.each do |l|
-    #   l.text_elements = l.text_elements.map do |te|
-    #     te || TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
-    #   end
-    # end
-    # table.rows.sort_by!(&:top)
     table
   end
 
@@ -91,7 +83,7 @@ class Page
     spreadsheet_rectangle_areas = spreadsheet_areas.map{|a| a.getBounds } #getBounds2D is theoretically better, but returns a Rectangle2D.Double, which doesn't have our Ruby sugar on it.
 
     @spreadsheets = spreadsheet_rectangle_areas.map do |rect|
-      spr = Spreadsheet.new(rect.y, rect.x,
+      spr = Tabula::Spreadsheet.new(rect.y, rect.x,
                             rect.width, rect.height,
                             self,
                             #TODO: keep track of the cells, instead of getting them again inefficiently.
