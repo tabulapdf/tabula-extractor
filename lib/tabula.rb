@@ -23,6 +23,7 @@ lm.logger_names.each do |name|
     end
   end
 end
+
 require_relative './tabula/version'
 require_relative './tabula/core_ext'
 

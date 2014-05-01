@@ -22,7 +22,7 @@ def parse_pages_arg(pages_arg)
       pages += (s.to_i..e.to_i).to_a
     end
   end
-  pages.sort
+  pages.sort.map { |i| i.to_java(:int) }
 end
 
 def parse_command_line
@@ -101,8 +101,9 @@ def main
 				  false
 				end
 
-  extractor = Tabula::Extraction::ObjectExtractor.new(filename, parse_pages_arg(opts[:pages]), opts[:password])
-  extractor.extract.each_with_index do |pdf_page, page_index|
+  extractor = Tabula::Extraction::ObjectExtractor.new(filename, password=opts[:password])
+  extractor.extract(parse_pages_arg(opts[:pages]))
+    .each_with_index do |pdf_page, page_index|
 
     #do the heuristic here
     if use_spreadsheet_extraction.nil?
@@ -130,6 +131,7 @@ def main
       end
       tables = page_areas.map{|page_area| page_area.make_table(vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(pdf_page, page_area, vertical_rulings) })}
     end
+
     tables.each do |table|
       Tabula::Writers.send(opts[:format].to_sym,
                           table,

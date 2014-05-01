@@ -46,7 +46,7 @@ module Tabula
                                                 page,
                                                 options[:password])
 
-    pdf_page = extractor.extract.first
+    pdf_page = extractor.extract.next
     extractor.close!
 
     if ["spreadsheet", "original"].include? options[:extraction_method]

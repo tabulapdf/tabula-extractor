@@ -12,6 +12,7 @@ public class Page extends Rectangle2D.Float {
     private List<Ruling> rulings;
     private float minCharWidth;
     private float minCharHeight;
+    private TextElementIndex spatial_index;
 
     public Page(float width, float height, Integer rotation, int page_number) {
         super();
@@ -22,7 +23,7 @@ public class Page extends Rectangle2D.Float {
 
     public Page(float width, float height, Integer rotation, int page_number,
             List<TextElement> characters, List<Ruling> rulings,
-            float minCharWidth, float minCharHeight) {
+            float minCharWidth, float minCharHeight, TextElementIndex index) {
 
         super();
         this.setRect(0, 0, width, height);
@@ -32,6 +33,7 @@ public class Page extends Rectangle2D.Float {
         this.rulings = rulings;
         this.minCharHeight = minCharHeight;
         this.minCharWidth = minCharWidth;
+        this.spatial_index = index;
     }
 
     public Page(float width, float height, Integer rotation, int page_number,
@@ -67,5 +69,9 @@ public class Page extends Rectangle2D.Float {
 
     public float getMinCharHeight() {
         return minCharHeight;
+    }
+    
+    public TextElementIndex getSpatialIndex() {
+        return this.spatial_index;
     }
 }

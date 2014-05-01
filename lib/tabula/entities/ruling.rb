@@ -118,26 +118,9 @@ class Ruling
     r
   end
 
-
-  def length
-    Math.sqrt( (self.right - self.left).abs ** 2 + (self.bottom - self.top).abs ** 2 )
-  end
-
-  def vertical?
-    left == right
-  end
-
-  def horizontal?
-    top == bottom
-  end
-
-  def oblique?
-    !(vertical? || horizontal?)
-  end
-
-  def perpendicular_to?(other)
-    return self.vertical? == other.horizontal?
-  end
+  # def length
+  #   Math.sqrt( (self.right - self.left).abs ** 2 + (self.bottom - self.top).abs ** 2 )
+  # end
 
   def to_json(arg)
     [left, top, right, bottom].to_json

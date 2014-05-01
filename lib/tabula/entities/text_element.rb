@@ -29,8 +29,8 @@ class TextElement
 
     return [] if text_elements.empty?
 
-    first_te = text_elements[0]
-    text_elements[1..-1]
+    #first_te = text_elements.shift #remove(0)
+    first_te = text_elements.remove(0.to_java(:int))
     text_chunks = [::Tabula::TextChunk.create_from_text_element(first_te)]
 
     previousAveCharWidth = text_chunks.first.width
@@ -41,6 +41,8 @@ class TextElement
     lastWordSpacing = -1
     sp = nil
 
+    # TODO get rid of this #inject and do a plain loop,
+    # this method needs to return an ArrayList
     text_elements.inject(text_chunks) do |chunks, char|
 
       current_chunk = chunks.last

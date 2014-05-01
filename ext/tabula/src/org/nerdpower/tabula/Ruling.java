@@ -9,6 +9,26 @@ public class Ruling extends Line2D.Float {
         super(left, top, left+width, top+height);
     }
 
-
-
+    public boolean vertical() {
+        return this.getX1() == this.getX2();
+    }
+    
+    public boolean horizontal() {
+        return this.getY1() == this.getY2();
+    }
+    
+    public boolean oblique() {
+        return !(this.vertical() || this.horizontal());
+    }
+    
+    public boolean perpendicularTo(Ruling other) {
+        return this.vertical() == other.horizontal();
+    }
+    
+    public double length() {
+        return Math.sqrt(Math.pow(this.getX1() - this.getX2(), 2) + Math.pow(this.getY1() - this.getY2(), 2));
+    }
+    
+    
+    
 }

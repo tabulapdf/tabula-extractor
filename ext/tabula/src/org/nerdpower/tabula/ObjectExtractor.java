@@ -1,5 +1,6 @@
 package org.nerdpower.tabula;
 import java.awt.BasicStroke;
+import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Shape;
@@ -17,12 +18,14 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.common.PDStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType3Font;
+import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
 import org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState;
 import org.apache.pdfbox.pdmodel.graphics.state.PDTextState;
 import org.apache.pdfbox.text.TextPosition;
 
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Collections;
 import java.util.Comparator;
 import java.util.Iterator;
 import java.util.List;
@@ -48,15 +51,16 @@ public class ObjectExtractor extends PageDrawer {
 
     private BasicStroke basicStroke;	
     private float minCharWidth = Float.MAX_VALUE, minCharHeight = Float.MAX_VALUE;
-    private List<TextElement> characters = new ArrayList<TextElement>();
-    private List<Ruling> rulings = new ArrayList<Ruling>();
+    private List<TextElement> characters;
+    private List<Ruling> rulings;
+    private TextElementIndex spatialIndex;
     private AffineTransform pageTransform;
     private Shape clippingPath;
     private Rectangle2D transformedClippingPathBounds;
     private Shape transformedClippingPath;
     private boolean extractRulingLines = true;
     private PDDocument pdf_document;
-    private List<PDPage> pdf_document_pages;
+    protected List<PDPage> pdf_document_pages;
     private PDPage page;
     private Dimension pageSize;
 
@@ -66,12 +70,12 @@ public class ObjectExtractor extends PageDrawer {
         this.pdf_document_pages = this.pdf_document.getDocumentCatalog().getAllPages();
     }
 
-    Page extractPage(Integer page_number) throws IOException {
+    protected Page extractPage(Integer page_number) throws IOException {
 
         if (page_number - 1 > this.pdf_document_pages.size() || page_number < 1) {
             throw new java.lang.IndexOutOfBoundsException("Page number does not exist");
         }
-
+        
         PDPage p = this.pdf_document_pages.get(page_number - 1);
         PDStream contents = p.getContents();
 
@@ -81,7 +85,9 @@ public class ObjectExtractor extends PageDrawer {
         this.clear();
 
         this.drawPage(p);
-
+        
+        Collections.sort(this.characters);
+        
         return new Page(p.findCropBox().getWidth(),
                 p.findCropBox().getHeight(),
                 p.findRotation(),
@@ -89,49 +95,17 @@ public class ObjectExtractor extends PageDrawer {
                 this.characters,
                 this.getRulings(),
                 this.minCharWidth,
-                this.minCharHeight);
+                this.minCharHeight,
+                this.spatialIndex);
     }
 
-    Iterable<Page> extract(Iterable<Integer> pages) {
-
-        final Iterator<Integer> pagesIterator = pages.iterator();
-
-        return new Iterable<Page>() {
-
-            @Override
-            public Iterator<Page> iterator() {
-                return new Iterator<Page>() {
-
-                    @Override
-                    public boolean hasNext() {
-                        return pagesIterator.hasNext();
-                    }
-
-                    @Override
-                    public Page next() {
-                        try {
-                            return extractPage(pagesIterator.next());
-                        } catch (IOException e) {
-                            e.printStackTrace();
-                        }
-                        return null;
-                    }
-
-                    @Override
-                    public void remove() {
-                        throw new UnsupportedOperationException();	
-                    }
-
-                };
-            }
-
-        };
+    PageIterator extract(Iterable<Integer> pages) {
+        return new PageIterator(this, pages);
     }
 
-    Iterable<Page> extract() {
+    PageIterator extract() {
         return extract(range(1, this.pdf_document_pages.size() + 1));
     }
-
 
     public void close() throws IOException {
         this.pdf_document.close();
@@ -157,6 +131,7 @@ public class ObjectExtractor extends PageDrawer {
         this.characters = new ArrayList<TextElement>();
         this.rulings = new ArrayList<Ruling>();
         this.pageTransform = null;
+        this.spatialIndex = new TextElementIndex();
         this.minCharWidth = Float.MAX_VALUE;
         this.minCharHeight = Float.MAX_VALUE;	
     }
@@ -166,16 +141,6 @@ public class ObjectExtractor extends PageDrawer {
     public void drawImage(Image awtImage, AffineTransform at) {
 
     }
-
-//    @Override
-//    public void setStroke(BasicStroke basicStroke) {
-//        this.basicStroke = basicStroke;
-//    }
-//
-//    @Override
-//    public BasicStroke getStroke() {
-//        return this.basicStroke;
-//    }
 
     @Override
     public void strokePath()  throws IOException {
@@ -264,12 +229,18 @@ public class ObjectExtractor extends PageDrawer {
         }
         this.getLinePath().reset();
     }
+    
+    private void strokePath(PDColor filter_by_color) {
+        this.strokePath();
+    }
 
     @Override
     public void fillPath(int windingRule) throws IOException {
+        //
         //float[] color_comps = this.getGraphicsState().getNonStrokingColor().getJavaColor().getRGBColorComponents(null);
+        PDColor color = this.getGraphicsState().getNonStrokingColor();
         // TODO use color_comps as filter_by_color
-        this.strokePath();
+        this.strokePath(color);
     }
 
 
@@ -325,6 +296,14 @@ public class ObjectExtractor extends PageDrawer {
                         textPosition.getDir());
 
         if (this.currentClippingPath().intersects(te)) {
+            if (this.minCharWidth > te.getWidth()) {
+                this.minCharWidth = (float) te.getWidth();
+            }
+            
+            if (this.minCharHeight > te.getHeight()) {
+                this.minCharHeight = (float) te.getHeight();
+            }
+            this.spatialIndex.add(te);
             this.characters.add(te);
         }		
     }
@@ -381,6 +360,10 @@ public class ObjectExtractor extends PageDrawer {
 
     public List<TextElement> getCharacters() {
         return characters;
+    }
+    
+    public TextElementIndex getSpatialIndex() {
+        return spatialIndex;
     }
 
     // range iterator

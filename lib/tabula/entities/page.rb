@@ -3,7 +3,6 @@ java_import org.nerdpower.tabula.Page
 class Page
   include Tabula::HasCells
   attr_accessor :file_path, :cells
-  attr_writer :spatial_index
 
   def get_area(area)
     if area.is_a?(Array)
@@ -20,18 +19,9 @@ class Page
                                texts,
                                ::Tabula::Ruling.crop_rulings_to_area(ruling_lines, area),
                                texts.map(&:width).min,
-                               texts.map(&:height).min)
-
-    page_area.spatial_index = spatial_index
+                               texts.map(&:height).min,
+                               spatial_index)
     return page_area
-  end
-
-  def spatial_index
-    if @spatial_index.nil?
-      @spatial_index = Tabula::TextElementIndex.new
-      self.texts.each { |te| @spatial_index << te }
-    end
-    @spatial_index
   end
 
   #returns a Table object
@@ -41,8 +31,8 @@ class Page
       return Tabula::Table.new(0, [])
     end
 
-    texts = self.texts.sort
-    text_chunks = Tabula::TextElement.merge_words(texts, options)
+    text_chunks = Tabula::TextElement.merge_words(self.texts,
+                                                  options)
 
     lines = Tabula::TextChunk.group_by_lines(text_chunks.sort).sort_by(&:top)
 
@@ -74,13 +64,14 @@ class Page
       return @spreadsheets
     end
     get_ruling_lines!(options)
+
     self.find_cells!(self.horizontal_ruling_lines, self.vertical_ruling_lines, options)
 
     spreadsheet_areas = find_spreadsheets_from_cells #literally, java.awt.geom.Area objects. lol sorry. polygons.
 
     #transform each spreadsheet area into a rectangle
     # and get the cells contained within it.
-    spreadsheet_rectangle_areas = spreadsheet_areas.map{|a| a.getBounds } #getBounds2D is theoretically better, but returns a Rectangle2D.Double, which doesn't have our Ruby sugar on it.
+    spreadsheet_rectangle_areas = spreadsheet_areas.map{ |a| a.getBounds2D }
 
     @spreadsheets = spreadsheet_rectangle_areas.map do |rect|
       spr = Tabula::Spreadsheet.new(rect.y, rect.x,
@@ -91,7 +82,7 @@ class Page
                             vertical_ruling_lines.select{|vl| rect.intersectsLine(vl) },
                             horizontal_ruling_lines.select{|hl| rect.intersectsLine(hl) }
                            )
-      spr.cells = @cells.select{|c| spr.overlaps?(c) }
+      spr.cells = @cells.select{ |c| spr.overlaps?(c) }
       spr.add_spanning_cells!
       spr
     end
@@ -138,10 +129,11 @@ class Page
     if self.getRulings.nil? || self.getRulings.empty?
       return []
     end
-    @ruling_lines = self.getRulings
+    @ruling_lines = self.getRulings.to_a
+
     self.snap_points!
 
-    @ruling_lines = @ruling_lines.select { |l| !(l.width == 0 && l.height == 0) }
+    @ruling_lines.select! { |l| !(l.width == 0 && l.height == 0) }
 
     @vertical_ruling_lines ||= ::Tabula::Ruling.collapse_oriented_rulings(@ruling_lines.select(&:vertical?))
     @horizontal_ruling_lines ||= ::Tabula::Ruling.collapse_oriented_rulings(@ruling_lines.select(&:horizontal?))
@@ -164,16 +156,6 @@ class Page
       texts
     else
       spatial_index.contains(area)
-    end
-  end
-
-  def fill_in_cell_texts!(areas)
-    texts.each do |t|
-      area = areas.find{|a| a.contains(t) }
-      area.text_elements << t unless area.nil?
-    end
-    areas.each do |area|
-      area.text_elements = ::Tabula::TextElement.merge_words(area.text_elements)
     end
   end
 
