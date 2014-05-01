@@ -18,7 +18,6 @@ import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.common.PDStream;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType3Font;
-import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
 import org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState;
 import org.apache.pdfbox.pdmodel.graphics.state.PDTextState;
 import org.apache.pdfbox.text.TextPosition;
@@ -27,7 +26,6 @@ import java.util.AbstractList;
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
-import java.util.Iterator;
 import java.util.List;
 import java.util.regex.Pattern;
 
@@ -198,7 +196,7 @@ public class ObjectExtractor extends PageDrawer {
 
                         if (line.intersects(this.currentClippingPath())) {
                             Rectangle2D tmp = line.getBounds2D().createIntersection(this.currentClippingPath()).getBounds2D();
-                            this.getRulings().add(new Ruling((float) tmp.getY(),
+                            this.rulings.add(new Ruling((float) tmp.getY(),
                                     (float) tmp.getX(),
                                     (float) tmp.getWidth(),
                                     (float) tmp.getHeight()));
@@ -218,7 +216,7 @@ public class ObjectExtractor extends PageDrawer {
 
                         if (line.intersects(this.currentClippingPath())) {
                             Rectangle2D tmp = line.getBounds2D().createIntersection(this.currentClippingPath()).getBounds2D();
-                            this.getRulings().add(new Ruling((float) tmp.getY(),
+                            this.rulings.add(new Ruling((float) tmp.getY(),
                                     (float) tmp.getX(),
                                     (float) tmp.getWidth(),
                                     (float) tmp.getHeight()));
@@ -230,17 +228,18 @@ public class ObjectExtractor extends PageDrawer {
         this.getLinePath().reset();
     }
     
-    private void strokePath(PDColor filter_by_color) {
-        this.strokePath();
-    }
+//    private void strokePath(PDColor filter_by_color) throws IOException {
+//        this.strokePath();
+//    }
 
     @Override
     public void fillPath(int windingRule) throws IOException {
         //
         //float[] color_comps = this.getGraphicsState().getNonStrokingColor().getJavaColor().getRGBColorComponents(null);
-        PDColor color = this.getGraphicsState().getNonStrokingColor();
+        float[] color = this.getGraphicsState().getNonStrokingColor().getComponents();
+        //new java.awt.Color
         // TODO use color_comps as filter_by_color
-        this.strokePath(color);
+        this.strokePath();
     }
 
 
@@ -252,14 +251,13 @@ public class ObjectExtractor extends PageDrawer {
         double horizontalScalingText = ts.getHorizontalScalingPercent() / 100.0;
         float spaceWidthText = 1000;
 
-        // TODO FINISH
         if (font instanceof PDType3Font) {
             // TODO WHAT?
         }
 
         for(int i = 0; i < spaceLikeChars.length; i++) {
             spaceWidthText = font.getFontWidth(spaceLikeChars[i]);
-            if (spaceWidthText > 1000) break;
+            if (spaceWidthText > 0) break;
         }
 
         float ctm00 = gs.getCurrentTransformationMatrix().getValue(0, 0);
@@ -276,7 +274,7 @@ public class ObjectExtractor extends PageDrawer {
         //			return;
         //		}
 
-        Float  h = textPosition.getHeightDir();
+        Float h = textPosition.getHeightDir();
 
         if (c == NBSP) { // replace non-breaking space for space
             c = " ";
@@ -382,13 +380,14 @@ public class ObjectExtractor extends PageDrawer {
     }
 
     // for testing, disregard	
-    //	public static void main(String[] args) throws IOException {
-    //		PDDocument document = PDDocument.load(args[0]);
-    //		ObjectExtractor oe = new ObjectExtractor(document);
-    //		//for (Page z: oe.extractPages(new ArrayList<Integer>(Arrays.asList(1,2)))) {
-    //		for (Page z: oe.extractPages()) {
-    //			System.out.println(z);
-    //		}
-    //	}
+    	public static void main(String[] args) throws IOException {
+    		PDDocument document = PDDocument.load(args[0]);
+    		ObjectExtractor oe = new ObjectExtractor(document);
+    		//for (Page z: oe.extractPages(new ArrayList<Integer>(Arrays.asList(1,2)))) {
+    		PageIterator e = oe.extract();
+    		while (e.hasNext()) {
+    		    System.out.println(e.next());
+    		}
+    	}
 
 }

@@ -1,6 +1,7 @@
 package org.nerdpower.tabula;
 
 import java.awt.geom.Line2D;
+import java.awt.geom.Point2D;
 
 @SuppressWarnings("serial")
 public class Ruling extends Line2D.Float {
@@ -23,6 +24,13 @@ public class Ruling extends Line2D.Float {
     
     public boolean perpendicularTo(Ruling other) {
         return this.vertical() == other.horizontal();
+    }
+    
+    public boolean colinear(Point2D point) {
+        return point.getX() >= this.getX1()
+                && point.getX() <= this.getX2()
+                && point.getY() >= this.getY1()
+                && point.getY() <= this.getY2();
     }
     
     public double length() {

@@ -118,17 +118,8 @@ class Ruling
     r
   end
 
-  # def length
-  #   Math.sqrt( (self.right - self.left).abs ** 2 + (self.bottom - self.top).abs ** 2 )
-  # end
-
   def to_json(arg)
     [left, top, right, bottom].to_json
-  end
-
-  def colinear?(point)
-    point.x >= left && point.x <= right &&
-      point.y >= top && point.y <= bottom
   end
 
   def ==(other)

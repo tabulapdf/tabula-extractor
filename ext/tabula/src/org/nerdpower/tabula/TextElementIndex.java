@@ -11,7 +11,6 @@ import com.infomatiq.jsi.Rectangle;
 import com.infomatiq.jsi.SpatialIndex;
 import com.infomatiq.jsi.rtree.RTree;
 
-@SuppressWarnings("serial")
 public class TextElementIndex {
     
     class SaveToListProcedure implements TIntProcedure {

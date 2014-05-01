@@ -1,6 +1,5 @@
 # -*- coding: utf-8 -*-
 java_import org.apache.pdfbox.pdmodel.PDDocument
-java_import org.apache.pdfbox.util.PDFTextStripper
 java_import org.apache.pdfbox.pdmodel.encryption.StandardDecryptionMaterial
 
 module Tabula

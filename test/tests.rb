@@ -41,15 +41,15 @@ end
 
 class TestEntityComparability < Minitest::Test
   def test_text_element_comparability
-    base = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, "Jeremy", nil)
+    base = Tabula::TextElement.new(0, 0, 0, 0, nil, 0, "Jeremy", 0, 0)
 
-    two = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, " Jeremy  \n", nil)
-    three = Tabula::TextElement.new(7, 6, 8, 6, nil, 12, "Jeremy", 88)
-    four = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "Jeremy", 55)
+    two = Tabula::TextElement.new(0, 0, 0, 0, nil, 0, " Jeremy  \n", 0, 0)
+    three = Tabula::TextElement.new(7, 6, 8, 6, nil, 12, "Jeremy", 88, 0)
+    four = Tabula::TextElement.new(5, 7, 1212, 121, nil, 15, "Jeremy", 55, 0)
 
-    five = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "jeremy b", 55)
-    six = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "jeremy    kj", 55)
-    seven = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, "jeremy    kj", nil)
+    five = Tabula::TextElement.new(5, 7, 1212, 121, nil, 15, "jeremy b", 55, 0)
+    six = Tabula::TextElement.new(5, 7, 1212, 121, nil, 15, "jeremy    kj", 55, 0)
+    seven = Tabula::TextElement.new(0, 0, 0, 0, nil, 0, "jeremy    kj", 55, 0)
     assert_equal base, two
     assert_equal base, three
     assert_equal base, four
@@ -60,15 +60,15 @@ class TestEntityComparability < Minitest::Test
   end
 
   def test_line_comparability
-    text_base = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, "Jeremy", nil)
+    text_base = Tabula::TextElement.new(0, 0, 0, 0, nil, 0, "Jeremy", 0)
 
-    text_two = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, " Jeremy  \n", nil)
+    text_two = Tabula::TextElement.new(0, 0, 0, 0, nil, 0, " Jeremy  \n", 0)
     text_three = Tabula::TextElement.new(7, 6, 8, 6, nil, 12, "Jeremy", 88)
-    text_four = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "Jeremy", 55)
+    text_four = Tabula::TextElement.new(5, 7, 1212, 121, nil, 15, "Jeremy", 55)
 
-    text_five = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "jeremy b", 55)
-    text_six = Tabula::TextElement.new(5, 7, 1212, 121, 66, 15, "jeremy    kj", 55)
-    text_seven = Tabula::TextElement.new(nil, nil, nil, nil, nil, nil, "jeremy    kj", nil)
+    text_five = Tabula::TextElement.new(5, 7, 1212, 121, nil, 15, "jeremy b", 55)
+    text_six = Tabula::TextElement.new(5, 7, 1212, 121, nil, 15, "jeremy    kj", 55)
+    text_seven = Tabula::TextElement.new(0, 0, 0, 0, nil, 0, "jeremy    kj", 0)
     line_base = Tabula::Line.new
     line_base.text_elements = [text_base, text_two, text_three]
     line_equal = Tabula::Line.new
@@ -587,7 +587,8 @@ class TestExtractor < Minitest::Test
       end
     end
     extractor.close!
-    assert_equal ["1295", "Name: Reino International Pty Ltd trading as Duncan Solutions \rAddress: 15/39 Herbet Street, St Leonards NSW 2065", "N/A", "Effective Date: 13 May 2013 \rDuration: 15 Weeks", "Supply, Installation and Maintenance of Parking Ticket Machines", "$3,148,800.00exgst", "N/A", "N/A", "Open Tender  \rTender evaluation criteria included: \r- The schedule of prices \r- Compliance with technical specifications/Technical assessment \r- Operational Plan including maintenance procedures"], data
+    expected = ["1295", "Name: Reino International Pty Ltd trading as Duncan Solutions \rAddress: 15/39 Herbet Street, St Leonards NSW 2065", "N/A", "Effective Date: 13 May 2013 \rDuration: 15 Weeks", "Supply, Installation and Maintenance of Parking Ticket Machines", "$3,148,800.00exgst", "N/A", "N/A", "Open Tender  \rTender evaluation criteria included: \r- The schedule of prices \r- Compliance with technical specifications/Technical assessment \r- Operational Plan including maintenance procedures"]
+    assert_equal expected, data
   end
 
   def test_remove_repeated_spaces

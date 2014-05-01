@@ -40,7 +40,7 @@ module Tabula
       end
       tops = cells.map(&:top).uniq.sort
       array_of_rows = tops.map do |top|
-        cells.select{|c| c.top == top }.sort_by(&:left)
+        cells.select { |c| c.top == top }.sort_by(&:left)
       end
       #here, insert another kind of placeholder for empty corners
       # like in 01001523B_China.pdf

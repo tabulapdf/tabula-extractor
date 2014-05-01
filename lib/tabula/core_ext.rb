@@ -3,6 +3,20 @@ java_import java.awt.geom.Line2D
 java_import java.awt.geom.Rectangle2D
 java_import java.awt.Rectangle
 
+
+def debug_text_elements(text_elements)
+  require 'csv'
+  m = [:text, :top, :left, :bottom, :right, :width_of_space]
+  CSV($stderr) { |csv|
+    text_elements.each { |te|
+      csv << m.map { |method|
+        te.send(method)
+      }
+    }
+  }
+end
+
+
 class Array
   def rpad(padding, target_size)
     if self.size < target_size
@@ -22,20 +36,6 @@ module Enumerable
 
   def mean
     self.sum/self.length.to_f
-  end
-
-  def sample_variance
-    m = self.mean
-    sum = self.inject(0) {|accum, i| accum + (i-m)**2 }
-    sum/(self.length - 1).to_f
-  end
-
-  def standard_deviation
-    return Math.sqrt(self.sample_variance)
-  end
-
-  def sorted?
-    each_cons(2).all? { |a, b| (a <=> b) <= 0 }
   end
 
 end
@@ -118,7 +118,6 @@ class Line2D::Float
   def vertical?(threshold=0.00001)
     (self.getX2 - self.getX1).abs < threshold
   end
-
 end
 
 class Rectangle2D
@@ -212,7 +211,6 @@ class Rectangle2D
       Point2D::Float.new(left, bottom) ]
   end
 
-
   def area
     self.width * self.height
   end
@@ -274,13 +272,13 @@ class Rectangle2D
   # as defined by PDF-TREX paper
   def horizontal_overlap_ratio(other)
     delta = [self.bottom - self.top, other.bottom - other.top].min
-    if [other.top, self.top, other.bottom, self.bottom].sorted?
+    if other.top <= self.top && self.top <= other.bottom && other.bottom <= self.bottom
       (other.bottom - self.top) / delta
-    elsif [self.top, other.top, self.bottom, other.bottom].sorted?
+    elsif self.top <= other.top && other.top <= self.bottom && self.bottom <= other.bottom
       (self.bottom - other.top) / delta
-    elsif [self.top, other.top, other.bottom, self.bottom].sorted?
+    elsif self.top <= other.top && other.top <= other.bottom && other.bottom <= self.bottom
       (other.bottom - other.top) / delta
-    elsif [other.top, self.top, self.bottom, other.bottom].sorted?
+    elsif other.top <= self.top && self.top <= self.bottom && self.bottom <= other.bottom
       (self.bottom - self.top) / delta
     else
       0
