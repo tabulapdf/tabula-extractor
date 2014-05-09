@@ -1,6 +1,5 @@
 package org.nerdpower.tabula;
 import java.awt.BasicStroke;
-import java.awt.Color;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Shape;
@@ -195,12 +194,10 @@ public class ObjectExtractor extends PageDrawer {
                             new Line2D.Float(end_pos, start_pos); 
 
                         if (line.intersects(this.currentClippingPath())) {
-                            Rectangle2D tmp = line.getBounds2D().createIntersection(this.currentClippingPath()).getBounds2D();
-                            this.rulings.add(new Ruling((float) tmp.getY(),
-                                    (float) tmp.getX(),
-                                    (float) tmp.getWidth(),
-                                    (float) tmp.getHeight()));
-
+                            Ruling r = new Ruling(line.getP1(), line.getP2()).intersect(this.currentClippingPath());
+                            if (!(r.getWidth() == 0 && r.getHeight() == 0)) {
+                                this.rulings.add(r);
+                            }
                         }
                         break;
             case PathIterator.SEG_MOVETO:
@@ -215,11 +212,10 @@ public class ObjectExtractor extends PageDrawer {
                             new Line2D.Float(last_move, end_pos); 
 
                         if (line.intersects(this.currentClippingPath())) {
-                            Rectangle2D tmp = line.getBounds2D().createIntersection(this.currentClippingPath()).getBounds2D();
-                            this.rulings.add(new Ruling((float) tmp.getY(),
-                                    (float) tmp.getX(),
-                                    (float) tmp.getWidth(),
-                                    (float) tmp.getHeight()));
+                            Ruling r = new Ruling(line.getP1(), line.getP2()).intersect(this.currentClippingPath());
+                            if (!(r.getWidth() == 0 && r.getHeight() == 0)) {
+                                this.rulings.add(r);
+                            }
                         }
                         break;
             }

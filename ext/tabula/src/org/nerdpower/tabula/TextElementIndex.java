@@ -40,7 +40,7 @@ public class TextElementIndex {
         si.add(rectangle2DToSpatialIndexRectangle(te), textElements.size() - 1);
     }
     
-    public Iterable<TextElement> contains(Rectangle2D r) {
+    public List<TextElement> contains(Rectangle2D r) {
         SaveToListProcedure proc = new SaveToListProcedure();
         si.contains(rectangle2DToSpatialIndexRectangle(r), proc);
         ArrayList<TextElement> rv = new ArrayList<TextElement>();
@@ -52,10 +52,10 @@ public class TextElementIndex {
     }
     
     private static Rectangle rectangle2DToSpatialIndexRectangle(Rectangle2D r) {
-        return new Rectangle((float) r.getMinX(),
-                (float) r.getMinY(),
-                (float) r.getMaxX(),
-                (float) r.getMaxY());
+        return new Rectangle((float) r.getX(),
+                (float) r.getY(),
+                (float) (r.getX() + r.getWidth()),
+                (float) (r.getY() + r.getHeight()));
     }
 
 }
