@@ -57,12 +57,12 @@ Here's a very basic example:
 
 ````ruby
 require 'tabula'
- 
+
 pdf_file_path = "whatever.pdf"
 outfilename = "whatever.csv"
- 
+
 out = open(outfilename, 'w')
- 
+
 extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all )
 extractor.extract.each do |pdf_page|
   pdf_page.spreadsheets.each do |spreadsheet|
@@ -73,7 +73,3 @@ end
 out.close
 
 ````
-
-## Notes
-
-`tabula-extractor` uses [LSD: a Line Segment Detector](http://www.ipol.im/pub/art/2012/gjmr-lsd/) by Rafael Grompone von Gioi, Jérémie Jakubowicz, Jean-Michel Morel and Gregory Randall.
