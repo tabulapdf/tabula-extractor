@@ -30,9 +30,4 @@ require_relative './tabula/extraction'
 require_relative './tabula/table_extractor'
 require_relative './tabula/writers'
 
-module Tabula
-  autoload :LSD               , File.expand_path('tabula/line_segment_detector.rb', File.dirname(__FILE__))
-  autoload :Render            , File.expand_path('tabula/pdf_render.rb', File.dirname(__FILE__))
-end
-
 require_relative './tabula/table_extractor'
