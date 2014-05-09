@@ -83,41 +83,6 @@ class Line2D::Float
   def inspect
     "<Line2D::Float[(#{self.getX1},#{self.getY1}),(#{self.getX2},#{self.getY2})]>"
   end
-
-  def rotate!(pointX, pointY, amount)
-    px1 = self.getX1 - pointX; px2 = self.getX2 - pointX
-    py1 = self.getY1 - pointY; py2 = self.getY2 - pointY
-
-    if amount == 90 || amount == -270
-      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], pointX - py2, pointY + px1, pointX - py1, pointY + px2
-    elsif amount == 270 || amount == -90
-      self.java_send :setLine, [Java::float, Java::float, Java::float, Java::float,], pointX + py1, pointY - px2, pointX + py2, pointY - px1
-    end
-
-  end
-
-  def transform!(affine_transform)
-    newP1, newP2 = Point2D::Float.new, Point2D::Float.new
-    affine_transform.transform(self.getP1, newP1)
-    affine_transform.transform(self.getP2, newP2)
-    setLine(newP1, newP2)
-    self
-  end
-
-  def snap!(cell_size)
-    newP1, newP2 = Point2D::Float.new, Point2D::Float.new
-    newP1.java_send :setLocation, [Java::float, Java::float], (self.getX1 / cell_size).round * cell_size, (self.getY1 / cell_size).round * cell_size
-    newP2.java_send :setLocation, [Java::float, Java::float], (self.getX2 / cell_size).round * cell_size, (self.getY2 / cell_size).round * cell_size
-    setLine(newP1, newP2)
-  end
-
-  def horizontal?(threshold=0.00001)
-    (self.getY2 - self.getY1).abs < threshold
-  end
-
-  def vertical?(threshold=0.00001)
-    (self.getX2 - self.getX1).abs < threshold
-  end
 end
 
 class Rectangle2D

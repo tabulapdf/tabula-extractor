@@ -135,13 +135,6 @@ class TextElement
       maxHeightForLine = [maxHeightForLine, char.height].max
       minYTopForLine = [minYTopForLine, char.top].min
 
-      # if sameLine
-      #   puts "prev: #{prev_char.text} - char: #{char.text} - diff: #{char.left - prev_char.right} - space: #{[deltaCharWidth, deltaSpace].min} - spacing: #{wordSpacing} - sp: #{!sp.nil?}"
-      # else
-      #   puts
-      # end
-
-
       dist = (char.left - (sp ? sp.right : prev_char.right))
 
       if !across_vertical_ruling \

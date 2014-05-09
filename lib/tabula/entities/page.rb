@@ -4,26 +4,6 @@ class Page
   include Tabula::HasCells
   attr_accessor :file_path, :cells
 
-  def get_area(area)
-    if area.is_a?(Array)
-      top, left, bottom, right = area
-      area = java.awt.geom.Rectangle2D::Float.new_from_tlwh(top, left,
-                                                            right - left, bottom - top)
-    end
-
-    texts = self.get_text(area)
-    page_area = self.class.new(area.width.to_java(:float),
-                               area.height.to_java(:float),
-                               rotation.to_java(:int),
-                               number.to_i.to_java(:int),
-                               texts,
-                               ::Tabula::Ruling.crop_rulings_to_area(ruling_lines, area),
-                               texts.map(&:width).min,
-                               texts.map(&:height).min,
-                               spatial_index)
-    return page_area
-  end
-
   #returns a Table object
   def get_table(options={})
     options = {:vertical_rulings => []}.merge(options)
