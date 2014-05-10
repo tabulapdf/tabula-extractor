@@ -14,7 +14,7 @@ module Tabula
         @lines[i] = Line.new
       end
       if @lines[i].text_elements[j]
-        @lines[i].text_elements[j].merge!(text_element)
+        @lines[i].text_elements[j].merge(text_element)
       else
         @lines[i].text_elements[j] = text_element
       end

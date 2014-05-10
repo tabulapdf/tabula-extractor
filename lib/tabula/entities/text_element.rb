@@ -31,7 +31,7 @@ class TextElement
 
     #first_te = text_elements.shift #remove(0)
     first_te = text_elements.remove(0.to_java(:int))
-    text_chunks = [::Tabula::TextChunk.create_from_text_element(first_te)]
+    text_chunks = [::Tabula::TextChunk.new(first_te)]
 
     previousAveCharWidth = text_chunks.first.width
     endOfLastTextX = text_chunks.first.right
@@ -46,7 +46,7 @@ class TextElement
     text_elements.inject(text_chunks) do |chunks, char|
 
       current_chunk = chunks.last
-      prev_char = current_chunk.text_elements.last
+      prev_char = current_chunk.text_elements[current_chunk.text_elements.size - 1]
 
       # Resets the average character width when we see a change in font
       # or a change in the font size
@@ -55,7 +55,7 @@ class TextElement
       end
 
       # if same char AND overlapped, skip
-      if (prev_char.text == char.text) && prev_char.overlaps_with_ratio?(char, 0.5)
+      if (prev_char.text == char.text) && (prev_char.overlap_ratio(char) >  0.5)
         next chunks
       end
 
@@ -126,7 +126,7 @@ class TextElement
                       prev_char.font_size,
                       ' ',
                       prev_char.width_of_space)
-        current_chunk << sp
+        current_chunk.add(sp)
       else
         sp = nil
       end
@@ -140,10 +140,10 @@ class TextElement
       if !across_vertical_ruling \
          && sameLine \
          && (dist < 0 ? current_chunk.vertically_overlaps?(char) : dist < wordSpacing)
-        current_chunk << char
+        current_chunk.add(char)
       else
         # create a new chunk
-        chunks << ::Tabula::TextChunk.create_from_text_element(char)
+        chunks << ::Tabula::TextChunk.new(char)
       end
 
       lastWordSpacing = wordSpacing
@@ -151,19 +151,6 @@ class TextElement
 
       chunks
     end
-  end
-
-  ##
-  # merge this TextElement with another (adjust size and text content accordingly)
-  def merge!(other)
-    raise TypeError, "argument is not a TextElement" unless other.instance_of?(TextElement)
-
-    if (self <=> other) < 0
-      self.text = other.text + self.text
-    else
-      self.text << other.text
-    end
-    super(other)
   end
 
   def to_h

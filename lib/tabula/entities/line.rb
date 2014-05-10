@@ -1,26 +1,26 @@
-module Tabula
-  class Line < java.awt.geom.Rectangle2D::Float
-    attr_accessor :text_elements
+java_import org.nerdpower.tabula.Line
+
+class Line
     attr_reader :index
 
     SPACE_RUN_MAX_LENGTH = 3
 
-    def initialize(index=nil)
-      super()
-      @text_elements = []
-      @index = index
-    end
+    # def initialize(index=nil)
+    #   super()
+    #   @text_elements = []
+    #   @index = index
+    # end
 
     def <<(t)
-      if @text_elements.size == 0
-        @text_elements << t
+      if text_elements.size == 0
+        text_elements << t
         self.top = t.top
         self.left = t.left
         self.width = t.width
         self.height = t.height
       else
         self.text_elements << t
-        self.merge!(t)
+        self.merge(t)
       end
     end
 
@@ -60,9 +60,9 @@ module Tabula
             in_run = true
           else
             if in_run || new_chunk
-              memo << TextChunk.create_from_text_element(te)
+              memo << TextChunk.new(te)
             else
-              memo.last << te
+              memo.last.add(te)
             end
             in_run = new_chunk = false
           end
@@ -82,5 +82,8 @@ module Tabula
         memo && my == yours
       end
     end
-  end
+end
+
+module Tabula
+  Line = org.nerdpower.tabula.Line
 end

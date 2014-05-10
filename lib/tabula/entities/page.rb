@@ -43,7 +43,7 @@ class Page
     unless @spreadsheets.nil?
       return @spreadsheets
     end
-    get_ruling_lines!(options)
+    get_ruling_lines!
 
     self.find_cells!(self.horizontal_ruling_lines, self.vertical_ruling_lines, options)
 
@@ -62,7 +62,7 @@ class Page
                             vertical_ruling_lines.select{|vl| rect.intersectsLine(vl) },
                             horizontal_ruling_lines.select{|hl| rect.intersectsLine(hl) }
                            )
-      spr.cells = @cells.select{ |c| spr.overlaps?(c) }
+      spr.cells = @cells.select{ |c| spr.intersects(c) }
       spr.add_spanning_cells!
       spr
     end
@@ -95,48 +95,41 @@ class Page
   end
 
   def horizontal_ruling_lines
-    get_ruling_lines!
-    @horizontal_ruling_lines.nil? ? [] : @horizontal_ruling_lines
+#    get_ruling_lines!
+    @horizontal_ruling_lines
   end
 
   def vertical_ruling_lines
-    get_ruling_lines!
-    @vertical_ruling_lines.nil? ? [] : @vertical_ruling_lines
+#    get_ruling_lines!
+    return @vertical_ruling_lines
   end
 
   #returns ruling lines, memoizes them in
-  def get_ruling_lines!(options={})
+  def get_ruling_lines!
+
+    unless @ruling_lines.nil?
+      return @ruling_lines
+    end
+
     if self.getRulings.nil? || self.getRulings.empty?
       return []
     end
-    @ruling_lines = self.getRulings.to_a
+
+    @ruling_lines = self.getRulings
 
     self.snap_points!
 
-    @ruling_lines.select! { |l| !(l.width == 0 && l.height == 0) }
+    @vertical_ruling_lines = ::Tabula::Ruling.collapse_oriented_rulings(@ruling_lines.select(&:vertical?))
 
-    @vertical_ruling_lines ||= ::Tabula::Ruling.collapse_oriented_rulings(@ruling_lines.select(&:vertical?))
-    @horizontal_ruling_lines ||= ::Tabula::Ruling.collapse_oriented_rulings(@ruling_lines.select(&:horizontal?))
+    @horizontal_ruling_lines = ::Tabula::Ruling.collapse_oriented_rulings(@ruling_lines.select(&:horizontal?))
 
-    @vertical_ruling_lines + @horizontal_ruling_lines
-
-  end
-
-  ##
-  # get text insidea area
-  # area can be an Array ([top, left, width, height])
-  # or a Rectangle2D
-  def get_text(area=nil)
-    if area.instance_of?(Array)
-      top, left, bottom, right = area
-      area = java.awt.geom.Rectangle2D::Float.new_from_tlwh(top, left,
-                                                              right - left, bottom - top)
-    end
-    if area.nil?
-      texts
-    else
-      spatial_index.contains(area)
-    end
+    rv = []
+    # yes, I know, this is awful
+    # it should be return vertical_ruling_lines + horizontal_ruling_lines
+    # but it seems that the `+` method is modifying its first argument in place
+    @vertical_ruling_lines.each { |v| rv << v }
+    @horizontal_ruling_lines.each { |h| rv << h }
+    rv
   end
 
   def get_cell_text(area=nil)
@@ -148,13 +141,14 @@ class Page
       :height => self.height,
       :number => self.number,
       :rotation => self.rotation,
-      :texts => self.texts
+      :texts => self.text
     }.to_json(options)
   end
 
   def snap_points!
     lines_to_points = {}
     points = []
+
     @ruling_lines.each do |line|
       point1 = line.p1 #comptooters are the wurst
       point2 = line.p2

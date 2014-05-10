@@ -5,6 +5,7 @@ require 'minitest/autorun'
 require 'csv'
 
 require_relative '../lib/tabula'
+java_import org.nerdpower.tabula.Rectangle
 
 def table_to_array(table)
   lines_to_array(table.rows)
@@ -154,9 +155,10 @@ class TestDumper < Minitest::Test
 
   def test_get_by_area
     extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/gre.pdf', File.dirname(__FILE__)))
-    characters = extractor.extract.first.get_text([107.1, 57.9214, 394.5214, 290.7])
+    page = extractor.extract.first
+    characters = page.get_text(107.1, 60.10, 313.65, 291.79)
     extractor.close!
-    assert_equal characters.size, 206
+    assert_equal 151, characters.size
   end
 end
 
@@ -226,7 +228,7 @@ class TestExtractor < Minitest::Test
     lines = page_obj.ruling_lines
     vertical_rulings = lines.select(&:vertical?)
 
-    area = [170, 28, 185, 833] #top left bottom right
+    top, left, bottom, right = [170, 28, 185, 833] #top left bottom right
 
     expected = Tabula::Table.new_from_array([
        ["", "REGIONAL PULMONARY & SLEEP",],
@@ -234,7 +236,7 @@ class TestExtractor < Minitest::Test
        ["", "MEDICINE", ],
       ])
 
-    assert_equal expected, lines_to_table(page_obj.get_area(area).make_table(:vertical_rulings => vertical_rulings))
+    assert_equal expected, lines_to_table(page_obj.get_area(top,left,bottom,right).make_table(:vertical_rulings => vertical_rulings))
     character_extractor.close!
   end
 
@@ -246,7 +248,7 @@ class TestExtractor < Minitest::Test
     vertical_rulings = lines.select(&:vertical?) #.uniq{|line| (line.left / 10).round }
 
     page_obj = character_extractor.extract.next
-    characters = page_obj.get_text([110, 28, 218, 833])
+    characters = page_obj.get_text(110, 28, 218, 833)
                                                            #top left bottom right
         expected = Tabula::Table.new_from_array([
           ['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '', '$85.00'],
@@ -309,10 +311,10 @@ class TestExtractor < Minitest::Test
 
       scale_factor = pdf_page.width / 1700
 
-      vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{|n| Tabula::Ruling.new(0, n * scale_factor, 0, 1000)}
+      vertical_rulings = [0, 360, 506, 617, 906, 1034, 1160, 1290, 1418, 1548].map{ |n| Tabula::Ruling.new(0, n * scale_factor, 0, 1000)}
 
       tables = page_areas.map do |page_area|
-        pdf_page.get_area(page_area).make_table(:vertical_rulings => vertical_rulings)
+        pdf_page.get_area(*page_area).make_table(:vertical_rulings => vertical_rulings)
       end
       assert_equal expected, lines_to_table(tables.first)
     end
@@ -518,8 +520,8 @@ class TestExtractor < Minitest::Test
   def test_almost_vertical_lines
     pdf_file_path = File.expand_path('data/puertos1.pdf', File.dirname(__FILE__))
     top, left, bottom, right = 273.9035714285714, 30.32142857142857, 554.8821428571429, 546.7964285714286
-    area = java.awt.geom.Rectangle2D::Float.new_from_tlwh(top, left,
-                                                          right - left, bottom - top)
+    area = Rectangle.new(top, left,
+                         right - left, bottom - top)
 
     extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
     extractor.extract.each do |pdf_page|
@@ -535,13 +537,15 @@ class TestExtractor < Minitest::Test
     top, left, bottom, right = 273.9035714285714, 30.32142857142857, 554.8821428571429, 546.7964285714286
 
     extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
-    extractor.extract.each do |pdf_page|
-      area = pdf_page.get_area([top, left, bottom, right])
-      table = area.spreadsheets.first.to_a
-      assert_equal 15, table.length
-      assert_equal ["", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM"], table.first
-      assert_equal ["TOTAL", "453,515", "895,111", "456,431", "718,382", "487,183", "886,211", "494,220", "816,623", "495,580", "810,565", "627,469", "1,248,804", "540,367"], table.last
-    end
+    pdf_page = extractor.extract.first
+
+    area = pdf_page.get_area(top, left, bottom, right)
+    table = area.spreadsheets.first.to_a
+
+    assert_equal 15, table.length
+    assert_equal ["", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM"], table.first
+    assert_equal ["TOTAL", "453,515", "895,111", "456,431", "718,382", "487,183", "886,211", "494,220", "816,623", "495,580", "810,565", "627,469", "1,248,804", "540,367"], table.last
+
     extractor.close!
   end
 

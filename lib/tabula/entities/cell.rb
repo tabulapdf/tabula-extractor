@@ -1,8 +1,9 @@
+java_import org.nerdpower.tabula.Rectangle
 module Tabula
 
   #cells are components of spreadsheets
 
-  class Cell < java.awt.geom.Rectangle2D::Float
+  class Cell < Rectangle
 
     NORMAL = 0
     DEBUG = 1

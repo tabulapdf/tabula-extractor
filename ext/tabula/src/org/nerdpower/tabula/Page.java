@@ -6,7 +6,7 @@ import java.util.Comparator;
 import java.util.List;
 
 @SuppressWarnings("serial")
-public class Page extends Rectangle2D.Float {
+public class Page extends Rectangle {
 
     private Integer rotation;
     private int pageNumber;
