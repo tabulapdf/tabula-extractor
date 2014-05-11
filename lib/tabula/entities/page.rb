@@ -14,7 +14,7 @@ class Page
     text_chunks = Tabula::TextElement.merge_words(self.texts,
                                                   options[:vertical_rulings])
 
-    lines = Tabula::TextChunk.group_by_lines(text_chunks.sort).sort_by(&:top)
+    lines = Tabula::TextChunk.group_by_lines(text_chunks)
 
     columns = unless options[:vertical_rulings].empty?
                 options[:vertical_rulings].map(&:left).sort #pixel locations, not entities
