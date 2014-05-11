@@ -12,7 +12,7 @@ class Page
     end
 
     text_chunks = Tabula::TextElement.merge_words(self.texts,
-                                                  options)
+                                                  options[:vertical_rulings])
 
     lines = Tabula::TextChunk.group_by_lines(text_chunks.sort).sort_by(&:top)
 

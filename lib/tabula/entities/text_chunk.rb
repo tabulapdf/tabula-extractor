@@ -8,32 +8,9 @@ class TextChunk
   attr_accessor :font, :font_size, :width_of_space
 
   def self.group_by_lines(text_chunks)
-    bbwidth = text_chunks.max_by(&:right).right - text_chunks.min_by(&:left).left
+    lines = self.groupByLines(text_chunks)
 
-    l = ::Tabula::Line.new
-    l << text_chunks.first
-
-    lines = text_chunks[1..-1].inject([l]) do |lines, te|
-      if lines.last.horizontal_overlap_ratio(te) < 0.01
-        # skip lines such that:
-        # - are wider than the 90% of the width of the text_chunks bounding box
-        # - it contains a single repeated character
-        if lines.last.width / bbwidth > 0.9 \
-                              && l.text_elements.all? { |te| te.text =~  ::Tabula::SAME_CHAR_RE }
-          lines.pop
-        end
-        lines << ::Tabula::Line.new
-      end
-      lines.last << te
-      lines
-    end
-
-    if lines.last.width / bbwidth > 0.9 \
-                          && l.text_elements.all? { |te| te.text =~ ::Tabula::SAME_CHAR_RE }
-      lines.pop
-    end
-
-    lines.map!(&:remove_sequential_spaces!)
+    lines.to_a.map(&:remove_sequential_spaces!)
   end
 
   ##
@@ -69,10 +46,6 @@ class TextChunk
     end
 
     regions.map { |r| r.right.round(2) }.uniq
-  end
-
-  def text
-    self.text_elements.map(&:text).join
   end
 
   def inspect

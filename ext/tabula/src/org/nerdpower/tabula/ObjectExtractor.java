@@ -3,6 +3,7 @@ import java.awt.BasicStroke;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Shape;
+import java.awt.event.KeyEvent;
 import java.awt.geom.AffineTransform;
 import java.awt.geom.Line2D;
 import java.awt.geom.PathIterator;
@@ -266,9 +267,9 @@ public class ObjectExtractor extends PageDrawer {
         String c = textPosition.getCharacter();
 
         // if c not printable, return
-        //		 if (!printable.matcher(c).matches()) {
-        //			return;
-        //		}
+        if (!isPrintable(c)) {
+            return;
+        }
 
         Float h = textPosition.getHeightDir();
 
@@ -358,6 +359,15 @@ public class ObjectExtractor extends PageDrawer {
     
     public TextElementIndex getSpatialIndex() {
         return spatialIndex;
+    }
+    
+    private static boolean isPrintable(String s) {
+        Character c = s.charAt(0);
+        Character.UnicodeBlock block = Character.UnicodeBlock.of( c );
+        return (!Character.isISOControl(c)) &&
+                c != KeyEvent.CHAR_UNDEFINED &&
+                block != null &&
+                block != Character.UnicodeBlock.SPECIALS;
     }
 
     // range iterator

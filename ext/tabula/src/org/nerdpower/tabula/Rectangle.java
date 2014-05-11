@@ -1,11 +1,11 @@
 package org.nerdpower.tabula;
 
 import java.awt.geom.Rectangle2D;
+import java.util.List;
 
+@SuppressWarnings("serial")
 public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle> {
-    
-    private static float SIMILARITY_DIVISOR = 20;
-    
+        
     public Rectangle() {
         super();
     }
@@ -42,6 +42,27 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
         return Math.max(0, Math.min(this.getRight(), other.getRight()) - Math.max(this.getLeft(), other.getLeft())) > 0;
     }
     
+    public float horizontalOverlapRatio(Rectangle other) {
+        float rv = 0, 
+              delta = (float) Math.min(this.getBottom() - this.getTop(), other.getBottom() - other.getTop());
+        
+        if (other.getTop() <= this.getTop() && this.getTop() <= other.getBottom() && other.getBottom() <= this.getBottom()) { 
+            rv = (float) ((other.getBottom() - this.getTop()) / delta);
+        }
+        else if (this.getTop() <= other.getTop() && other.getTop() <= this.getBottom() && this.getBottom() <= other.getBottom()) { 
+            rv = (float) ((this.getBottom() - other.getTop()) / delta);
+        }
+        else if (this.getTop() <= other.getTop() && other.getTop() <= other.getBottom() && other.getBottom() <= this.getBottom()) {
+            rv = (float) ((other.getBottom() - other.getTop()) / delta);
+        }
+        else if (other.getTop() <= this.getTop() && this.getTop() <= this.getBottom() && this.getBottom() <= other.getBottom()) {
+            rv = (float) ((this.getBottom() - this.getTop()) / delta);
+        }
+        
+        return rv;
+
+    }
+    
     public float overlapRatio(Rectangle other) {
         double intersectionWidth = Math.max(0, Math.min(this.getRight(), other.getRight()) - Math.max(this.getLeft(), other.getLeft()));
         double intersectionHeight = Math.max(0, Math.min(this.getBottom(), other.getBottom()) - Math.max(this.getTop(), other.getTop()));
@@ -52,11 +73,7 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
     }
     
     public Rectangle merge(Rectangle other) {
-        setTop(Math.min(this.getTop(), other.getTop()));
-        setLeft(Math.min(this.getLeft(), other.getLeft()));
-        this.width = (float) (Math.max(this.getRight(), other.getRight()) - this.getLeft());
-        this.height = (float) (Math.max(this.getBottom(), other.getBottom()) - this.getTop());
-
+        this.setRect(this.createUnion(other));
         return this;
     }
 
@@ -93,6 +110,26 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
     
     public void setBottom(double bottom) {
         this.setRect(this.x, this.y, this.width, bottom - this.y);
+    }
+
+    
+    /**
+     * @param rectangles
+     * @return minimum bounding box that contains all the rectangles
+     */
+    public static Rectangle boundingBoxOf(List<? extends Rectangle> rectangles) {
+        float minx = java.lang.Float.MAX_VALUE;
+        float miny = java.lang.Float.MAX_VALUE;
+        float maxx = java.lang.Float.MIN_VALUE;
+        float maxy = java.lang.Float.MIN_VALUE;
+        
+        for (Rectangle r: rectangles) {
+            minx = (float) Math.min(r.getMinX(), minx);
+            miny = (float) Math.min(r.getMinY(), miny);
+            maxx = (float) Math.max(r.getMaxX(), maxx);
+            maxy = (float) Math.max(r.getMaxY(), maxy);
+        }
+        return new Rectangle(miny, minx, maxx - minx, maxy - miny);
     }
     
     

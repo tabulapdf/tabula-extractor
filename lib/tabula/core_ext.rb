@@ -114,10 +114,6 @@ class Rectangle2D
     self.to_h.to_json
   end
 
-  def tlbr
-    [top, left, bottom, right]
-  end
-
   def tlwh
     [top, left, width, height]
   end
@@ -131,22 +127,6 @@ class Rectangle2D
 
   # Various ways that rectangles can overlap one another
   #------------------------------
-
-  # as defined by PDF-TREX paper
-  def horizontal_overlap_ratio(other)
-    delta = [self.bottom - self.top, other.bottom - other.top].min
-    if other.top <= self.top && self.top <= other.bottom && other.bottom <= self.bottom
-      (other.bottom - self.top) / delta
-    elsif self.top <= other.top && other.top <= self.bottom && self.bottom <= other.bottom
-      (self.bottom - other.top) / delta
-    elsif self.top <= other.top && other.top <= other.bottom && other.bottom <= self.bottom
-      (other.bottom - other.top) / delta
-    elsif other.top <= self.top && self.top <= self.bottom && self.bottom <= other.bottom
-      (self.bottom - self.top) / delta
-    else
-      0
-    end
-  end
 
 
   # Funky custom methods (i.e. not just geometry)

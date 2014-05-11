@@ -1,24 +1,63 @@
 package org.nerdpower.tabula;
 
-import java.awt.geom.Rectangle2D;
 import java.util.ArrayList;
 import java.util.List;
 
 @SuppressWarnings("serial")
 public class Line extends Rectangle {
     
-    List<TextElement> textElements = new ArrayList<TextElement>();
+    List<TextChunk> textChunks = new ArrayList<TextChunk>();
+    private static int CHAR_RUN_MAX_LENGTH = 3;
     
-    
-    public List<TextElement> getTextElements() {
-        return textElements;
+    public List<TextChunk> getTextElements() {
+        return textChunks;
     }
     
-    public void setTextElements(List<TextElement> textElements) {
-        this.textElements = textElements;
+    public void setTextElements(List<TextChunk> textChunks) {
+        this.textChunks = textChunks;
     }
-
+    
+    public void addTextChunk(int i, TextChunk textChunk) {
+        if (i < 0) {
+            throw new IllegalArgumentException("i can't be less than 0");
+        }
+        
+        int s = this.textChunks.size(); 
+        if (s < i + 1) {
+            for (; s <= i; s++) {
+                this.textChunks.add(null);
+            }
+            this.textChunks.set(i, textChunk);
+        }
+        else {
+            this.textChunks.set(i, this.textChunks.get(i).merge(textChunk));
+        }
+        this.merge(textChunk);
+    }
+    
+    public void addTextChunk(TextChunk textChunk) {
+        if (this.textChunks.size() == 0) {
+            this.setRect(textChunk);
+        }
+        else {
+            this.merge(textChunk);
+        }
+        this.textChunks.add(textChunk);
+    }
     
     
+    /**
+     * remove runs of the space char longer than SPACE_RUN_MAX_LENGTH
+     * should not change dimensions of the container +Line+
+     * 
+     */
+//    public void removeRunsOfSpace() {
+//        int runStart = -1;
+//        int runLength = 0;
+//        for (int i = 0; i < this.textChunks.size(); i++) {
+//            
+//            if ()
+//        }
+//    }
 
 }

@@ -5,25 +5,6 @@ class Line
 
     SPACE_RUN_MAX_LENGTH = 3
 
-    # def initialize(index=nil)
-    #   super()
-    #   @text_elements = []
-    #   @index = index
-    # end
-
-    def <<(t)
-      if text_elements.size == 0
-        text_elements << t
-        self.top = t.top
-        self.left = t.left
-        self.width = t.width
-        self.height = t.height
-      else
-        self.text_elements << t
-        self.merge(t)
-      end
-    end
-
     ##
     # remove runs of the space char longer than SPACE_RUN_MAX_LENGTH
     # should not change dimensions of the container +Line+

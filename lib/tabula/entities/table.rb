@@ -13,11 +13,7 @@ module Tabula
       if @lines.size <= i
         @lines[i] = Line.new
       end
-      if @lines[i].text_elements[j]
-        @lines[i].text_elements[j].merge(text_element)
-      else
-        @lines[i].text_elements[j] = text_element
-      end
+      @lines[i].add_text_chunk(j, text_element)
     end
 
 
@@ -30,8 +26,8 @@ module Tabula
       rpad!
       lstrip_lines!
       li = lines.map do |l|
-        l.text_elements.map! do |te|
-          te || TextElement::EMPTY # TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+        l.text_elements = l.text_elements.map do |te|
+          te || TextElement::EMPTY
         end
       end.select do
         |l| !l.all? { |te| te.text.empty? }
@@ -114,7 +110,10 @@ module Tabula
       if min_leading_empty_strings == 0
         @lines
       else
-        @lines.each{|line| line.text_elements = line.text_elements[min_leading_empty_strings..-1]}
+        @lines.each{ |line|
+          #line.text_elements = line.text_elements[min_leading_empty_strings..-1]
+          line.text_elements.removeRange(0, min_leading_empty_strings)
+        }
         @lines
       end
     end
