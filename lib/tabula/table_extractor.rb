@@ -1,22 +1,5 @@
 java_import org.nerdpower.tabula.Rectangle
 module Tabula
-
-  def Tabula.merge_words(text_elements, options={})
-    warn 'Tabula.merge_words is DEPRECATED. Use Tabula::TextElement.merge_words instead'
-    TextElement.merge_words(text_elements, options)
-  end
-
-  def Tabula.group_by_lines(text_chunks)
-    warn 'Tabula.group_by_lines is DEPRECATED. Use Tabula::TextChunk.group_by_lines instead.'
-    TextChunk.group_by_lines(text_chunks)
-  end
-
-  # Returns an array of Tabula::Line
-  def Tabula.make_table(page, area, options={})
-    warn 'Tabula.make_table is DEPRECATED. Use Tabula::Page#make_table instead.'
-    page.get_area(area).make_table(options)
-  end
-
   # extract a table from file +pdf_path+, +pages+ and +area+
   #
   # +pages+ can be a single integer (1-based) or an array of integers
@@ -62,6 +45,7 @@ module Tabula
 
     use_detected_lines = false
     if options[:detect_ruling_lines] && options[:vertical_rulings].empty?
+
       detected_vertical_rulings = Ruling.crop_rulings_to_area(pdf_page.vertical_ruling_lines,
                                                               area)
 

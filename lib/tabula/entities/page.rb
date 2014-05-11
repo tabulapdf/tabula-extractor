@@ -100,7 +100,7 @@ class Page
   end
 
   def vertical_ruling_lines
-#    get_ruling_lines!
+    get_ruling_lines!
     return @vertical_ruling_lines
   end
 
