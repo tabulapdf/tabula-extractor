@@ -66,8 +66,14 @@ public class TextChunk extends Rectangle {
         // implement lines.map!(&:remove_sequential_spaces!)
         
         return lines;
-        
-        
+    }
+    
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        String s = super.toString();
+        sb.append(s.substring(0, s.length() - 1));
+        sb.append(String.format(", text=\"%s\"]", this.getText()));
+        return sb.toString();
     }
     
     public String getText() {

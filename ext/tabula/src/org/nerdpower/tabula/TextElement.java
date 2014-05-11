@@ -72,8 +72,8 @@ public class TextElement extends Rectangle  {
             return textChunks;
         }
         
-        TextChunk firstTC = new TextChunk(textElements.remove(0)); 
-        textChunks.add(firstTC);
+        textChunks.add(new TextChunk(textElements.remove(0)));
+        TextChunk firstTC = textChunks.get(0); 
         
         float previousAveCharWidth = (float) firstTC.getWidth();
         float endOfLastTextX = (float) firstTC.getRight();
@@ -97,7 +97,7 @@ public class TextElement extends Rectangle  {
             }
             
             // if chr is a space that overlaps with prevChar, skip
-            if (chr.getText() == " " && prevChar.x == chr.x && prevChar.y == chr.y) {
+            if (chr.getText() == " " && prevChar.getLeft() == chr.getLeft() && prevChar.getTop() == chr.getTop()) {
                 continue;
             }
             
@@ -165,25 +165,21 @@ public class TextElement extends Rectangle  {
             endOfLastTextX = (float) chr.getRight();
             
             // should we add a space?
-            // TODO: add !accross_vertical_ruling &&
             
             if (!acrossVerticalRuling &&
                 sameLine &&
                 expectedStartOfNextWordX < chr.getLeft() && 
                 !prevChar.getText().endsWith(" ")) {
                 
-//                System.out.println("Adding space");
-//                System.out.println(prevChar.getText());
-//                System.out.println(chr.getText());
-                
                 sp = new TextElement((float) prevChar.getTop(),
                         (float) prevChar.getLeft(),
-                        expectedStartOfNextWordX - prevChar.x,
+                        (float) (expectedStartOfNextWordX - prevChar.getLeft()),
                         (float) prevChar.getHeight(),
                         prevChar.getFont(),
                         prevChar.getFontSize(),
                         " ",
                         prevChar.getWidthOfSpace());
+                
                 currentChunk.add(sp);
             }
             else {
@@ -191,10 +187,10 @@ public class TextElement extends Rectangle  {
             }
             
             maxYForLine = (float) Math.max(chr.getBottom(), maxYForLine);
-            maxHeightForLine = Math.max(maxHeightForLine, chr.height);
-            minYTopForLine = Math.min(minYTopForLine, chr.y);
+            maxHeightForLine = (float) Math.max(maxHeightForLine, chr.getHeight());
+            minYTopForLine = (float) Math.min(minYTopForLine, chr.getTop());
 
-            dist = chr.x - (sp != null ? sp.x : prevChar.x);
+            dist = (float) (chr.getLeft() - (sp != null ? sp.getRight() : prevChar.getRight()));
 
             if (!acrossVerticalRuling &&
                 sameLine &&
@@ -206,7 +202,7 @@ public class TextElement extends Rectangle  {
             }
             
             lastWordSpacing = wordSpacing;
-            previousAveCharWidth = sp != null ? (averageCharWidth + sp.width) / 2.0f : averageCharWidth;
+            previousAveCharWidth = (float) (sp != null ? (averageCharWidth + sp.getWidth()) / 2.0f : averageCharWidth);
         }
         return textChunks;
     }
