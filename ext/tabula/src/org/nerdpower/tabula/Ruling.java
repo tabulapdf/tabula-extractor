@@ -29,15 +29,11 @@ public class Ruling extends Line2D.Float {
 
     public boolean vertical() {
         float diff = Math.abs(this.x1 - this.x2);
-//        if (diff > 0 && diff < 0.5)
-//          System.out.println("Vertical: " + this.x1 + ", " + this.x2);
         return diff < ORIENTATION_CHECK_THRESHOLD;
     }
     
     public boolean horizontal() {
         float diff = Math.abs(this.y1 - this.y2);
-//        if (diff > 0 && diff < 0.5)
-//          System.out.println("Horizontal: " + this.y1 + ", " + this.y2);
         return diff < ORIENTATION_CHECK_THRESHOLD;
     }
     
@@ -184,10 +180,6 @@ public class Ruling extends Line2D.Float {
             vertical = this_l; horizontal = other_l;
         }
         else {
-//            System.out.println("this: " + this_l.toString());
-//            System.out.println("other: " + other_l.toString());
-//            System.out.println("Is other vertical? " + other_l.vertical());
-            
             throw new IllegalArgumentException("lines must be orthogonal, vertical and horizontal");
         }
         return new Point2D.Float(vertical.getLeft(), horizontal.getTop());        
@@ -292,9 +284,7 @@ public class Ruling extends Line2D.Float {
             sos.add(new SortObject(SOType.HRIGHT, h.getRight(), h));
         }
 
-//        System.out.println("Adding verticals");
         for (Ruling v : verticals) {
-//            System.out.println("Vertical? " + v.vertical());
             sos.add(new SortObject(SOType.VERTICAL, v.getLeft(), v));
         }
         
@@ -330,7 +320,6 @@ public class Ruling extends Line2D.Float {
             switch(so.type) {
             case VERTICAL:
                 for (Map.Entry<Ruling, Boolean> h : tree.entrySet()) {
-//                    System.out.format("h: %s v: %s\n", h.getKey(), so.ruling);
                     Point2D i = h.getKey().intersectionPoint(so.ruling);
                     if (i == null) {
                         continue;

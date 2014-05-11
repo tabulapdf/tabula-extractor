@@ -27,8 +27,6 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
-import java.util.regex.Pattern;
-
 
 public class ObjectExtractor extends PageDrawer {
 
@@ -43,11 +41,9 @@ public class ObjectExtractor extends PageDrawer {
         }
     }
 
-    private static final Pattern printable = Pattern.compile("\\p{Print}");
     private static final char[] spaceLikeChars = {' ', '-', '1', 'i'};
     private static final String NBSP = "\u00A0";
 
-    private BasicStroke basicStroke;	
     private float minCharWidth = Float.MAX_VALUE, minCharHeight = Float.MAX_VALUE;
     private List<TextElement> characters;
     private List<Ruling> rulings;
