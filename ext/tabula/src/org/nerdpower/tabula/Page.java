@@ -1,6 +1,7 @@
 package org.nerdpower.tabula;
 
 import java.awt.geom.Rectangle2D;
+import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
@@ -11,7 +12,7 @@ public class Page extends Rectangle {
     private Integer rotation;
     private int pageNumber;
     private List<TextElement> texts;
-    private List<Ruling> rulings;
+    private List<Ruling> rulings, verticalRulingLines, horizontalRulingLines;
     private float minCharWidth;
     private float minCharHeight;
     private TextElementIndex spatial_index;
@@ -22,32 +23,26 @@ public class Page extends Rectangle {
         this.rotation = rotation;
         this.pageNumber = page_number;
     }
+    
+    public Page(float width, float height, Integer rotation, int page_number,
+            List<TextElement> characters, List<Ruling> rulings) {
+
+        this(width, height, rotation, page_number);
+        this.texts = characters;
+        this.rulings = rulings;
+    }
+
 
     public Page(float width, float height, Integer rotation, int page_number,
             List<TextElement> characters, List<Ruling> rulings,
             float minCharWidth, float minCharHeight, TextElementIndex index) {
 
-        super();
-        this.setRect(0, 0, width, height);
-        this.rotation = rotation;
-        this.pageNumber = page_number;
-        this.texts = characters;
-        this.rulings = rulings;
+        this(width, height, rotation, page_number, characters, rulings);
         this.minCharHeight = minCharHeight;
         this.minCharWidth = minCharWidth;
         this.spatial_index = index;
     }
 
-    public Page(float width, float height, Integer rotation, int page_number,
-            List<TextElement> characters, List<Ruling> rulings) {
-
-        super();
-        this.setRect(0, 0, width, height);
-        this.rotation = rotation;
-        this.pageNumber = page_number;
-        this.texts = characters;
-        this.rulings = rulings;
-    }
     
     public Page getArea(Rectangle2D area) {
         List<TextElement> t = getText(area);
@@ -106,6 +101,34 @@ public class Page extends Rectangle {
 
     public List<Ruling> getRulings() {
         return rulings;
+    }
+    
+    public List<Ruling> getVerticalRulings() {
+        if (this.verticalRulingLines != null) {
+            return this.verticalRulingLines;
+        }
+        
+        this.verticalRulingLines = new ArrayList<Ruling>();
+        for (Ruling vr: this.getRulings()) {
+            if (vr.vertical()) {
+                this.verticalRulingLines.add(vr);
+            }
+        }
+        return this.verticalRulingLines;
+    }
+    
+    public List<Ruling> getHorizontalRulings() {
+        if (this.horizontalRulingLines != null) {
+            return this.horizontalRulingLines;
+        }
+        
+        this.horizontalRulingLines = new ArrayList<Ruling>();
+        for (Ruling hr: this.getRulings()) {
+            if (hr.horizontal()) {
+                this.horizontalRulingLines.add(hr);
+            }
+        }
+        return this.horizontalRulingLines;
     }
 
 

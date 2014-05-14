@@ -1,4 +1,5 @@
 java_import org.nerdpower.tabula.Page
+java_import org.nerdpower.tabula.BasicExtractionAlgorithm
 
 class Page
   include Tabula::HasCells
@@ -7,30 +8,15 @@ class Page
   #returns a Table object
   def get_table(options={})
     options = {:vertical_rulings => []}.merge(options)
-    if texts.empty?
-      return Tabula::Table.new(0, [])
-    end
 
-    text_chunks = Tabula::TextElement.merge_words(self.texts,
-                                                  options[:vertical_rulings])
+    tables = if options[:vertical_rulings].empty?
+               BasicExtractionAlgorithm.new.extract(self)
+             else
+               BasicExtractionAlgorithm.new(options[:vertical_rulings]).extract(self)
+             end
 
-    lines = Tabula::TextChunk.group_by_lines(text_chunks)
+    tables.first
 
-    columns = unless options[:vertical_rulings].empty?
-                options[:vertical_rulings].map(&:left).sort #pixel locations, not entities
-              else
-                Tabula::TextChunk.column_positions(lines).sort
-              end
-
-    table = Tabula::Table.new(lines.count, columns)
-    lines.each_with_index do |line, i|
-      line.text_elements.select { |te| te.text !~ Tabula::ONLY_SPACES_RE }.each do |te|
-        j = columns.find_index { |s| te.left <= s } || columns.count
-        table.add_text_element(te, i, j)
-      end
-    end
-
-    table
   end
 
   #for API backwards-compatibility reasons, this returns an array of arrays.

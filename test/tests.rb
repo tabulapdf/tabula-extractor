@@ -617,7 +617,7 @@ class TestExtractor < Minitest::Test
                                  :extraction_method => 'original')
 
     expected = [["ALBERT LEA, MAYO CLINIC HEALTH SYS- ALBE", "0", "0", "0", "7", "7", ".0", ".0", ".0", "23.3", "10.4"], ["ROCHESTER, MAYO CLINIC METHODIST HOSPITA", "6", "7", "14", "11", "25", "27.3", "100.0", "37.8", "36.7", "37.3"], ["ROCHESTER, MAYO CLINIC ST. MARYS", "9", "0", "11", "7", "18", "40.9", ".0", "29.7", "23.3", "26.9"], ["BLUE EARTH, UNITED HOSPITAL DISTRICT", "3", "0", "4", "0", "4", "13.6", ".0", "10.8", ".0", "6.0"], ["FAIRMONT, MAYO CLINIC HEALTH SYSTEM -FAI", "1", "0", "2", "1", "3", "4.5", ".0", "5.4", "3.3", "4.5"], ["MANKATO, MAYO CLINIC HEALTH SYSTEM- MANK", "3", "0", "5", "3", "8", "13.6", ".0", "13.5", "10.0", "11.9"], ["ALL REGION 4 (TC) HOSPITALS", "0", "0", "1", "1", "2", ".0", ".0", "2.7", "3.3", "3.0"], ["", "22", "7", "37", "30", "67", "100.0", "100.0", "100.0", "100.0", "100.0"]]
-    assert_equal table_to_array(table), expected
+    assert_equal expected, table_to_array(table)
   end
 
   def test_monospaced_table_ascii_line_separator
@@ -626,7 +626,7 @@ class TestExtractor < Minitest::Test
     expected = [["Column A", "* ColB1", "ColB2  ColB3", "* Column C"], ["Value 1", "*  23.5", "66.811.0", "* Name 1"], ["Value 2", "*  33.2", "56.312.0", "* Name 2"], ["Value 3", "* 123.3", "200.4  123.9", "* Name 3"], ["Value 4", "*  24.5", "66.811.0", "* Name 1"], ["Value 5", "*  43.2", "80.114.5", "* Name 2"], ["Value 6", "* 100.6", "190.4  120.3", "* Name 3"], ["Value 7", "*  11.5", "66.811.0", "* Name 1"], ["Value 8", "*  37.4", "77.420.1", "* Name 2"], ["Value 9", "* 883.3", "110.4  111.2", "* Name 3"]]
 
     table = extractor.extract_page(1).get_table
-    assert_equal table_to_array(table), expected
+    assert_equal expected, table_to_array(table)
   end
 
 

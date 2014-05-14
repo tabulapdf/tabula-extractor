@@ -6,7 +6,7 @@ import java.util.List;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 
 @SuppressWarnings("serial")
-public class TextElement extends Rectangle  {
+public class TextElement extends Rectangle implements TextContainer {
 
     private String text;
     private PDFont font;
@@ -57,11 +57,11 @@ public class TextElement extends Rectangle  {
     
     /**
      * heuristically merge a list of TextElement into a list of TextChunk
-     * lots of ideas taken from PDFBox's PDFTextStripper.writePage
+     * ported from from PDFBox's PDFTextStripper.writePage, with modifications
      * here be dragons
      * 
      * @param textElements
-     * @param verticalRulingLocations
+     * @param verticalRulings
      * @return
      */
     public static List<TextChunk> mergeWords(List<TextElement> textElements, List<Ruling> verticalRulings) {
@@ -97,7 +97,7 @@ public class TextElement extends Rectangle  {
             }
             
             // if chr is a space that overlaps with prevChar, skip
-            if (chr.getText() == " " && prevChar.getLeft() == chr.getLeft() && prevChar.getTop() == chr.getTop()) {
+            if (chr.getText().equals(" ") && prevChar.getLeft() == chr.getLeft() && prevChar.getTop() == chr.getTop()) {
                 continue;
             }
             
@@ -165,7 +165,6 @@ public class TextElement extends Rectangle  {
             endOfLastTextX = (float) chr.getRight();
             
             // should we add a space?
-            
             if (!acrossVerticalRuling &&
                 sameLine &&
                 expectedStartOfNextWordX < chr.getLeft() && 

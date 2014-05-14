@@ -265,7 +265,7 @@ public class Ruling extends Line2D.Float {
         TreeMap<Ruling, Boolean> tree = new TreeMap<Ruling, Boolean>(new Comparator<Ruling>() {
             @Override
             public int compare(Ruling o1, Ruling o2) {
-                return (int) Math.signum(o1.getTop() - o2.getTop());
+                return java.lang.Double.compare(o1.getTop(), o2.getTop());
             }});
         
         TreeMap<Point2D, Ruling[]> rv = new TreeMap<Point2D, Ruling[]>(new Comparator<Point2D>() {

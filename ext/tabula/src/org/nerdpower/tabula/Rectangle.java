@@ -5,6 +5,8 @@ import java.util.List;
 
 @SuppressWarnings("serial")
 public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle> {
+    
+    private static final float VERTICAL_COMPARISON_THRESHOLD = 0.1f;
         
     public Rectangle() {
         super();
@@ -20,7 +22,7 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
         double thisBottom = this.getY() + this.getHeight();
         double otherBottom = other.getY() + other.getHeight();
         double yDifference = Math.abs(thisBottom - otherBottom);
-        if ((yDifference < 0.1) ||
+        if ((yDifference < VERTICAL_COMPARISON_THRESHOLD) ||
                 (otherBottom >= this.getY() && otherBottom <= thisBottom) ||
                 (thisBottom >= other.getY() && thisBottom <= otherBottom)) {
             return java.lang.Double.compare(this.getX(), other.getX());

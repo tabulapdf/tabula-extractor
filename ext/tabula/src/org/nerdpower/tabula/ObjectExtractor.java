@@ -1,5 +1,4 @@
 package org.nerdpower.tabula;
-import java.awt.BasicStroke;
 import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Shape;
@@ -269,7 +268,7 @@ public class ObjectExtractor extends PageDrawer {
 
         Float h = textPosition.getHeightDir();
 
-        if (c == NBSP) { // replace non-breaking space for space
+        if (c.equals(NBSP)) { // replace non-breaking space for space
             c = " ";
         }
 
@@ -284,7 +283,7 @@ public class ObjectExtractor extends PageDrawer {
                 c,
                 // workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
                 (wos == Float.NaN || wos == 0) ? this.currentSpaceWidth() : wos,
-                        textPosition.getDir());
+                textPosition.getDir());
 
         if (this.currentClippingPath().intersects(te)) {
             if (this.minCharWidth > te.getWidth()) {
@@ -382,14 +381,25 @@ public class ObjectExtractor extends PageDrawer {
     }
 
     // for testing, disregard	
-    	public static void main(String[] args) throws IOException {
-    		PDDocument document = PDDocument.load(args[0]);
-    		ObjectExtractor oe = new ObjectExtractor(document);
-    		//for (Page z: oe.extractPages(new ArrayList<Integer>(Arrays.asList(1,2)))) {
-    		PageIterator e = oe.extract();
-    		while (e.hasNext()) {
-    		    System.out.println(e.next());
-    		}
-    	}
+    public static void main(String[] args) throws IOException {
+        PDDocument document = PDDocument.load(args[0]);
+        ObjectExtractor oe = new ObjectExtractor(document);
+
+        PageIterator e = oe.extract();
+        while (e.hasNext()) {
+            //Page p = e.next().getArea(32.871f, 41.721f, 486.75f, 694.092f);
+            //Page p = e.next().getArea(535.5f, 70.125f, 549.3125f, 532.3125f);
+            Page p = e.next();
+            List<Table> ts = new BasicExtractionAlgorithm().extract(p);
+            for (List<TextChunk> row : ts.get(0).cells) {
+                StringBuilder sb = new StringBuilder();
+                for (TextChunk cell : row) {
+                    sb.append(cell == null ? "" : cell.getText());
+                    sb.append(",");
+                }
+                System.out.println(sb.toString());
+            }
+        }
+    }
 
 }
