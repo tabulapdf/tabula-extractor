@@ -16,6 +16,7 @@ test/data/icdar-groundtruth
 tmp
 /*.pdf
 /*.csv
+*.class
 
 # YARD artifacts
 .yardoc
