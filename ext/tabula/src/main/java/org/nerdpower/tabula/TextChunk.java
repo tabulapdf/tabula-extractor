@@ -3,7 +3,6 @@ package org.nerdpower.tabula;
 import java.util.ArrayList;
 import java.util.Arrays;
 import java.util.List;
-import java.util.ListIterator;
 
 @SuppressWarnings("serial")
 public class TextChunk extends Rectangle implements TextContainer { 

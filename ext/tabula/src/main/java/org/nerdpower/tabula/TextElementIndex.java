@@ -7,9 +7,9 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 
-import com.infomatiq.jsi.Rectangle;
-import com.infomatiq.jsi.SpatialIndex;
-import com.infomatiq.jsi.rtree.RTree;
+import net.sf.jsi.Rectangle;
+import net.sf.jsi.SpatialIndex;
+import net.sf.jsi.rtree.RTree;
 
 public class TextElementIndex {
     

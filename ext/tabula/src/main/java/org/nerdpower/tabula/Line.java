@@ -2,13 +2,12 @@ package org.nerdpower.tabula;
 
 import java.util.ArrayList;
 import java.util.List;
-import java.util.ListIterator;
+
 
 @SuppressWarnings("serial")
 public class Line extends Rectangle {
 
     List<TextChunk> textChunks = new ArrayList<TextChunk>();
-    private static final int CHAR_RUN_MAX_LENGTH = 3;
     static final Character[] WHITE_SPACE_CHARS = { ' ', '\t', '\r', '\n', '\f' };
     
 
