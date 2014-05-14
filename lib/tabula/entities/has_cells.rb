@@ -1,6 +1,7 @@
 require 'set'
 java_import java.awt.Polygon
 java_import java.awt.geom.Area
+java_import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm
 
 module Tabula
   # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors; ruling_lines reader
@@ -29,67 +30,73 @@ module Tabula
     # finds cells from the ruling lines on the page.
     # implements Nurminen thesis algorithm cf. https://github.com/jazzido/tabula-extractor/issues/16
     # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors
+    # def find_cells!(horizontal_ruling_lines, vertical_ruling_lines, options={})
+    #   # All lines need to been sorted from up to down,
+    #   # and left to right in ascending order
+
+    #   cellsFound = []
+
+    #   intersection_points = Ruling.find_intersections(horizontal_ruling_lines, vertical_ruling_lines)
+
+    #   # All crossing-points have been sorted from up to down,
+    #   # and left to right in ascending order
+    #   # depending on the Point2D default sort here.
+    #   intersection_points_array = intersection_points.keys.sort
+
+    #   intersection_points_array.each_with_index do |topLeft, i|
+    #     # Fetch all points on the same vertical and horizontal
+    #     # line with current crossing point
+    #     horizontal, vertical = intersection_points[topLeft]
+
+    #     # this lets us go to the next intersection_point in intersection_points_array
+    #     # it is bad and I feel bad.
+    #     catch :cellCreated do
+
+    #       # CrossingPointsDirectlyBelow( topLeft );
+    #       x_points = intersection_points_array[i..-1].select{|pt| pt.x == topLeft.x && pt.y > topLeft.y }
+    #       # CrossingPointsDirectlyToTheRight( topLeft );
+    #       y_points = intersection_points_array[i..-1].select{|pt| pt.y == topLeft.y && pt.x > topLeft.x }
+
+
+    #       x_points.each do |x_point|
+    #         #                                Skip to next crossing-point
+    #         # if( NOT EdgeExistsBetween( topLeft, x_point)) next crossing-
+    #         #                                                    point;
+    #         next unless vertical.colinear?(x_point)
+    #         y_points.each do |y_point|
+
+    #           # if( NOT EdgeExistsBetween( topLeft, y_point)) next crossing-
+    #           #                                                    point;
+    #           next unless horizontal.colinear?(y_point)
+    #           #Hypothetical bottom right point of rectangle
+    #           btmRight = Point2D::Float.new(y_point.x, x_point.y)
+    #           if intersection_points.include?(btmRight)
+    #             btmRightHorizontal, btmRightVertical = intersection_points[btmRight]
+
+    #             if btmRightHorizontal.colinear?( x_point ) &&
+    #                 btmRightVertical.colinear?( y_point )
+    #               # Rectangle is confirmed to have 4 sides
+    #               cellsFound << Cell.new_from_points( topLeft, btmRight, options)
+    #               # Each crossing point can be the top left corner
+    #               # of only a single rectangle
+    #               #next crossing-point; we need to "next" out of the outer loop here
+    #               # to avoid creating non-minimal cells, I htink.
+    #               throw :cellCreated
+    #             end
+    #           end
+    #         end
+    #       end
+    #     end #cellCreated
+    #   end
+    #   self.cells = cellsFound
+    #   cellsFound
+    # end
     def find_cells!(horizontal_ruling_lines, vertical_ruling_lines, options={})
-      # All lines need to been sorted from up to down,
-      # and left to right in ascending order
-
-      cellsFound = []
-
-      intersection_points = Ruling.find_intersections(horizontal_ruling_lines, vertical_ruling_lines)
-
-      # All crossing-points have been sorted from up to down,
-      # and left to right in ascending order
-      # depending on the Point2D default sort here.
-      intersection_points_array = intersection_points.keys.sort
-
-      intersection_points_array.each_with_index do |topLeft, i|
-        # Fetch all points on the same vertical and horizontal
-        # line with current crossing point
-        horizontal, vertical = intersection_points[topLeft]
-
-        # this lets us go to the next intersection_point in intersection_points_array
-        # it is bad and I feel bad.
-        catch :cellCreated do
-
-          # CrossingPointsDirectlyBelow( topLeft );
-          x_points = intersection_points_array[i..-1].select{|pt| pt.x == topLeft.x && pt.y > topLeft.y }
-          # CrossingPointsDirectlyToTheRight( topLeft );
-          y_points = intersection_points_array[i..-1].select{|pt| pt.y == topLeft.y && pt.x > topLeft.x }
-
-
-          x_points.each do |x_point|
-            #                                Skip to next crossing-point
-            # if( NOT EdgeExistsBetween( topLeft, x_point)) next crossing-
-            #                                                    point;
-            next unless vertical.colinear?(x_point)
-            y_points.each do |y_point|
-
-              # if( NOT EdgeExistsBetween( topLeft, y_point)) next crossing-
-              #                                                    point;
-              next unless horizontal.colinear?(y_point)
-              #Hypothetical bottom right point of rectangle
-              btmRight = Point2D::Float.new(y_point.x, x_point.y)
-              if intersection_points.include?(btmRight)
-                btmRightHorizontal, btmRightVertical = intersection_points[btmRight]
-
-                if btmRightHorizontal.colinear?( x_point ) &&
-                    btmRightVertical.colinear?( y_point )
-                  # Rectangle is confirmed to have 4 sides
-                  cellsFound << Cell.new_from_points( topLeft, btmRight, options)
-                  # Each crossing point can be the top left corner
-                  # of only a single rectangle
-                  #next crossing-point; we need to "next" out of the outer loop here
-                  # to avoid creating non-minimal cells, I htink.
-                  throw :cellCreated
-                end
-              end
-            end
-          end
-        end #cellCreated
-      end
-      self.cells = cellsFound
-      cellsFound
+      self.cells = SpreadsheetExtractionAlgorithm.new.findCells(horizontal_ruling_lines, vertical_ruling_lines)
+      puts self.cells.size
+      self.cells
     end
+
 
     #TODO:
     #returns array of Spreadsheet objects constructed (or spreadsheet_areas => cells)
