@@ -13,18 +13,15 @@
 			<name>Sonatype repository</name>
 			<url>https://oss.sonatype.org/content/repositories/snapshots/</url>
 		</repository>
-		
+
 		<repository>
-			<releases>
-            <enabled>false</enabled>
-            <updatePolicy>always</updatePolicy>
-            <checksumPolicy>warn</checksumPolicy>
-          </releases>
-          <snapshots>
-            <enabled>true</enabled>
-            <updatePolicy>always</updatePolicy>
-            <checksumPolicy>fail</checksumPolicy>
-          </snapshots>
+			<!-- <releases> <enabled>true</enabled> <updatePolicy>always</updatePolicy> 
+				<checksumPolicy>warn</checksumPolicy> </releases> -->
+			<snapshots>
+				<enabled>true</enabled>
+				<updatePolicy>always</updatePolicy>
+				<checksumPolicy>warn</checksumPolicy>
+			</snapshots>
 			<id>nerdpower</id>
 			<name>nerdpower repository</name>
 			<url>http://nerdpower.org/maven2/</url>
@@ -40,6 +37,19 @@
 				<configuration>
 					<source>1.6</source>
 					<target>1.6</target>
+				</configuration>
+			</plugin>
+			<plugin>
+				<artifactId>maven-assembly-plugin</artifactId>
+				<configuration>
+					<archive>
+						<manifest>
+							<mainClass>fully.qualified.MainClass</mainClass>
+						</manifest>
+					</archive>
+					<descriptorRefs>
+						<descriptorRef>jar-with-dependencies</descriptorRef>
+					</descriptorRefs>
 				</configuration>
 			</plugin>
 		</plugins>
@@ -71,7 +81,6 @@
 			<groupId>org.apache.pdfbox</groupId>
 			<artifactId>pdfbox</artifactId>
 			<version>2.0.0-SNAPSHOT</version>
-			<scope>compile</scope>
 		</dependency>
 
 		<dependency>
