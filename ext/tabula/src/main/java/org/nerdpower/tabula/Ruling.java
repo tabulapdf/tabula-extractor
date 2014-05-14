@@ -246,7 +246,7 @@ public class Ruling extends Line2D.Float {
     
     // log(n) implementation of find_intersections
     // based on http://people.csail.mit.edu/indyk/6.838-old/handouts/lec2.pdf
-    public static TreeMap<Point2D, Ruling[]> findIntersections(List<Ruling> horizontals, List<Ruling> verticals) {
+    public static Map<Point2D, Ruling[]> findIntersections(List<Ruling> horizontals, List<Ruling> verticals) {
         
         class SortObject {
             protected SOType type;
