@@ -103,7 +103,7 @@ class Page
 
     @ruling_lines = self.getRulings
 
-    self.snap_points!
+    self.snap_points
 
     @vertical_ruling_lines = ::Tabula::Ruling.collapse_oriented_rulings(@ruling_lines.select(&:vertical?))
 
@@ -129,53 +129,6 @@ class Page
       :rotation => self.rotation,
       :texts => self.text
     }.to_json(options)
-  end
-
-  def snap_points!
-    lines_to_points = {}
-    points = []
-
-    @ruling_lines.each do |line|
-      point1 = line.p1 #comptooters are the wurst
-      point2 = line.p2
-      # for a given line, each call to #p1 and #p2 creates a new
-      # Point2D::Float object, rather than returning the same one over and
-      # over again.
-      # so we have to get it, store it in memory as `point1` and `point2`
-      # and then store those in various places (and now, modifying one will
-      # modify the reference and thereby modify the other)
-      lines_to_points[line] = [point1, point2]
-      points += [point1, point2]
-    end
-
-    # lines are stored separately from their constituent points
-    # so you can't modify the points and then modify the lines.
-    # ah, but perhaps I can stick the points in a hash AND in an array
-    # and then modify the lines by means of the points in the hash.
-
-    [[:x, :x=, self.min_char_width], [:y, :y=, self.min_char_height]].each do |getter, setter, cell_size|
-      sorted_points = points.sort_by(&getter)
-      first_point = sorted_points.shift
-      grouped_points = sorted_points.inject([[first_point]] ) do |memo, next_point|
-        last = memo.last
-
-        if (next_point.send(getter) - last.first.send(getter)).abs < cell_size
-          memo[-1] << next_point
-        else
-          memo << [next_point]
-        end
-        memo
-      end
-      grouped_points.each do |group|
-        uniq_locs = group.map(&getter).uniq
-        avg_loc = uniq_locs.sum / uniq_locs.size
-        group.each{|p| p.send(setter, avg_loc) }
-      end
-    end
-
-    lines_to_points.each do |l, p1_p2|
-      l.java_send :setLine, [java.awt.geom.Point2D, java.awt.geom.Point2D], p1_p2[0], p1_p2[1]
-    end
   end
 end
 
