@@ -20,6 +20,7 @@ import org.apache.pdfbox.pdmodel.font.PDType3Font;
 import org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState;
 import org.apache.pdfbox.pdmodel.graphics.state.PDTextState;
 import org.apache.pdfbox.text.TextPosition;
+import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm;
 
 import java.util.AbstractList;
 import java.util.ArrayList;

@@ -5,6 +5,8 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.nerdpower.tabula.extractors.ExtractionAlgorithm;
+
 public class Table {
     
     public static final Table EMPTY = new Table(0,0);

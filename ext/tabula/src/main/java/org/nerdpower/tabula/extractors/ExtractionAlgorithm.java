@@ -1,6 +1,9 @@
-package org.nerdpower.tabula;
+package org.nerdpower.tabula.extractors;
 
 import java.util.List;
+
+import org.nerdpower.tabula.Page;
+import org.nerdpower.tabula.Table;
 
 public interface ExtractionAlgorithm {
 

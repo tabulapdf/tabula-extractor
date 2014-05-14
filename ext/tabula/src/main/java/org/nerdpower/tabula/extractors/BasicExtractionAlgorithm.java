@@ -1,10 +1,18 @@
-package org.nerdpower.tabula;
+package org.nerdpower.tabula.extractors;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 import java.util.Arrays;
+
+import org.nerdpower.tabula.Line;
+import org.nerdpower.tabula.Page;
+import org.nerdpower.tabula.Rectangle;
+import org.nerdpower.tabula.Ruling;
+import org.nerdpower.tabula.Table;
+import org.nerdpower.tabula.TextChunk;
+import org.nerdpower.tabula.TextElement;
 
 public class BasicExtractionAlgorithm implements ExtractionAlgorithm {
     

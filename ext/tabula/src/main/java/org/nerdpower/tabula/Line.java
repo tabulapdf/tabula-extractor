@@ -8,7 +8,7 @@ import java.util.List;
 public class Line extends Rectangle {
 
     List<TextChunk> textChunks = new ArrayList<TextChunk>();
-    static final Character[] WHITE_SPACE_CHARS = { ' ', '\t', '\r', '\n', '\f' };
+    public static final Character[] WHITE_SPACE_CHARS = { ' ', '\t', '\r', '\n', '\f' };
     
 
     public List<TextChunk> getTextElements() {
