@@ -9,7 +9,7 @@ import java.util.List;
 public class Cell extends Rectangle implements TextContainer {
     private boolean spanning;
     private boolean placeholder;
-    private boolean useLineReturns;
+    private boolean useLineReturns = true;
     private List<TextChunk> textElements;
     
     public Cell(float top, float left, float width, float height) {
@@ -25,14 +25,17 @@ public class Cell extends Rectangle implements TextContainer {
 
     @Override
     public String getText() {
+        if (this.textElements.size() == 0) {
+            return "";
+        }
         StringBuilder sb = new StringBuilder();
         Collections.sort(this.textElements);
         double curTop = this.textElements.get(0).getTop();
         for (TextChunk tc: this.textElements) {
-            sb.append(tc.getText());
             if (this.useLineReturns && tc.getTop() > curTop) {
                 sb.append("\r");
             }
+            sb.append(tc.getText());
             curTop = tc.getTop();
         }
         return sb.toString().trim();

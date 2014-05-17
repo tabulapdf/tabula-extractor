@@ -5,35 +5,14 @@ class Table
   # include Tabula::Tabular
   # attr_reader :extraction_method
 
-  def initialize(line_count, separators)
-    @separators = separators
-    @lines = (0...line_count).inject([]) { |m| m << Line.new }
-    @extraction_method = "original"
-  end
-
   # def cols
   #   rows.transpose
-  # end
-
-  # TODO: this is awful, refactor
-  # def rows
-  #   rpad!
-  #   lstrip_lines!
-  #   li = lines.map { |l|
-  #     l.text_elements = l.text_elements.map { |te|
-  #       te || TextElement::EMPTY
-  #     }
-  #   }.select { |l|
-  #     !l.all? { |te| te.text.empty? }
-  #   }.sort_by { |l|
-  #     l.map { |te| te.top || 0 }.max
-  #   }
   # end
 
   # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
   # probably only used for testing
   def self.new_from_array(array_of_rows)
-    t = Table.new(array_of_rows.size, [])
+    t = Table.new(array_of_rows.size, array_of_rows.map(&:size).max)
     @extraction_method = "testing"
     tlines = []
     array_of_rows.each_with_index do |row, index|

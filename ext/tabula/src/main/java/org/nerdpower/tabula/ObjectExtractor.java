@@ -9,8 +9,11 @@ import java.awt.geom.PathIterator;
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
 import java.io.IOException;
-
-import org.apache.pdfbox.rendering.PageDrawer;
+import java.util.AbstractList;
+import java.util.ArrayList;
+import java.util.Collections;
+import java.util.Comparator;
+import java.util.List;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
@@ -19,14 +22,12 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType3Font;
 import org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState;
 import org.apache.pdfbox.pdmodel.graphics.state.PDTextState;
+import org.apache.pdfbox.rendering.PageDrawer;
 import org.apache.pdfbox.text.TextPosition;
 import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm;
 
-import java.util.AbstractList;
-import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
-import java.util.List;
+import org.nerdpower.tabula.extractors.ExtractionAlgorithm;
+import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm;
 
 public class ObjectExtractor extends PageDrawer {
 
@@ -53,7 +54,7 @@ public class ObjectExtractor extends PageDrawer {
     private Rectangle2D transformedClippingPathBounds;
     private Shape transformedClippingPath;
     private boolean extractRulingLines = true;
-    private PDDocument pdf_document;
+    private final PDDocument pdf_document;
     protected List<PDPage> pdf_document_pages;
     private PDPage page;
     private Dimension pageSize;
@@ -390,16 +391,21 @@ public class ObjectExtractor extends PageDrawer {
         while (e.hasNext()) {
             //Page p = e.next().getArea(32.871f, 41.721f, 486.75f, 694.092f);
             //Page p = e.next().getArea(535.5f, 70.125f, 549.3125f, 532.3125f);
-            Page p = e.next();
-            List<Table> ts = new BasicExtractionAlgorithm().extract(p);
-            for (List<TextChunk> row : ts.get(0).cells) {
-                StringBuilder sb = new StringBuilder();
-                for (TextChunk cell : row) {
-                    sb.append(cell == null ? "" : cell.getText());
-                    sb.append(",");
-                }
-                System.out.println(sb.toString());
-            }
+            Page p = e.next().getArea(425.625f, 53.125f, 575.714f, 810.535f);
+            // List<Table> ts = new BasicExtractionAlgorithm().extract(p);
+            SpreadsheetExtractionAlgorithm ea = new SpreadsheetExtractionAlgorithm();
+            List<? extends Rectangle> cells = ea.findCells(p.getHorizontalRulings(), p.getVerticalRulings());
+            List<Rectangle> spreadsheets = ea.findSpreadsheetsFromCells(cells);
+            System.out.println(spreadsheets);
+            
+//            for (List<TextChunk> row : ts.get(0).cells) {
+//                StringBuilder sb = new StringBuilder();
+//                for (TextChunk cell : row) {
+//                    sb.append(cell == null ? "" : cell.getText());
+//                    sb.append(",");
+//                }
+//                System.out.println(sb.toString());
+//            }
         }
     }
 

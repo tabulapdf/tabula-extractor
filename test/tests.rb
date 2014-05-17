@@ -429,7 +429,6 @@ class TestExtractor < Minitest::Test
     assert_equal expected_spreadsheets.map{|s| [s.x, s.y, s.width, s.height] },
       SpreadsheetsHasCellsTester.new(cells).find_spreadsheets_from_cells.map{|a| s = a.getBounds; [s.x, s.y, s.width, s.height] }
 
-
   end
 
   def test_add_spanning_cells
@@ -484,7 +483,7 @@ class TestExtractor < Minitest::Test
   def test_extract_tabular_data_using_lines_and_spreadsheets
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     expected_data_path = File.expand_path('data/frx_2012_disclosure.tsv', File.dirname(__FILE__))
-    expected = open(expected_data_path, 'r').read #.split("\n").map{|line| line.split("\t")}
+    expected = open(expected_data_path, 'r').read
 
     extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all)
     extractor.extract.each do |pdf_page|

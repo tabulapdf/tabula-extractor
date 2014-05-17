@@ -8,9 +8,10 @@ import org.apache.pdfbox.pdmodel.font.PDFont;
 @SuppressWarnings("serial")
 public class TextElement extends Rectangle implements TextContainer {
 
-    private String text;
-    private PDFont font;
-    private float fontSize, widthOfSpace, dir;
+    private final String text;
+    private final PDFont font;
+    private float fontSize;
+    private float widthOfSpace, dir;
 
     public TextElement(float y, float x, float width, float height,
             PDFont font, float fontSize, String c, float widthOfSpace) {
@@ -19,6 +20,7 @@ public class TextElement extends Rectangle implements TextContainer {
         this.text = c;
         this.widthOfSpace = widthOfSpace;
         this.fontSize = fontSize;
+        this.font = font;
     } 
 
     public TextElement(float y, float x, float width, float height,
@@ -28,9 +30,11 @@ public class TextElement extends Rectangle implements TextContainer {
         this.text = c;
         this.widthOfSpace = widthOfSpace;
         this.fontSize = fontSize;
+        this.font = font;
         this.dir = dir;
     }
 
+    @Override
     public String getText() {
         return text;
     }
@@ -68,7 +72,7 @@ public class TextElement extends Rectangle implements TextContainer {
         
         List<TextChunk> textChunks = new ArrayList<TextChunk>();
         
-        if (textElements.size() == 0) {
+        if (textElements.isEmpty()) {
             return textChunks;
         }
         
@@ -92,7 +96,7 @@ public class TextElement extends Rectangle implements TextContainer {
             prevChar = currentChunk.textElements.get(currentChunk.textElements.size() - 1);
             
             // if same char AND overlapped, skip
-            if ((chr.getText() == prevChar.getText()) && (prevChar.overlapRatio(chr) > 0.5)) {
+            if ((chr.getText().equals(prevChar.getText())) && (prevChar.overlapRatio(chr) > 0.5)) {
                 continue;
             }
             
@@ -153,7 +157,7 @@ public class TextElement extends Rectangle implements TextContainer {
             
             // new line?
             sameLine = true;
-            if (!overlap((float) chr.getBottom(), chr.height, maxYForLine, maxHeightForLine)) {
+            if (!Utils.overlap((float) chr.getBottom(), chr.height, maxYForLine, maxHeightForLine)) {
                 endOfLastTextX = -1;
                 expectedStartOfNextWordX = -java.lang.Float.MAX_VALUE;
                 maxYForLine = -java.lang.Float.MAX_VALUE;
@@ -205,17 +209,4 @@ public class TextElement extends Rectangle implements TextContainer {
         }
         return textChunks;
     }
-    
-    private static boolean within(float first, float second, float variance) {
-        return second < first + variance && second > first - variance;
-    }
-    
-    private static boolean overlap(float y1, float height1, float y2, float height2, float variance) {
-        return within( y1, y2, variance) || (y2 <= y1 && y2 >= y1 - height1) || (y1 <= y2 && y1 >= y2-height2);
-    }
-    
-    private static boolean overlap(float y1, float height1, float y2, float height2) {
-        return overlap(y1, height1, y2, height2, 0.1f);
-    }
-
 }

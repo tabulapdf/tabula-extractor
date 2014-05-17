@@ -1,5 +1,5 @@
 java_import org.nerdpower.tabula.Page
-java_import org.nerdpower.tabula.BasicExtractionAlgorithm
+java_import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm
 
 class Page
   include Tabula::HasCells

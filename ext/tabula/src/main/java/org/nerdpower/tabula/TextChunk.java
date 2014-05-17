@@ -148,7 +148,7 @@ public class TextChunk extends Rectangle implements TextContainer {
             lastChar = currentChar;
         }
         
-        if (rv.size() == 0) { // no splits occurred, hence this.squeeze() == [this]
+        if (rv.isEmpty()) { // no splits occurred, hence this.squeeze() == [this]
             rv.add(this);
         }
         

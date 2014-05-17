@@ -1,6 +1,8 @@
 package org.nerdpower.tabula;
 
+import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
+import java.util.Formatter;
 import java.util.List;
 
 @SuppressWarnings("serial")
@@ -16,20 +18,23 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
         super();
         this.setRect(left, top, width, height);
     }
-
+    
     @Override
     public int compareTo(Rectangle other) {
-        double thisBottom = this.getY() + this.getHeight();
-        double otherBottom = other.getY() + other.getHeight();
+        double thisBottom = this.getBottom();
+        double otherBottom = other.getBottom();
         double yDifference = Math.abs(thisBottom - otherBottom);
+        int rv;
         if ((yDifference < VERTICAL_COMPARISON_THRESHOLD) ||
-                (otherBottom >= this.getY() && otherBottom <= thisBottom) ||
-                (thisBottom >= other.getY() && thisBottom <= otherBottom)) {
-            return java.lang.Double.compare(this.getX(), other.getX());
+                (otherBottom > this.getY() && otherBottom < thisBottom) ||
+                (thisBottom > other.getY() && thisBottom < otherBottom)) {
+            
+            rv = java.lang.Double.compare(this.getX(), other.getX());
         }
         else {
-            return java.lang.Double.compare(thisBottom, otherBottom);
+            rv = java.lang.Double.compare(thisBottom, otherBottom);
         }
+        return rv;
     }
     
     public float getArea() {
@@ -112,6 +117,24 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
     
     public void setBottom(double bottom) {
         this.setRect(this.x, this.y, this.width, bottom - this.y);
+    }
+    
+    public Point2D[] getPoints() {
+        return new Point2D[] {
+                new Point2D.Float((float) this.getLeft(), (float) this.getTop()),
+                new Point2D.Float((float) this.getRight(), (float) this.getTop()),
+                new Point2D.Float((float) this.getRight(), (float) this.getBottom()),
+                new Point2D.Float((float) this.getLeft(), (float) this.getBottom())
+        };
+    }
+    
+    @Override
+    public String toString() {
+        StringBuilder sb = new StringBuilder();
+        String s = super.toString();
+        sb.append(s.substring(0, s.length() - 1));
+        sb.append(String.format(",bottom=%f,right=%f]", this.getBottom(), this.getRight()));
+        return sb.toString();
     }
 
     

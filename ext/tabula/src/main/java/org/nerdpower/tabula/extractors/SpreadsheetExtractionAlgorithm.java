@@ -6,7 +6,6 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.HashMap;
 import java.util.HashSet;
-import java.util.Hashtable;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
@@ -119,37 +118,39 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
         return cellsFound;
     }
     
-    public List<Rectangle> findSpreadsheetsFromCells(List<Rectangle> cells) {
+    public List<Rectangle> findSpreadsheetsFromCells(List<? extends Rectangle> cells) {
         // via: http://stackoverflow.com/questions/13746284/merging-multiple-adjacent-rectangles-into-one-polygon
         List<Rectangle> rectangles = new ArrayList<Rectangle>();
-        Set<Point2D> points = new HashSet<Point2D>();
+        Set<Point2D> pointSet = new HashSet<Point2D>();
         Map<Point2D, Point2D> edgesH = new HashMap<Point2D, Point2D>();
         Map<Point2D, Point2D> edgesV = new HashMap<Point2D, Point2D>();
         int i = 0;
+        
+        cells = new ArrayList<Rectangle>(new HashSet<Rectangle>(cells));
         
         Collections.sort(cells);
         
         for (Rectangle cell: cells) {
             for(Point2D pt: cell.getPoints()) {
-                if (points.contains(pt)) {
-                    points.remove(pt);
+                if (pointSet.contains(pt)) { // shared vertex, remove it
+                    pointSet.remove(pt);
                 }
                 else {
-                    points.add(pt);
+                    pointSet.add(pt);
                 }
             }
         }
         
         // X first sort
-        List<Point2D> pointsSortX = new ArrayList<Point2D>(points);
+        List<Point2D> pointsSortX = new ArrayList<Point2D>(pointSet);
         Collections.sort(pointsSortX, X_FIRST_POINT_COMPARATOR);
         // Y first sort
-        List<Point2D> pointsSortY = new ArrayList<Point2D>(points);
+        List<Point2D> pointsSortY = new ArrayList<Point2D>(pointSet);
         Collections.sort(pointsSortY, POINT_COMPARATOR);
         
-        while (i < points.size()) {
+        while (i < pointSet.size()) {
             float currY = (float) pointsSortY.get(i).getY();
-            while (i < points.size() && pointsSortY.get(i).getY() == currY) {
+            while (i < pointSet.size() && pointsSortY.get(i).getY() == currY) {
                 edgesH.put(pointsSortY.get(i), pointsSortY.get(i+1));
                 edgesH.put(pointsSortY.get(i+1), pointsSortY.get(i));
                 i += 2;
@@ -157,9 +158,9 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
         }
         
         i = 0;
-        while (i < points.size()) {
+        while (i < pointSet.size()) {
             float currX = (float) pointsSortX.get(i).getX();
-            while (i < points.size() && pointsSortX.get(i).getX() == currX) {
+            while (i < pointSet.size() && pointsSortX.get(i).getX() == currX) {
                 edgesV.put(pointsSortX.get(i), pointsSortX.get(i+1));
                 edgesV.put(pointsSortX.get(i+1), pointsSortX.get(i));
                 i += 2;
@@ -168,9 +169,9 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
         
         // Get all the polygons
         List<Polygon> polygons = new ArrayList<Polygon>();
-        Polygon polygon = new Polygon();
         Point2D nextVertex;
         while (!edgesH.isEmpty()) {
+            Polygon polygon = new Polygon();
             Point2D first = edgesH.keySet().iterator().next();
             polygon.add(new PolygonVertex(first, Direction.HORIZONTAL));
             edgesH.remove(first);
@@ -197,13 +198,10 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
                     break;
                 }
             }
+            
             for (PolygonVertex vertex: polygon) {
-                if (edgesH.containsKey(vertex.point)) {
-                    edgesH.remove(vertex.point);
-                }
-                if (edgesV.containsKey(vertex.point)) {
-                    edgesV.remove(vertex.point);
-                }
+                edgesH.remove(vertex.point);
+                edgesV.remove(vertex.point);
             }
             polygons.add(polygon);
         }
@@ -226,6 +224,7 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
         return rectangles;
     }
     
+    @Override
     public String toString() {
         return "spreadsheet";
     }
@@ -245,7 +244,15 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
         }
         
         public boolean equals(PolygonVertex other) {
-            return this.point.equals(other.point) && this.direction == other.direction;
+            return this.point.equals(other.point);
+        }
+        
+        public int hashCode() {
+            return this.point.hashCode();
+        }
+        
+        public String toString() {
+            return String.format("%s[point=%s,direction=%s]", this.getClass().getName(), this.point.toString(), this.direction.toString());
         }
     }
     

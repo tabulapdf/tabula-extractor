@@ -38,7 +38,7 @@ public class Line extends Rectangle {
     }
 
     public void addTextChunk(TextChunk textChunk) {
-        if (this.textChunks.size() == 0) {
+        if (this.textChunks.isEmpty()) {
             this.setRect(textChunk);
         }
         else {

@@ -49,30 +49,6 @@ class Point2D::Float
     [self.getX, self.getY].to_json(*args)
   end
 
-  def hash
-    "#{self.getX},#{self.getY}".hash
-  end
-
-  def <=>(other)
-    return  1 if self.y > other.y
-    return -1 if self.y < other.y
-    return  1 if self.x  > other.x
-    return -1 if self.x  < other.x
-    return  0
-  end
-
-  def x_first_cmp(other)
-    return  1 if self.x  > other.x
-    return -1 if self.x  < other.x
-    return  1 if self.y > other.y
-    return -1 if self.y < other.y
-    return  0
-  end
-
-  def ==(other)
-    return self.x == other.x && self.y == other.y
-  end
-
 end
 
 class Line2D::Float
@@ -88,17 +64,6 @@ end
 class Rectangle2D
   SIMILARITY_DIVISOR = 20
 
-  alias_method :top, :minY
-  alias_method :right, :maxX
-  alias_method :left, :minX
-  alias_method :bottom, :maxY
-
-  def self.new_from_tlwh(top, left, width, height)
-    r = self.new()
-    r.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], left, top, width, height
-    r
-  end
-
   # Implement geometry stuff
   #-------------------------
 
@@ -112,17 +77,6 @@ class Rectangle2D
 
   def to_json(options={})
     self.to_h.to_json
-  end
-
-  def tlwh
-    [top, left, width, height]
-  end
-
-  def points
-    [ Point2D::Float.new(left, top),
-      Point2D::Float.new(right, top),
-      Point2D::Float.new(right, bottom),
-      Point2D::Float.new(left, bottom) ]
   end
 
   # Various ways that rectangles can overlap one another
