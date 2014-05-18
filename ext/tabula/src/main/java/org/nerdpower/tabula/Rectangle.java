@@ -2,7 +2,6 @@ package org.nerdpower.tabula;
 
 import java.awt.geom.Point2D;
 import java.awt.geom.Rectangle2D;
-import java.util.Formatter;
 import java.util.List;
 
 @SuppressWarnings("serial")

@@ -1,10 +1,7 @@
-/*
- * To change this license header, choose License Headers in Project Properties.
- * To change this template file, choose Tools | Templates
- * and open the template in the editor.
- */
-
 package org.nerdpower.tabula;
+
+import java.util.AbstractList;
+import java.util.List;
 
 /**
  *
@@ -21,6 +18,21 @@ public class Utils {
     
     public static boolean overlap(double y1, double height1, double y2, double height2) {
         return overlap(y1, height1, y2, height2, 0.1f);
+    }
+    
+    // range iterator
+    public static List<Integer> range(final int begin, final int end) {
+        return new AbstractList<Integer>() {
+            @Override
+            public Integer get(int index) {
+                return begin + index;
+            }
+
+            @Override
+            public int size() {
+                return end - begin;
+            }
+        };
     }
 
 }

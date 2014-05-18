@@ -4,7 +4,7 @@ import java.io.IOException;
 import java.util.Iterator;
 
 
-class PageIterator implements Iterator<Page> {
+public class PageIterator implements Iterator<Page> {
 
     private ObjectExtractor oe;
     private Iterator<Integer> pageIndexIterator;

@@ -61,8 +61,8 @@ public class TextElement extends Rectangle implements TextContainer {
     
     /**
      * heuristically merge a list of TextElement into a list of TextChunk
-     * ported from from PDFBox's PDFTextStripper.writePage, with modifications
-     * here be dragons
+     * ported from from PDFBox's PDFTextStripper.writePage, with modifications.
+     * Here be dragons
      * 
      * @param textElements
      * @param verticalRulings
@@ -124,7 +124,7 @@ public class TextElement extends Rectangle implements TextContainer {
             // space character with some margin.
             wordSpacing = (float) chr.getWidthOfSpace();
             deltaSpace = 0;
-            if (wordSpacing == java.lang.Float.NaN || wordSpacing == 0) {
+            if (java.lang.Float.isNaN(wordSpacing) || wordSpacing == 0) {
                 deltaSpace = java.lang.Float.MAX_VALUE;
             }
             else if (lastWordSpacing < 0) {

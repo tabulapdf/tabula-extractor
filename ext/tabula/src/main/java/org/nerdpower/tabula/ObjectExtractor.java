@@ -24,10 +24,7 @@ import org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState;
 import org.apache.pdfbox.pdmodel.graphics.state.PDTextState;
 import org.apache.pdfbox.rendering.PageDrawer;
 import org.apache.pdfbox.text.TextPosition;
-import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm;
 
-import org.nerdpower.tabula.extractors.ExtractionAlgorithm;
-import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm;
 
 public class ObjectExtractor extends PageDrawer {
 
@@ -55,7 +52,7 @@ public class ObjectExtractor extends PageDrawer {
     private Shape transformedClippingPath;
     private boolean extractRulingLines = true;
     private final PDDocument pdf_document;
-    protected List<PDPage> pdf_document_pages;
+    protected List pdf_document_pages;
     private PDPage page;
     private Dimension pageSize;
 
@@ -71,7 +68,7 @@ public class ObjectExtractor extends PageDrawer {
             throw new java.lang.IndexOutOfBoundsException("Page number does not exist");
         }
         
-        PDPage p = this.pdf_document_pages.get(page_number - 1);
+        PDPage p = (PDPage) this.pdf_document_pages.get(page_number - 1);
         PDStream contents = p.getContents();
 
         if (contents == null) {
@@ -94,12 +91,12 @@ public class ObjectExtractor extends PageDrawer {
                 this.spatialIndex);
     }
 
-    PageIterator extract(Iterable<Integer> pages) {
+    public PageIterator extract(Iterable<Integer> pages) {
         return new PageIterator(this, pages);
     }
 
-    PageIterator extract() {
-        return extract(range(1, this.pdf_document_pages.size() + 1));
+    public PageIterator extract() {
+        return extract(Utils.range(1, this.pdf_document_pages.size() + 1));
     }
 
     public void close() throws IOException {
@@ -284,7 +281,7 @@ public class ObjectExtractor extends PageDrawer {
                 textPosition.getFontSize(),
                 c,
                 // workaround a possible bug in PDFBox: https://issues.apache.org/jira/browse/PDFBOX-1755
-                (wos == Float.NaN || wos == 0) ? this.currentSpaceWidth() : wos,
+                (Float.isNaN(wos) || wos == 0) ? this.currentSpaceWidth() : wos,
                 textPosition.getDir());
 
         if (this.currentClippingPath().intersects(te)) {
@@ -366,47 +363,4 @@ public class ObjectExtractor extends PageDrawer {
                 block != null &&
                 block != Character.UnicodeBlock.SPECIALS;
     }
-
-    // range iterator
-    private static List<Integer> range(final int begin, final int end) {
-        return new AbstractList<Integer>() {
-            @Override
-            public Integer get(int index) {
-                return begin + index;
-            }
-
-            @Override
-            public int size() {
-                return end - begin;
-            }
-        };
-    }
-
-    // for testing, disregard	
-    public static void main(String[] args) throws IOException {
-        PDDocument document = PDDocument.load(args[0]);
-        ObjectExtractor oe = new ObjectExtractor(document);
-
-        PageIterator e = oe.extract();
-        while (e.hasNext()) {
-            //Page p = e.next().getArea(32.871f, 41.721f, 486.75f, 694.092f);
-            //Page p = e.next().getArea(535.5f, 70.125f, 549.3125f, 532.3125f);
-            Page p = e.next().getArea(425.625f, 53.125f, 575.714f, 810.535f);
-            // List<Table> ts = new BasicExtractionAlgorithm().extract(p);
-            SpreadsheetExtractionAlgorithm ea = new SpreadsheetExtractionAlgorithm();
-            List<? extends Rectangle> cells = ea.findCells(p.getHorizontalRulings(), p.getVerticalRulings());
-            List<Rectangle> spreadsheets = ea.findSpreadsheetsFromCells(cells);
-            System.out.println(spreadsheets);
-            
-//            for (List<TextChunk> row : ts.get(0).cells) {
-//                StringBuilder sb = new StringBuilder();
-//                for (TextChunk cell : row) {
-//                    sb.append(cell == null ? "" : cell.getText());
-//                    sb.append(",");
-//                }
-//                System.out.println(sb.toString());
-//            }
-        }
-    }
-
 }

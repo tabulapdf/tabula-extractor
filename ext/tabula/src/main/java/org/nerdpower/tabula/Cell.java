@@ -13,7 +13,7 @@ public class Cell extends Rectangle implements TextContainer {
     private List<TextChunk> textElements;
     
     public Cell(float top, float left, float width, float height) {
-        super(left, top, width, height);
+        super(top, left, width, height);
         this.setPlaceholder(false);
         this.setSpanning(false);
         this.setTextElements(new ArrayList<TextChunk>());

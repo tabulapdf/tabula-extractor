@@ -2,14 +2,22 @@ package org.tabula.nerdpower;
 
 import static org.junit.Assert.*;
 
+import java.io.IOException;
 import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
+import org.apache.pdfbox.pdmodel.PDDocument;
 import org.junit.After;
 import org.junit.Before;
 import org.junit.Test;
 import org.nerdpower.tabula.Cell;
+import org.nerdpower.tabula.ObjectExtractor;
+import org.nerdpower.tabula.Page;
 import org.nerdpower.tabula.Rectangle;
+import org.nerdpower.tabula.Ruling;
+import org.nerdpower.tabula.TextChunk;
+import org.nerdpower.tabula.TextElement;
 import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm;
 
 public class TestSpreadsheetExtractor {
@@ -139,6 +147,47 @@ public class TestSpreadsheetExtractor {
             new Cell(442.0f, 764.0f, 216.0f, 74.0f),
             new Cell(516.0f, 764.0f, 216.0f, 28.0f),
             new Cell(544.0f, 764.0f, 216.0f, 4.0f) };
+    
+    public static final Rectangle[] EXPECTED_RECTANGLES = {
+        new Rectangle(40.0f, 18.0f, 208.0f, 40.0f),
+        new Rectangle(84.0f, 18.0f, 962.0f, 464.0f)
+    };
+    
+    private static final Ruling[] VERTICAL_RULING_LINES = { 
+            new Ruling(40.0f, 18.0f, 0.0f, 40.0f),
+            new Ruling(44.0f, 70.0f, 0.0f, 36.0f),
+            new Ruling(40.0f, 226.0f, 0.0f, 40.0f) 
+            };
+
+    private static final Ruling[] HORIZONTAL_RULING_LINES = {
+            new Ruling(40.0f, 18.0f, 208.0f, 0.0f),
+            new Ruling(44.0f, 18.0f, 208.0f, 0.0f),
+            new Ruling(50.0f, 18.0f, 208.0f, 0.0f),
+            new Ruling(54.0f, 18.0f, 208.0f, 0.0f),
+            new Ruling(60.0f, 18.0f, 208.0f, 0.0f),
+            new Ruling(64.0f, 18.0f, 208.0f, 0.0f),
+            new Ruling(70.0f, 18.0f, 208.0f, 0.0f),
+            new Ruling(74.0f, 18.0f, 208.0f, 0.0f),
+            new Ruling(80.0f, 18.0f, 208.0f, 0.0f) 
+    };
+    
+    
+    private static final Cell[] EXPECTED_CELLS = { 
+            new Cell(40.0f, 18.0f, 208.0f, 4.0f),
+            new Cell(44.0f, 18.0f, 52.0f, 6.0f),
+            new Cell(50.0f, 18.0f, 52.0f, 4.0f),
+            new Cell(54.0f, 18.0f, 52.0f, 6.0f),
+            new Cell(60.0f, 18.0f, 52.0f, 4.0f),
+            new Cell(64.0f, 18.0f, 52.0f, 6.0f),
+            new Cell(70.0f, 18.0f, 52.0f, 4.0f),
+            new Cell(74.0f, 18.0f, 52.0f, 6.0f),
+            new Cell(44.0f, 70.0f, 156.0f, 6.0f),
+            new Cell(50.0f, 70.0f, 156.0f, 4.0f),
+            new Cell(54.0f, 70.0f, 156.0f, 6.0f),
+            new Cell(60.0f, 70.0f, 156.0f, 4.0f),
+            new Cell(64.0f, 70.0f, 156.0f, 6.0f),
+            new Cell(70.0f, 70.0f, 156.0f, 4.0f),
+            new Cell(74.0f, 70.0f, 156.0f, 6.0f) };
 
     @Before
     public void setUp() throws Exception {
@@ -147,14 +196,43 @@ public class TestSpreadsheetExtractor {
     @After
     public void tearDown() throws Exception {
     }
+    
+    @Test
+    public void testLinesToCells() {
+        SpreadsheetExtractionAlgorithm se = new SpreadsheetExtractionAlgorithm();
+        List<Cell> cells = se.findCells(Arrays.asList(HORIZONTAL_RULING_LINES), Arrays.asList(VERTICAL_RULING_LINES));
+        Collections.sort(cells);
+        List<Cell> expected = Arrays.asList(EXPECTED_CELLS);
+        Collections.sort(expected);
+        assertTrue(cells.equals(expected));
+    }
 
     @Test
     public void testFindSpreadsheetsFromCells() {
         SpreadsheetExtractionAlgorithm se = new SpreadsheetExtractionAlgorithm();
         List<? extends Rectangle> cells = Arrays.asList(CELLS);
-        System.out.println(se.findSpreadsheetsFromCells(cells));
-        System.out.println("mierda");
+        List<Rectangle> expected = Arrays.asList(EXPECTED_RECTANGLES);
+        Collections.sort(expected);
+        List<Rectangle> foundRectangles = se.findSpreadsheetsFromCells(cells);
+        Collections.sort(foundRectangles);
+        assertTrue(foundRectangles.equals(expected));
+        // TODO add assertions
+    }
+    
+    @Test
+    public void testSpanningCells() {
+        PDDocument document;
+        try {
+            document = PDDocument.load("src/test/resources/org/tabula/nerdpower/spanning_cells.pdf");
+            ObjectExtractor oe = new ObjectExtractor(document);
+            Page page = oe.extract().next();
+            List<TextChunk> chunks = TextElement.mergeWords(page.getText());
+            System.out.println(chunks);
 
+        } catch (IOException e) {
+            // TODO Auto-generated catch block
+            e.printStackTrace();
+        }
     }
 
 }
