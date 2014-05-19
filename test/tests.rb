@@ -129,21 +129,6 @@ class TestPagesInfoExtractor < Minitest::Test
   end
 end
 
-class TestTableGuesser < Minitest::Test
-  def test_find_rects_from_lines_with_lsd
-    skip "Skipping until we actually use LSD"
-    filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    page_index = 0
-    lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(filename, page_index, :render_pdf => true)
-
-    page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
-    page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
-    expected_page_areas = [[54.087890625, 50.203125, 734.220703125, 550.44140625]]
-    assert_equal expected_page_areas, page_areas
-  end
-
-end
-
 class TestDumper < Minitest::Test
 
   def test_extractor
@@ -216,7 +201,17 @@ class TestExtractor < Minitest::Test
                                                 :detect_ruling_lines => true,
                                                 :extraction_method => "original")
 
-    expected = Tabula::Table.new_from_array([["AANONSEN, DEBORAH, A", "", "STATEN ISLAND, NY", "MEALS", "$85.00"], ["TOTAL", "", "", "", "$85.00"], ["AARON, CAREN, T", "", "RICHMOND, VA", "EDUCATIONAL ITEMS", "$78.80"], ["AARON, CAREN, T", "", "RICHMOND, VA", "MEALS", "$392.45"], ["TOTAL", "", "", "", "$471.25"], ["AARON, JOHN", "", "CLARKSVILLE, TN", "MEALS", "$20.39"], ["TOTAL", "", "", "", "$20.39"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "MEALS", "$310.33"], ["", "REGIONAL PULMONARY & SLEEP"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE"], ["TOTAL", "", "", "", "$5,010.33"], ["AARON, MAUREEN, M", "", "MARTINSVILLE, VA", "MEALS", "$193.67"], ["TOTAL", "", "", "", "$193.67"], ["AARON, MICHAEL, L", "", "WEST ISLIP, NY", "MEALS", "$19.50"], ["TOTAL", "", "", "", "$19.50"], ["AARON, MICHAEL, R", "", "BROOKLYN, NY", "MEALS", "$65.92"]])
+
+    puts table.rows.to_a.inspect
+
+    expected = [["AANONSEN, DEBORAH, A", "", "STATEN ISLAND, NY", "MEALS", "$85.00"], ["TOTAL", "", "", "", "$85.00"], ["AARON, CAREN, T", "", "RICHMOND, VA", "EDUCATIONAL ITEMS", "$78.80"], ["AARON, CAREN, T", "", "RICHMOND, VA", "MEALS", "$392.45"], ["TOTAL", "", "", "", "$471.25"], ["AARON, JOHN", "", "CLARKSVILLE, TN", "MEALS", "$20.39"], ["TOTAL", "", "", "", "$20.39"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "MEALS", "$310.33"], ["", "REGIONAL PULMONARY & SLEEP"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE"], ["TOTAL", "", "", "", "$5,010.33"], ["AARON, MAUREEN, M", "", "MARTINSVILLE, VA", "MEALS", "$193.67"], ["TOTAL", "", "", "", "$193.67"], ["AARON, MICHAEL, L", "", "WEST ISLIP, NY", "MEALS", "$19.50"], ["TOTAL", "", "", "", "$19.50"], ["AARON, MICHAEL, R", "", "BROOKLYN, NY", "MEALS", "$65.92"]]
+
+    expected.each_with_index do |row, i|
+      row.each_with_index do |cell, j|
+        puts table.rows[i][j].text.inspect
+        #assert_equal cell, table.rows[i][j].text
+      end
+    end
 
     assert_equal expected, table
   end
@@ -427,7 +422,7 @@ class TestExtractor < Minitest::Test
 
     #compares spreadsheets on area only.
     assert_equal expected_spreadsheets.map{|s| [s.x, s.y, s.width, s.height] },
-      SpreadsheetsHasCellsTester.new(cells).find_spreadsheets_from_cells.map{|a| s = a.getBounds; [s.x, s.y, s.width, s.height] }
+      SpreadsheetsHasCellsTester.new(cells).find_spreadsheets_from_cells.map{|a| s = a.getBounds2D; [s.x, s.y, s.width, s.height] }.sort
 
   end
 

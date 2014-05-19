@@ -61,37 +61,42 @@ class Table
   end
 
   protected
-  def rpad!
-    max = lines.map{|l| l.text_elements.size}.max
-    lines.each do |line|
-      needed = max - line.text_elements.size
-      needed.times do
-        line.text_elements << TextElement::EMPTY # TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
-      end
-    end
-  end
+  # def rpad!
+  #   max = lines.map{|l| l.text_elements.size}.max
+  #   lines.each do |line|
+  #     needed = max - line.text_elements.size
+  #     needed.times do
+  #       line.text_elements << TextElement::EMPTY # TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+  #     end
+  #   end
+  # end
 
   #for equality testing, return @lines stripped of leading columns of empty strings
   #TODO: write a method to strip all totally-empty columns (or not?)
   def lstrip_lines
-    min_leading_empty_strings = Float::INFINITY
-    @lines.each do |line|
+    min_leading_empty_strings = ::Float::INFINITY
+    lines.each do |line|
       empties = line.text_elements.map{|t| t.nil? || t.text.empty? }
       min_leading_empty_strings = [min_leading_empty_strings,
                                    empties.index(false) || 0].min
     end
     if min_leading_empty_strings == 0
-      @lines
+      lines
     else
-      @lines.each{ |line|
-        #line.text_elements = line.text_elements[min_leading_empty_strings..-1]
-        line.text_elements.removeRange(0, min_leading_empty_strings)
-      }
-      @lines
+      (0...lines.size).each do |i|
+        #puts lines[i].inspect
+        lines[i].text_elements.removeRange(0, min_leading_empty_strings)
+      end
+      # @lines.each{ |line|
+      #   #line.text_elements = line.text_elements[min_leading_empty_strings..-1]
+      #   line.text_elements.removeRange(0, min_leading_empty_strings)
+      # }
+      lines
     end
   end
   def lstrip_lines!
-    @lines = self.lstrip_lines
+    #@lines = self.lstrip_lines
+    lstrip_lines
   end
 
   attr_accessor :lines

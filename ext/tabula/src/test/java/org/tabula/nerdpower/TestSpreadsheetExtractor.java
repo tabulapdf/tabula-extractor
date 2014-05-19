@@ -216,11 +216,11 @@ public class TestSpreadsheetExtractor {
         List<Rectangle> foundRectangles = se.findSpreadsheetsFromCells(cells);
         Collections.sort(foundRectangles);
         assertTrue(foundRectangles.equals(expected));
-        // TODO add assertions
     }
     
     @Test
     public void testSpanningCells() {
+        // TODO Add assertions
         PDDocument document;
         try {
             document = PDDocument.load("src/test/resources/org/tabula/nerdpower/spanning_cells.pdf");

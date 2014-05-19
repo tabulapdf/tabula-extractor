@@ -4,26 +4,82 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+import java.util.TreeMap;
 
 import org.nerdpower.tabula.extractors.ExtractionAlgorithm;
 
-public class Table {
+@SuppressWarnings("serial")
+public class Table extends Rectangle {
+    
+    class CellPosition implements Comparable<CellPosition> {
+        int row, col;
+        CellPosition(int row, int col) {
+            this.row = row; this.col = col;
+        }
+        
+        @Override
+        public boolean equals(Object other) {
+            return this.row == ((CellPosition) other).row && this.col == ((CellPosition) other).col;
+        }
+
+        @Override
+        public int compareTo(CellPosition other) {
+           int rv = 0;
+           if(this.row < other.row) {
+               rv = -1;
+           }
+           else if (this.row > other.row) {
+               rv = 1;
+           }
+           else if (this.col > other.col) {
+               rv = 1;
+           }
+           else if (this.col < other.col) {
+               rv = -1;
+           }
+           return rv;
+        }
+    }
+    
+    class CellContainer extends TreeMap<CellPosition, TextChunk> {
+        
+        public int maxRow = 0, maxCol = 0;
+        
+        public TextChunk get(int row, int col) {
+            return this.get(new CellPosition(row, col));
+        }
+        
+        public List<TextChunk> getRow(int row) {
+            return new ArrayList<TextChunk>(this.subMap(new CellPosition(row, 0), new CellPosition(row, maxRow)).values());
+        }
+        
+        @Override
+        public TextChunk put(CellPosition cp, TextChunk value) {
+            this.maxRow = Math.max(maxRow, cp.row);
+            this.maxCol = Math.max(maxCol, cp.col);
+            super.put(cp, value);
+            return value;
+        }
+        
+        @Override
+        public TextChunk get(Object key) {
+            return this.containsKey(key) ? super.get(key) : TextChunk.EMPTY;
+        }
+        
+        public boolean containsKey(int row, int col) {
+            return this.containsKey(new CellPosition(row, col));
+        }
+        
+    }
     
     public static final Table EMPTY = new Table(0,0);
     
+    CellContainer cellContainer = new CellContainer();
     Page page;
     ExtractionAlgorithm extractionAlgorithm;
-    List<List<TextChunk>> cells;
     
     public Table(int rows, int columns) {
-        this.cells = new ArrayList<List<TextChunk>>(rows);
-        for (int i = 0; i < rows; i++) {
-            List<TextChunk> row = new ArrayList<TextChunk>(columns);
-            for (int j = 0; j < columns; j++) {
-                row.add(TextChunk.EMPTY);
-            }
-            this.cells.add(row);
-        }
+        super();
     }
     
     public Table(int rows, int columns, Page page, ExtractionAlgorithm extractionAlgorithm) {
@@ -33,32 +89,30 @@ public class Table {
     }
 
     public void add(TextChunk tc, int i, int j) {
-        this.cells.get(i).set(j, tc);
+        this.merge(tc);
+        this.cellContainer.put(new CellPosition(i, j), tc);
     }
     
     public List<List<TextChunk>> getRows() {
-        Collections.sort(this.cells, new Comparator<List<TextChunk>>() {
+        List<List<TextChunk>> rv = new ArrayList<List<TextChunk>>();
+        for (int i = 0; i <= this.cellContainer.maxRow; i++) {
+            List<TextChunk> lastRow = new ArrayList<TextChunk>(); 
+            rv.add(lastRow);
+            for (int j = 0; j <= this.cellContainer.maxCol; j++) {
+                lastRow.add(this.cellContainer.containsKey(i, j) ? this.cellContainer.get(i, j) : TextChunk.EMPTY);
+            }
+        }
+        Collections.sort(rv, new Comparator<List<TextChunk>>() {
             @Override
             public int compare(List<TextChunk> o1, List<TextChunk> o2) {
-                return Double.compare(Rectangle.boundingBoxOf(o1).getBottom(), Rectangle.boundingBoxOf(o2).getBottom());
-            }});
-        return this.cells;
+                return java.lang.Double.compare(Rectangle.boundingBoxOf(o1).getBottom(),
+                        Rectangle.boundingBoxOf(o2).getBottom());
+            }
+        });
+        return rv;
     }
     
     public List<List<TextChunk>> getCols() {
-        return transpose(this.getRows());
-    }
-    
-    private static <T> List<List<T>> transpose(List<List<T>> table) {
-        List<List<T>> ret = new ArrayList<List<T>>();
-        final int N = table.get(0).size();
-        for (int i = 0; i < N; i++) {
-            List<T> col = new ArrayList<T>();
-            for (List<T> row : table) {
-                col.add(row.get(i));
-            }
-            ret.add(col);
-        }
-        return ret;
+        return Utils.transpose(this.getRows());
     }
 }
