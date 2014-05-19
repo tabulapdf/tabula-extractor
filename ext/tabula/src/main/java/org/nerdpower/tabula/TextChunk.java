@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("serial")
-public class TextChunk extends Rectangle implements TextContainer { 
+public class TextChunk extends Rectangle { 
     public static final TextChunk EMPTY = new TextChunk(0,0,0,0);
     List<TextElement> textElements = new ArrayList<TextElement>();
     
@@ -148,8 +148,15 @@ public class TextChunk extends Rectangle implements TextContainer {
             lastChar = currentChar;
         }
         
+        
         if (rv.isEmpty()) { // no splits occurred, hence this.squeeze() == [this]
-            rv.add(this);
+            if (subSequenceLength >= minRunLength) {
+                TextChunk[] chunks = this.splitAt(subSequenceStart); 
+                rv.add(chunks[0]);
+            }
+            else {
+                rv.add(this);
+            }
         }
         
         return rv;

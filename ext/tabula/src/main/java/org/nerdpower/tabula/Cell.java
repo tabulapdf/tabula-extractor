@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 @SuppressWarnings("serial")
-public class Cell extends Rectangle implements TextContainer {
+public class Cell extends Rectangle {
     private boolean spanning;
     private boolean placeholder;
     private boolean useLineReturns = true;
@@ -23,7 +23,6 @@ public class Cell extends Rectangle implements TextContainer {
         super((float) topLeft.getY(), (float) topLeft.getX(), (float) (bottomRight.getX() - topLeft.getX()), (float) (bottomRight.getY() - topLeft.getY()));
     }
 
-    @Override
     public String getText() {
         if (this.textElements.size() == 0) {
             return "";

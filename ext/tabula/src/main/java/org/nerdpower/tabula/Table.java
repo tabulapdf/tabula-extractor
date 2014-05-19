@@ -1,8 +1,6 @@
 package org.nerdpower.tabula;
 
 import java.util.ArrayList;
-import java.util.Collections;
-import java.util.Comparator;
 import java.util.List;
 import java.util.TreeMap;
 
@@ -102,13 +100,6 @@ public class Table extends Rectangle {
                 lastRow.add(this.cellContainer.containsKey(i, j) ? this.cellContainer.get(i, j) : TextChunk.EMPTY);
             }
         }
-        Collections.sort(rv, new Comparator<List<TextChunk>>() {
-            @Override
-            public int compare(List<TextChunk> o1, List<TextChunk> o2) {
-                return java.lang.Double.compare(Rectangle.boundingBoxOf(o1).getBottom(),
-                        Rectangle.boundingBoxOf(o2).getBottom());
-            }
-        });
         return rv;
     }
     

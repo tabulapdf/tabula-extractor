@@ -6,7 +6,7 @@ import java.util.List;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 
 @SuppressWarnings("serial")
-public class TextElement extends Rectangle implements TextContainer {
+public class TextElement extends Rectangle {
 
     private final String text;
     private final PDFont font;
@@ -34,7 +34,6 @@ public class TextElement extends Rectangle implements TextContainer {
         this.dir = dir;
     }
 
-    @Override
     public String getText() {
         return text;
     }

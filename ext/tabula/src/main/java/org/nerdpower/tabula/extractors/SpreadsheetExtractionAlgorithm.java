@@ -168,10 +168,10 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
         }
         
         // Get all the polygons
-        List<Polygon> polygons = new ArrayList<Polygon>();
+        List<List<PolygonVertex>> polygons = new ArrayList<List<PolygonVertex>>();
         Point2D nextVertex;
         while (!edgesH.isEmpty()) {
-            Polygon polygon = new Polygon();
+            ArrayList<PolygonVertex> polygon = new ArrayList<PolygonVertex>();
             Point2D first = edgesH.keySet().iterator().next();
             polygon.add(new PolygonVertex(first, Direction.HORIZONTAL));
             edgesH.remove(first);
@@ -207,7 +207,7 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
         }
         
         // calculate grid-aligned minimum area rectangles for each found polygon
-        for(Polygon poly: polygons) {
+        for(List<PolygonVertex> poly: polygons) {
             float top = java.lang.Float.MAX_VALUE;
             float left = java.lang.Float.MAX_VALUE;
             float bottom = java.lang.Float.MIN_VALUE;
@@ -255,10 +255,4 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
             return String.format("%s[point=%s,direction=%s]", this.getClass().getName(), this.point.toString(), this.direction.toString());
         }
     }
-    
-    @SuppressWarnings("serial")
-    private class Polygon extends ArrayList<PolygonVertex> {
-    }
-    
-
 }

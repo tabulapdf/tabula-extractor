@@ -23,7 +23,6 @@ Gem::Specification.new do |s|
   s.add_development_dependency 'ruby-debug'
   s.add_development_dependency 'pry'
   s.add_development_dependency 'minitest'
-  s.add_development_dependency 'rake-compiler'
 
   s.add_runtime_dependency "trollop", ["~> 2.0"]
 end
