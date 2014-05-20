@@ -10,24 +10,26 @@ module Tabula
     ARBITRARY_MAGIC_HEURISTIC_NUMBER = 0.65
 
     def is_tabular?
-      ratio = heuristic_ratio
-      return ratio > ARBITRARY_MAGIC_HEURISTIC_NUMBER && ratio < (1 / ARBITRARY_MAGIC_HEURISTIC_NUMBER)
+      #ratio = heuristic_ratio
+      #return ratio > ARBITRARY_MAGIC_HEURISTIC_NUMBER && ratio < (1 / ARBITRARY_MAGIC_HEURISTIC_NUMBER)
+      SpreadsheetExtractionAlgorithm.new.isTabular(self)
     end
 
-    def heuristic_ratio
-      #spreadsheet extraction
-      spreadsheet = spreadsheets.first
-      return Float::NAN if spreadsheet.nil?
-      rows_defined_by_lines = spreadsheet.rows.size #rows filled in automatically
-      columns_defined_by_lines = spreadsheet.cols.size
+    # def heuristic_ratio
+    #   #spreadsheet extraction
+    #   spreadsheet = spreadsheets.first
+    #   return Float::NAN if spreadsheet.nil?
+    #   rows_defined_by_lines = spreadsheet.rows.size #rows filled in automatically
+    #   columns_defined_by_lines = spreadsheet.cols.size
 
-      table = self.get_table
-      columns_defined_without_lines = table.cols.size
-      rows_defined_without_lines = table.rows.size
-      ((columns_defined_by_lines.to_f / columns_defined_without_lines) + (rows_defined_by_lines.to_f / rows_defined_without_lines)) / 2
-    end
+    #   table = self.get_table
+    #   columns_defined_without_lines = table.cols.size
+    #   rows_defined_without_lines = table.rows.size
+    #   ((columns_defined_by_lines.to_f / columns_defined_without_lines) + (rows_defined_by_lines.to_f / rows_defined_without_lines)) / 2
+    # end
 
     def find_cells!(horizontal_ruling_lines, vertical_ruling_lines, options={})
+      puts horizontal_ruling_lines.inspect
       self.cells = SpreadsheetExtractionAlgorithm.new.findCells(horizontal_ruling_lines, vertical_ruling_lines)
       self.cells
     end

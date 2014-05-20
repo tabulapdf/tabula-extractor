@@ -10,6 +10,8 @@ import org.junit.Before;
 import org.junit.Test;
 import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm;
 import org.nerdpower.tabula.writers.CSVWriter;
+import org.nerdpower.tabula.writers.JSONWriter;
+import org.nerdpower.tabula.writers.TSVWriter;
 
 public class TestWriters {
     
@@ -40,10 +42,31 @@ public class TestWriters {
     public void testCSVWriter() throws IOException {
         Table table = this.getTable();
         StringBuilder sb = new StringBuilder();
-        CSVWriter.writeTable(sb, table);
+        (new CSVWriter()).write(sb, table);
         String s = sb.toString();
         String[] lines = s.split("\\r?\\n");
         assertEquals(lines[0], EXPECTED_CSV_WRITER_OUTPUT);
+    }
+    
+    @Test
+    public void testTSVWriter() throws IOException {
+        Table table = this.getTable();
+        StringBuilder sb = new StringBuilder();
+        (new TSVWriter()).write(sb, table);
+        String s = sb.toString();
+        System.out.println(s);
+        //String[] lines = s.split("\\r?\\n");
+        //assertEquals(lines[0], EXPECTED_CSV_WRITER_OUTPUT);
+    }
+    
+    @Test
+    public void testJSONWriter() throws IOException {
+        // TODO add assertions
+        Table table = this.getTable();
+        StringBuilder sb = new StringBuilder();
+        (new JSONWriter()).write(sb, table);
+        String s = sb.toString();
+        System.out.println(s);
     }
 
 }

@@ -16,7 +16,7 @@ public class Page extends Rectangle {
     private Integer rotation;
     private int pageNumber;
     private List<TextElement> texts;
-    private List<Ruling> rulings, verticalRulingLines, horizontalRulingLines;
+    private List<Ruling> rulings, verticalRulingLines = null, horizontalRulingLines = null;
     private float minCharWidth;
     private float minCharHeight;
     private TextElementIndex spatial_index;
@@ -61,13 +61,13 @@ public class Page extends Rectangle {
                         Collections.min(t, new Comparator<TextElement>() {
                             @Override
                             public int compare(TextElement te1, TextElement te2) {
-                                return (int) Math.signum(te1.width - te2.width);
+                                return java.lang.Double.compare(te1.width, te2.width);
                             }}).width,
                         
                         Collections.min(t, new Comparator<TextElement>() {
                                 @Override
                                 public int compare(TextElement te1, TextElement te2) {
-                                    return (int) Math.signum(te1.height - te2.height);
+                                    return java.lang.Double.compare(te1.height, te2.height);
                         }}).height,
                         
                         spatial_index);
@@ -104,20 +104,40 @@ public class Page extends Rectangle {
     }
 
     public List<Ruling> getRulings() {
-        return rulings;
+        if (this.rulings != null) {
+            return this.rulings;
+        }
+        
+        this.snapPoints();
+        
+        List<Ruling> vrs = new ArrayList<Ruling>();
+        for (Ruling vr: this.rulings) {
+            if (vr.vertical()) {
+                vrs.add(vr);
+            }
+        }
+        this.verticalRulingLines = Ruling.collapseOrientedRulings(vrs);
+        
+        List<Ruling> hrs = new ArrayList<Ruling>(); 
+        for (Ruling hr: this.rulings) {
+            if (hr.vertical()) {
+                hrs.add(hr);
+            }
+        }
+        this.horizontalRulingLines = Ruling.collapseOrientedRulings(hrs);
+        
+        this.rulings = new ArrayList<Ruling>(this.verticalRulingLines);
+        this.rulings.addAll(this.horizontalRulingLines);
+        
+        return this.rulings;
+        
     }
     
     public List<Ruling> getVerticalRulings() {
         if (this.verticalRulingLines != null) {
             return this.verticalRulingLines;
         }
-        
-        this.verticalRulingLines = new ArrayList<Ruling>();
-        for (Ruling vr: this.getRulings()) {
-            if (vr.vertical()) {
-                this.verticalRulingLines.add(vr);
-            }
-        }
+        this.getRulings();
         return this.verticalRulingLines;
     }
     
@@ -125,13 +145,7 @@ public class Page extends Rectangle {
         if (this.horizontalRulingLines != null) {
             return this.horizontalRulingLines;
         }
-        
-        this.horizontalRulingLines = new ArrayList<Ruling>();
-        for (Ruling hr: this.getRulings()) {
-            if (hr.horizontal()) {
-                this.horizontalRulingLines.add(hr);
-            }
-        }
+        this.getRulings();
         return this.horizontalRulingLines;
     }
 

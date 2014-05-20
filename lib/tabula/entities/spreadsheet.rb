@@ -23,10 +23,6 @@ module Tabula
       Spreadsheet.new(0, 0, 0, 0, page, [], nil, nil)
     end
 
-    def ruling_lines
-      @vertical_ruling_lines + @horizontal_ruling_lines
-    end
-
     def ruling_lines=(lines)
       @vertical_ruling_lines = lines.select{|vl| vl.vertical? && spr.intersectsLine(vl) }
       @horizontal_ruling_lines = lines.select{|hl| hl.horizontal? && spr.intersectsLine(hl) }

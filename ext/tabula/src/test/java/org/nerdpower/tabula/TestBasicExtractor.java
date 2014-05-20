@@ -58,7 +58,7 @@ public class TestBasicExtractor {
             Page page = oe.extract().next().getArea(269.875f, 12.75f, 790.5f, 561f);
             BasicExtractionAlgorithm bea = new BasicExtractionAlgorithm();
             Table table = bea.extract(page).get(0);
-            CSVWriter.writeTable(System.out, table);
+            (new CSVWriter()).write(System.out, table);
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();

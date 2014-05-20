@@ -17,7 +17,7 @@ public class Table extends Rectangle {
         
         @Override
         public boolean equals(Object other) {
-            return this.row == ((CellPosition) other).row && this.col == ((CellPosition) other).col;
+            return other != null && this.row == ((CellPosition) other).row && this.col == ((CellPosition) other).col;
         }
 
         @Override
@@ -75,7 +75,12 @@ public class Table extends Rectangle {
     CellContainer cellContainer = new CellContainer();
     Page page;
     ExtractionAlgorithm extractionAlgorithm;
+    List<List<TextChunk>> rows = null;
     
+    public ExtractionAlgorithm getExtractionAlgorithm() {
+        return extractionAlgorithm;
+    }
+
     public Table(int rows, int columns) {
         super();
     }
@@ -89,18 +94,23 @@ public class Table extends Rectangle {
     public void add(TextChunk tc, int i, int j) {
         this.merge(tc);
         this.cellContainer.put(new CellPosition(i, j), tc);
+        this.rows = null; // clear the memoized rows
     }
     
     public List<List<TextChunk>> getRows() {
-        List<List<TextChunk>> rv = new ArrayList<List<TextChunk>>();
+        if (this.rows != null) {
+            return this.rows;
+        }
+        
+        this.rows = new ArrayList<List<TextChunk>>();
         for (int i = 0; i <= this.cellContainer.maxRow; i++) {
             List<TextChunk> lastRow = new ArrayList<TextChunk>(); 
-            rv.add(lastRow);
+            this.rows.add(lastRow);
             for (int j = 0; j <= this.cellContainer.maxCol; j++) {
                 lastRow.add(this.cellContainer.containsKey(i, j) ? this.cellContainer.get(i, j) : TextChunk.EMPTY);
             }
         }
-        return rv;
+        return this.rows;
     }
     
     public List<List<TextChunk>> getCols() {

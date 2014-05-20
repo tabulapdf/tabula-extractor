@@ -306,11 +306,11 @@ public class Ruling extends Line2D.Float {
                        rv = 1;
                      }
                     else {
-                       rv = (int) Math.signum(a.position - b.position);
+                       rv = java.lang.Double.compare(a.position, b.position);
                     }
                 }
                 else {
-                    return (int) Math.signum(a.position - b.position);
+                    return java.lang.Double.compare(a.position, b.position);
                 }
                 return rv;
             }

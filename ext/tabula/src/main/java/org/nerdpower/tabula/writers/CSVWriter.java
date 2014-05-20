@@ -9,17 +9,25 @@ import org.apache.commons.csv.CSVFormat;
 import org.nerdpower.tabula.Table;
 import org.nerdpower.tabula.TextChunk;
 
-public class CSVWriter {
+public class CSVWriter implements Writer {
     
-    public static void writeTable(Appendable out, Table table) throws IOException {
-        CSVPrinter printer = new CSVPrinter(out, CSVFormat.EXCEL);
+    CSVPrinter printer;
+    
+    void createWriter(Appendable out) {
+        this.printer = new CSVPrinter(out, CSVFormat.EXCEL);
+    }
+    
+    @Override
+    public void write(Appendable out, Table table) throws IOException {
+        this.createWriter(out);
         for (List<TextChunk> row: table.getRows()) {
             List<String> cells = new ArrayList<String>(row.size());
             for (TextChunk tc: row) {
                 cells.add(tc.getText());
             }
-            printer.printRecord(cells);
+            this.printer.printRecord(cells);
         }
-        printer.close();
+        printer.flush();
     }
+
 }

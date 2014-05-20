@@ -17,6 +17,8 @@ import org.nerdpower.tabula.Table;
 
 public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
     
+    private static final float ARBITRARY_MAGIC_HEURISTIC_NUMBER = 0.65f;
+    
     private static final Comparator<Point2D> POINT_COMPARATOR = new Comparator<Point2D>() {
         @Override
         public int compare(Point2D arg0, Point2D arg1) {
@@ -61,6 +63,28 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
     public List<Table> extract(Page page) {
         // TODO Auto-generated method stub
         return null;
+    }
+    
+    public boolean isTabular(Page page) {
+        List<Table> tables = new SpreadsheetExtractionAlgorithm().extract(page);
+        if (tables.size() == 0) {
+            return false;
+        }
+        Table table = tables.get(0);
+        int rowsDefinedByLines = table.getRows().size();
+        int colsDefinedByLines = table.getCols().size();
+        
+        tables = new BasicExtractionAlgorithm().extract(page);
+        if (tables.size() == 0) {
+            // TODO WHAT DO WE DO HERE?
+        }
+        table = tables.get(0);
+        int rowsDefinedWithoutLines = table.getRows().size();
+        int colsDefinedWithoutLines = table.getCols().size();
+        
+        float ratio = (((float) colsDefinedByLines / colsDefinedWithoutLines) + ((float) rowsDefinedByLines / rowsDefinedWithoutLines)) / 2.0f;
+        
+        return ratio > ARBITRARY_MAGIC_HEURISTIC_NUMBER && ratio < (1/ARBITRARY_MAGIC_HEURISTIC_NUMBER);
     }
     
     public List<Cell> findCells(List<Ruling> horizontalRulingLines, List<Ruling> verticalRulingLines) {
@@ -234,7 +258,7 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
         VERTICAL
     }
     
-    private class PolygonVertex {
+     class PolygonVertex {
         Point2D point;
         Direction direction;
         

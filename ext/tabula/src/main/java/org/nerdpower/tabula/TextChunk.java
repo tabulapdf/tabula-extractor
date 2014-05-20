@@ -125,11 +125,11 @@ public class TextChunk extends Rectangle {
         for (int i = 0; i < this.getTextElements().size(); i++) {
             TextElement textElement = this.getTextElements().get(i);
             currentChar = textElement.getText().charAt(0); 
-            if (currentChar == c && lastChar == currentChar) {
+            if (lastChar != null && currentChar.equals(c) && lastChar.equals(currentChar)) {
                 subSequenceLength++;
             }
             else {
-                if ((lastChar != currentChar || i + 1 == this.getTextElements().size()) && subSequenceLength >= minRunLength) {
+                if (((lastChar != null && !lastChar.equals(currentChar)) || i + 1 == this.getTextElements().size()) && subSequenceLength >= minRunLength) {
 
                     if (subSequenceStart == 0 && subSequenceLength < this.getTextElements().size() - 1) {
                         t = this.splitAt(subSequenceLength);
