@@ -54,7 +54,7 @@ public class BasicExtractionAlgorithm implements ExtractionAlgorithm {
             columns = columnPositions(lines);
         }
         
-        Table table = new Table(lines.size(), columns.size(), page, this);
+        Table table = new Table(page, this);
         
         for (int i = 0; i < lines.size(); i++) {
             Line line = lines.get(i);

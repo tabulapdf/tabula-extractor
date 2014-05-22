@@ -7,7 +7,7 @@ import org.nerdpower.tabula.Table;
 
 public interface ExtractionAlgorithm {
 
-    List<Table> extract(Page page);
+    List<? extends Table> extract(Page page);
     String toString();
     
 }

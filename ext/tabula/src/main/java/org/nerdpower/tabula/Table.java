@@ -70,7 +70,7 @@ public class Table extends Rectangle {
         
     }
     
-    public static final Table EMPTY = new Table(0,0);
+    public static final Table EMPTY = new Table();
     
     CellContainer cellContainer = new CellContainer();
     Page page;
@@ -80,13 +80,13 @@ public class Table extends Rectangle {
     public ExtractionAlgorithm getExtractionAlgorithm() {
         return extractionAlgorithm;
     }
-
-    public Table(int rows, int columns) {
+    
+    Table() {
         super();
     }
-    
-    public Table(int rows, int columns, Page page, ExtractionAlgorithm extractionAlgorithm) {
-        this(rows, columns);
+
+    public Table(Page page, ExtractionAlgorithm extractionAlgorithm) {
+        super();
         this.page = page;
         this.extractionAlgorithm = extractionAlgorithm;
     }

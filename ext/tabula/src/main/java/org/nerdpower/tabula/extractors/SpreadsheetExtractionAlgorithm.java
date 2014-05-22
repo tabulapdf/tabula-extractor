@@ -9,11 +9,14 @@ import java.util.HashSet;
 import java.util.List;
 import java.util.Map;
 import java.util.Set;
+
 import org.nerdpower.tabula.Cell;
 import org.nerdpower.tabula.Page;
 import org.nerdpower.tabula.Rectangle;
 import org.nerdpower.tabula.Ruling;
 import org.nerdpower.tabula.Table;
+import org.nerdpower.tabula.TableWithRulingLines;
+import org.nerdpower.tabula.TextElement;
 
 public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
     
@@ -60,13 +63,44 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
     };
 
     @Override
-    public List<Table> extract(Page page) {
+    public List<? extends Table> extract(Page page) {
         // TODO Auto-generated method stub
-        return null;
+        List<Cell> cells = findCells(page.getHorizontalRulings(), page.getVerticalRulings());
+        List<Rectangle> spreadsheetAreas = findSpreadsheetsFromCells(cells);
+        
+        List<TableWithRulingLines> spreadsheets = new ArrayList<TableWithRulingLines>();
+        for (Rectangle area: spreadsheetAreas) {
+
+            List<Cell> overlappingCells = new ArrayList<Cell>();
+            for (Cell c: cells) {
+                if (c.intersects(area)) {
+                    c.setTextElements(TextElement.mergeWords(page.getText(c)));
+                    overlappingCells.add(c);
+                }
+            }
+
+            List<Ruling> horizontalOverlappingRulings = new ArrayList<Ruling>();
+            for (Ruling hr: page.getHorizontalRulings()) {
+                if (area.intersectsLine(hr)) {
+                    horizontalOverlappingRulings.add(hr);
+                }
+            }
+            List<Ruling> verticalOverlappingRulings = new ArrayList<Ruling>();
+            for (Ruling vr: page.getHorizontalRulings()) {
+                if (area.intersectsLine(vr)) {
+                    verticalOverlappingRulings.add(vr);
+                }
+            }
+            
+            spreadsheets.add(new TableWithRulingLines(area, page, cells,
+                    horizontalOverlappingRulings, verticalOverlappingRulings));
+        }
+        
+        return spreadsheets;
     }
     
     public boolean isTabular(Page page) {
-        List<Table> tables = new SpreadsheetExtractionAlgorithm().extract(page);
+        List<? extends Table> tables = new SpreadsheetExtractionAlgorithm().extract(page);
         if (tables.size() == 0) {
             return false;
         }
@@ -139,6 +173,11 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
                 }
             }
         }
+        
+        // TODO create cells for vertical ruling lines with aligned endpoints at the top/bottom of a grid 
+        // that aren't connected with an horizontal ruler?
+        // see: https://github.com/jazzido/tabula-extractor/issues/78#issuecomment-41481207
+        
         return cellsFound;
     }
     

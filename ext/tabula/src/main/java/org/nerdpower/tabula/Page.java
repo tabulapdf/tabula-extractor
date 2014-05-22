@@ -16,7 +16,7 @@ public class Page extends Rectangle {
     private Integer rotation;
     private int pageNumber;
     private List<TextElement> texts;
-    private List<Ruling> rulings, verticalRulingLines = null, horizontalRulingLines = null;
+    private List<Ruling> rulings, cleanRulings = null, verticalRulingLines = null, horizontalRulingLines = null;
     private float minCharWidth;
     private float minCharHeight;
     private TextElementIndex spatial_index;
@@ -104,8 +104,12 @@ public class Page extends Rectangle {
     }
 
     public List<Ruling> getRulings() {
-        if (this.rulings != null) {
+        if (this.cleanRulings != null) {
             return this.rulings;
+        }
+        
+        if (this.rulings == null || this.rulings.isEmpty()) {
+            return new ArrayList<Ruling>();
         }
         
         this.snapPoints();
@@ -120,14 +124,14 @@ public class Page extends Rectangle {
         
         List<Ruling> hrs = new ArrayList<Ruling>(); 
         for (Ruling hr: this.rulings) {
-            if (hr.vertical()) {
+            if (hr.horizontal()) {
                 hrs.add(hr);
             }
         }
         this.horizontalRulingLines = Ruling.collapseOrientedRulings(hrs);
         
-        this.rulings = new ArrayList<Ruling>(this.verticalRulingLines);
-        this.rulings.addAll(this.horizontalRulingLines);
+        this.cleanRulings = new ArrayList<Ruling>(this.verticalRulingLines);
+        this.cleanRulings.addAll(this.horizontalRulingLines);
         
         return this.rulings;
         

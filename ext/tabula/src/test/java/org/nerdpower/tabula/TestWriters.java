@@ -28,11 +28,7 @@ public class TestWriters {
     //static final String 
     
     private Table getTable() throws IOException {
-        PDDocument document;
-       document = PDDocument
-                .load("src/test/resources/org/nerdpower/tabula/argentina_diputados_voting_record.pdf");
-        ObjectExtractor oe = new ObjectExtractor(document);
-        Page page = oe.extract().next().getArea(269.875f, 12.75f, 790.5f, 561f);
+        Page page = Util.getAreaFromFirstPage("src/test/resources/org/nerdpower/tabula/argentina_diputados_voting_record.pdf", 269.875f, 12.75f, 790.5f, 561f);
         BasicExtractionAlgorithm bea = new BasicExtractionAlgorithm();
         Table table = bea.extract(page).get(0);
         return table;

@@ -7,12 +7,8 @@ import java.util.Arrays;
 import java.util.Collections;
 import java.util.List;
 
-import org.apache.pdfbox.pdmodel.PDDocument;
-import org.junit.After;
-import org.junit.Before;
 import org.junit.Test;
 import org.nerdpower.tabula.Cell;
-import org.nerdpower.tabula.ObjectExtractor;
 import org.nerdpower.tabula.Page;
 import org.nerdpower.tabula.Rectangle;
 import org.nerdpower.tabula.Ruling;
@@ -189,14 +185,6 @@ public class TestSpreadsheetExtractor {
             new Cell(70.0f, 70.0f, 156.0f, 4.0f),
             new Cell(74.0f, 70.0f, 156.0f, 6.0f) };
 
-    @Before
-    public void setUp() throws Exception {
-    }
-
-    @After
-    public void tearDown() throws Exception {
-    }
-    
     @Test
     public void testLinesToCells() {
         SpreadsheetExtractionAlgorithm se = new SpreadsheetExtractionAlgorithm();
@@ -221,18 +209,23 @@ public class TestSpreadsheetExtractor {
     @Test
     public void testSpanningCells() {
         // TODO Add assertions
-        PDDocument document;
         try {
-            document = PDDocument.load("src/test/resources/org/nerdpower/tabula/spanning_cells.pdf");
-            ObjectExtractor oe = new ObjectExtractor(document);
-            Page page = oe.extract().next();
+            Page page = Util.getFirstPage("src/test/resources/org/nerdpower/tabula/spanning_cells.pdf");
             List<TextChunk> chunks = TextElement.mergeWords(page.getText());
             System.out.println(chunks);
-
         } catch (IOException e) {
             // TODO Auto-generated catch block
             e.printStackTrace();
         }
+    }
+    
+    @Test
+    public void testIncompleteGrid() throws IOException {
+        Page page = Util.getFirstPage("src/test/resources/org/nerdpower/tabula/china.pdf");
+        SpreadsheetExtractionAlgorithm se = new SpreadsheetExtractionAlgorithm();
+        List<? extends Table> tables = se.extract(page);
+        assertEquals(2, tables.size());
+        System.out.println(tables);
     }
 
 }
