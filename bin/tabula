@@ -120,7 +120,6 @@ def main
       end
       tables = pdf_page.spreadsheets(:use_line_returns=> use_line_returns).map(&:rows)
     else
-      STDERR.puts "Page #{pdf_page.number(:one_indexed)}: #{page_area.to_s}" if opts[:debug]
       if opts[:guess]
         page_areas = pdf_page.spreadsheets.map{|rect| pdf_page.get_area(rect.dims(:top, :left, :bottom, :right))}
       elsif area_input
@@ -128,7 +127,10 @@ def main
       else
         page_areas = [pdf_page]
       end
-      tables = page_areas.map{|page_area| page_area.make_table(vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(pdf_page, page_area, vertical_rulings) })}
+      tables = page_areas.map { |page_area|
+        STDERR.puts "Page #{pdf_page.number(:one_indexed)}: #{page_area.to_s}" if opts[:debug]
+        page_area.make_table(vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(pdf_page, page_area, vertical_rulings) })
+      }
     end
     tables.each do |table|
       Tabula::Writers.send(opts[:format].to_sym,
