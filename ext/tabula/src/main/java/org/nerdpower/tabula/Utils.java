@@ -1,7 +1,11 @@
 package org.nerdpower.tabula;
 
+import java.awt.Shape;
+import java.awt.geom.Rectangle2D;
 import java.util.AbstractList;
 import java.util.ArrayList;
+import java.util.Collection;
+import java.util.Iterator;
 import java.util.List;
 
 /**
@@ -19,6 +23,22 @@ public class Utils {
     
     public static boolean overlap(double y1, double height1, double y2, double height2) {
         return overlap(y1, height1, y2, height2, 0.1f);
+    }
+    
+    public static Rectangle bounds(Collection<? extends Shape> shapes) {
+        if (shapes.isEmpty()) {
+            throw new IllegalArgumentException("shapes can't be empty");
+        }
+        
+        Iterator<? extends Shape> iter = shapes.iterator();
+        Rectangle rv = new Rectangle();
+
+        do {
+            Rectangle2D.union(iter.next().getBounds2D(), rv, rv);
+        } while (iter.hasNext());
+        
+        return rv;
+        
     }
     
     // range iterator

@@ -6,7 +6,7 @@ import java.util.Collections;
 import java.util.List;
 
 @SuppressWarnings("serial")
-public class Cell extends Rectangle {
+public class Cell extends RectangularTextContainer {
     private boolean spanning;
     private boolean placeholder;
     private boolean useLineReturns = true;

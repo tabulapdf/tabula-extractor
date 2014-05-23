@@ -39,20 +39,20 @@ public class Table extends Rectangle {
         }
     }
     
-    class CellContainer extends TreeMap<CellPosition, TextChunk> {
+    class CellContainer extends TreeMap<CellPosition, RectangularTextContainer> {
         
         public int maxRow = 0, maxCol = 0;
         
-        public TextChunk get(int row, int col) {
+        public RectangularTextContainer get(int row, int col) {
             return this.get(new CellPosition(row, col));
         }
         
-        public List<TextChunk> getRow(int row) {
-            return new ArrayList<TextChunk>(this.subMap(new CellPosition(row, 0), new CellPosition(row, maxRow)).values());
+        public List<RectangularTextContainer> getRow(int row) {
+            return new ArrayList<RectangularTextContainer>(this.subMap(new CellPosition(row, 0), new CellPosition(row, maxRow+1)).values());
         }
         
         @Override
-        public TextChunk put(CellPosition cp, TextChunk value) {
+        public RectangularTextContainer put(CellPosition cp, RectangularTextContainer value) {
             this.maxRow = Math.max(maxRow, cp.row);
             this.maxCol = Math.max(maxCol, cp.col);
             super.put(cp, value);
@@ -60,7 +60,7 @@ public class Table extends Rectangle {
         }
         
         @Override
-        public TextChunk get(Object key) {
+        public RectangularTextContainer get(Object key) {
             return this.containsKey(key) ? super.get(key) : TextChunk.EMPTY;
         }
         
@@ -75,36 +75,36 @@ public class Table extends Rectangle {
     CellContainer cellContainer = new CellContainer();
     Page page;
     ExtractionAlgorithm extractionAlgorithm;
-    List<List<TextChunk>> rows = null;
+    List<List<RectangularTextContainer>> rows = null;
     
     public ExtractionAlgorithm getExtractionAlgorithm() {
         return extractionAlgorithm;
     }
     
-    Table() {
+    public Table() {
         super();
     }
 
     public Table(Page page, ExtractionAlgorithm extractionAlgorithm) {
-        super();
+        this();
         this.page = page;
         this.extractionAlgorithm = extractionAlgorithm;
     }
 
-    public void add(TextChunk tc, int i, int j) {
+    public void add(RectangularTextContainer tc, int i, int j) {
         this.merge(tc);
         this.cellContainer.put(new CellPosition(i, j), tc);
         this.rows = null; // clear the memoized rows
     }
     
-    public List<List<TextChunk>> getRows() {
+    public List<List<RectangularTextContainer>> getRows() {
         if (this.rows != null) {
             return this.rows;
         }
         
-        this.rows = new ArrayList<List<TextChunk>>();
+        this.rows = new ArrayList<List<RectangularTextContainer>>();
         for (int i = 0; i <= this.cellContainer.maxRow; i++) {
-            List<TextChunk> lastRow = new ArrayList<TextChunk>(); 
+            List<RectangularTextContainer> lastRow = new ArrayList<RectangularTextContainer>(); 
             this.rows.add(lastRow);
             for (int j = 0; j <= this.cellContainer.maxCol; j++) {
                 lastRow.add(this.cellContainer.containsKey(i, j) ? this.cellContainer.get(i, j) : TextChunk.EMPTY);
@@ -113,7 +113,7 @@ public class Table extends Rectangle {
         return this.rows;
     }
     
-    public List<List<TextChunk>> getCols() {
+    public List<List<RectangularTextContainer>> getCols() {
         return Utils.transpose(this.getRows());
     }
 }

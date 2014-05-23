@@ -15,6 +15,8 @@ import org.nerdpower.tabula.Ruling;
 import org.nerdpower.tabula.TextChunk;
 import org.nerdpower.tabula.TextElement;
 import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm;
+import org.nerdpower.tabula.writers.CSVWriter;
+import org.nerdpower.tabula.UtilsForTesting;
 
 public class TestSpreadsheetExtractor {
 
@@ -207,25 +209,28 @@ public class TestSpreadsheetExtractor {
     }
     
     @Test
-    public void testSpanningCells() {
+    public void testSpanningCells() throws IOException {
         // TODO Add assertions
-        try {
-            Page page = Util.getFirstPage("src/test/resources/org/nerdpower/tabula/spanning_cells.pdf");
-            List<TextChunk> chunks = TextElement.mergeWords(page.getText());
-            System.out.println(chunks);
-        } catch (IOException e) {
-            // TODO Auto-generated catch block
-            e.printStackTrace();
-        }
+        Page page = UtilsForTesting
+                .getFirstPage("src/test/resources/org/nerdpower/tabula/spanning_cells.pdf");
+        SpreadsheetExtractionAlgorithm se = new SpreadsheetExtractionAlgorithm();
+        List<? extends Table> tables = se.extract(page);
+        //assertEquals(1, tables.size());
+        StringBuilder sb = new StringBuilder();
+        (new CSVWriter()).write(sb, tables.get(0));
+        System.out.println(sb.toString());
     }
     
     @Test
     public void testIncompleteGrid() throws IOException {
-        Page page = Util.getFirstPage("src/test/resources/org/nerdpower/tabula/china.pdf");
+        Page page = UtilsForTesting.getFirstPage("src/test/resources/org/nerdpower/tabula/china.pdf");
         SpreadsheetExtractionAlgorithm se = new SpreadsheetExtractionAlgorithm();
         List<? extends Table> tables = se.extract(page);
         assertEquals(2, tables.size());
-        System.out.println(tables);
+        List<List<RectangularTextContainer>> rows = tables.get(0).getRows(); 
+        StringBuilder sb = new StringBuilder();
+        (new CSVWriter()).write(sb, tables.get(0));
+        System.out.println(sb.toString());
     }
 
 }

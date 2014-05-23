@@ -92,7 +92,7 @@ public class SpreadsheetExtractionAlgorithm implements ExtractionAlgorithm {
                 }
             }
             
-            spreadsheets.add(new TableWithRulingLines(area, page, cells,
+            spreadsheets.add(new TableWithRulingLines(area, page, overlappingCells,
                     horizontalOverlappingRulings, verticalOverlappingRulings));
         }
         

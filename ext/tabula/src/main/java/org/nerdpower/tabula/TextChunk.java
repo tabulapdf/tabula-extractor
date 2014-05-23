@@ -5,7 +5,7 @@ import java.util.Arrays;
 import java.util.List;
 
 @SuppressWarnings("serial")
-public class TextChunk extends Rectangle { 
+public class TextChunk extends RectangularTextContainer { 
     public static final TextChunk EMPTY = new TextChunk(0,0,0,0);
     List<TextElement> textElements = new ArrayList<TextElement>();
     
@@ -51,14 +51,6 @@ public class TextChunk extends Rectangle {
 
     public List<TextElement> getTextElements() {
         return textElements;
-    }
-    
-    public String toString() {
-        StringBuilder sb = new StringBuilder();
-        String s = super.toString();
-        sb.append(s.substring(0, s.length() - 1));
-        sb.append(String.format(", text=\"%s\"]", this.getText()));
-        return sb.toString();
     }
     
     public String getText() {

@@ -44,7 +44,7 @@ public class ObjectExtractor extends PageDrawer {
     private float minCharWidth = Float.MAX_VALUE, minCharHeight = Float.MAX_VALUE;
     private List<TextElement> characters;
     private List<Ruling> rulings;
-    private TextElementIndex spatialIndex;
+    private RectangleSpatialIndex spatialIndex;
     private AffineTransform pageTransform;
     private Shape clippingPath;
     private Rectangle2D transformedClippingPathBounds;
@@ -122,7 +122,7 @@ public class ObjectExtractor extends PageDrawer {
         this.characters = new ArrayList<TextElement>();
         this.rulings = new ArrayList<Ruling>();
         this.pageTransform = null;
-        this.spatialIndex = new TextElementIndex();
+        this.spatialIndex = new RectangleSpatialIndex();
         this.minCharWidth = Float.MAX_VALUE;
         this.minCharHeight = Float.MAX_VALUE;	
     }
@@ -350,7 +350,7 @@ public class ObjectExtractor extends PageDrawer {
         return characters;
     }
     
-    public TextElementIndex getSpatialIndex() {
+    public RectangleSpatialIndex getSpatialIndex() {
         return spatialIndex;
     }
     

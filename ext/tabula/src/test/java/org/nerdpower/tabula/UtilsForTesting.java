@@ -4,7 +4,7 @@ import java.io.IOException;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
 
-public class Util {
+public class UtilsForTesting {
     
     public static Page getAreaFromFirstPage(String path, float top, float left, float bottom, float right) throws IOException {
         ObjectExtractor oe = null;
