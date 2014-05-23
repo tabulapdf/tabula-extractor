@@ -17,6 +17,7 @@ tmp
 /*.pdf
 /*.csv
 *.class
+*.prefs
 
 # YARD artifacts
 .yardoc

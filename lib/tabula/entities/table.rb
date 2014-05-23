@@ -12,18 +12,18 @@ class Table
   # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
   # probably only used for testing
   def self.new_from_array(array_of_rows)
-    t = Table.new(array_of_rows.size, array_of_rows.map(&:size).max)
+    t = Table.new
     @extraction_method = "testing"
     tlines = []
-    array_of_rows.each_with_index do |row, index|
+    array_of_rows.each_with_index do |row, j|
       l = Line.new
-      l.text_elements = row.each_with_index.map { |cell, inner_index|
-        TextElement.new(index.to_java(:float), inner_index.to_java(:float), 1, 1, nil, 0, cell, 0)
+      l.text_elements = row.each_with_index.map { |cell, j|
+        TextElement.new(i.to_java(:float), j.to_java(:float), 1, 1, nil, 0, cell, 0)
       }
       tlines << l
     end
     t.instance_variable_set(:@lines, tlines)
-    t.send(:rpad!)
+#    t.send(:rpad!)
     t
   end
 
@@ -84,13 +84,8 @@ class Table
       lines
     else
       (0...lines.size).each do |i|
-        #puts lines[i].inspect
         lines[i].text_elements.removeRange(0, min_leading_empty_strings)
       end
-      # @lines.each{ |line|
-      #   #line.text_elements = line.text_elements[min_leading_empty_strings..-1]
-      #   line.text_elements.removeRange(0, min_leading_empty_strings)
-      # }
       lines
     end
   end
