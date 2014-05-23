@@ -215,7 +215,7 @@ public class TestSpreadsheetExtractor {
                 .getFirstPage("src/test/resources/org/nerdpower/tabula/spanning_cells.pdf");
         SpreadsheetExtractionAlgorithm se = new SpreadsheetExtractionAlgorithm();
         List<? extends Table> tables = se.extract(page);
-        //assertEquals(1, tables.size());
+        assertEquals(2, tables.size());
         StringBuilder sb = new StringBuilder();
         (new CSVWriter()).write(sb, tables.get(0));
         System.out.println(sb.toString());

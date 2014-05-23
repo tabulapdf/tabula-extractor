@@ -15,7 +15,7 @@ class Table
     t = Table.new
     @extraction_method = "testing"
     tlines = []
-    array_of_rows.each_with_index do |row, j|
+    array_of_rows.each_with_index do |row, i|
       l = Line.new
       l.text_elements = row.each_with_index.map { |cell, j|
         TextElement.new(i.to_java(:float), j.to_java(:float), 1, 1, nil, 0, cell, 0)

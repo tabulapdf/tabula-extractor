@@ -29,33 +29,34 @@ class Page
     unless @spreadsheets.nil?
       return @spreadsheets
     end
-    get_ruling_lines!
 
-    self.find_cells!(self.getHorizontalRulings, self.getVerticalRulings, options)
+    tables = SpreadsheetExtractionAlgorithm.new.extract(self).sort
 
-    spreadsheet_areas = find_spreadsheets_from_cells #literally, java.awt.geom.Area objects. lol sorry. polygons.
+    # self.find_cells!(self.getHorizontalRulings, self.getVerticalRulings, options)
 
-    #transform each spreadsheet area into a rectangle
-    # and get the cells contained within it.
-    spreadsheet_rectangle_areas = spreadsheet_areas.map{ |a| a.getBounds2D }
+    # spreadsheet_areas = find_spreadsheets_from_cells #literally, java.awt.geom.Area objects. lol sorry. polygons.
 
-    @spreadsheets = spreadsheet_rectangle_areas.map do |rect|
-      spr = Tabula::Spreadsheet.new(rect.y, rect.x,
-                            rect.width, rect.height,
-                            self,
-                            #TODO: keep track of the cells, instead of getting them again inefficiently.
-                            [],
-                            vertical_ruling_lines.select{|vl| rect.intersectsLine(vl) },
-                            horizontal_ruling_lines.select{|hl| rect.intersectsLine(hl) }
-                           )
-      spr.cells = @cells.select{ |c| spr.intersects(c) }
-      spr.add_spanning_cells!
-      spr
-    end
-    if options[:fill_in_cells]
-      fill_in_cells!
-    end
-    spreadsheets
+    # #transform each spreadsheet area into a rectangle
+    # # and get the cells contained within it.
+    # spreadsheet_rectangle_areas = spreadsheet_areas.map{ |a| a.getBounds2D }
+
+    # @spreadsheets = spreadsheet_rectangle_areas.map do |rect|
+    #   spr = Tabula::Spreadsheet.new(rect.y, rect.x,
+    #                         rect.width, rect.height,
+    #                         self,
+    #                         #TODO: keep track of the cells, instead of getting them again inefficiently.
+    #                         [],
+    #                         vertical_ruling_lines.select{|vl| rect.intersectsLine(vl) },
+    #                         horizontal_ruling_lines.select{|hl| rect.intersectsLine(hl) }
+    #                        )
+    #   spr.cells = @cells.select{ |c| spr.intersects(c) }
+    #   spr.add_spanning_cells!
+    #   spr
+    # end
+    # if options[:fill_in_cells]
+    #   fill_in_cells!
+    # end
+    # spreadsheets
   end
 
   def fill_in_cells!(options={})

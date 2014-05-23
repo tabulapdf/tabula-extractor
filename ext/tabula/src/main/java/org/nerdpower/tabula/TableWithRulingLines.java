@@ -93,7 +93,4 @@ public class TableWithRulingLines extends Table {
         }
         return rv;
     }
-    
-    
-    
 }

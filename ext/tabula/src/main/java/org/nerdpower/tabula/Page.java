@@ -86,7 +86,7 @@ public class Page extends Rectangle {
     }
     
     public List<TextElement> getText(float top, float left, float bottom, float right) {
-        Rectangle area = new Rectangle(top, left, width, height);
+        Rectangle area = new Rectangle(top, left, right - left, bottom - top);
         return this.getText(area);
     }
 
