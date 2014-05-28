@@ -24,6 +24,15 @@ public class BasicExtractionAlgorithm implements ExtractionAlgorithm {
     public BasicExtractionAlgorithm(List<Ruling> verticalRulings) {
         this.verticalRulings = verticalRulings;
     }
+    
+    public List<Table> extract(Page page, List<Float> verticalRulingPositions) {
+        List<Ruling> verticalRulings = new ArrayList<Ruling>(verticalRulingPositions.size());
+        for (Float p: verticalRulingPositions) {
+            verticalRulings.add(new Ruling((float) page.getTop(), (float) p, 0.0f, (float) page.getHeight()));
+        }
+        this.verticalRulings = verticalRulings;
+        return this.extract(page);
+    }
 
     @Override
     public List<Table> extract(Page page) {

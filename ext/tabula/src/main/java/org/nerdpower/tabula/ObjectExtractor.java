@@ -13,16 +13,19 @@ import java.util.ArrayList;
 import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
+
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.common.PDStream;
+import org.apache.pdfbox.pdmodel.encryption.StandardDecryptionMaterial;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType3Font;
 import org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState;
 import org.apache.pdfbox.pdmodel.graphics.state.PDTextState;
 import org.apache.pdfbox.rendering.PageDrawer;
 import org.apache.pdfbox.text.TextPosition;
+import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 
 
 public class ObjectExtractor extends PageDrawer {
@@ -56,9 +59,20 @@ public class ObjectExtractor extends PageDrawer {
     private Dimension pageSize;
 
     public ObjectExtractor(PDDocument pdf_document) throws IOException {
+        this(pdf_document, null);
+    }
+    
+    public ObjectExtractor(PDDocument pdf_document, String password) throws IOException {
         super(null);
+        if (pdf_document.isEncrypted()) {
+            if (password == null) {
+                throw new IOException("Document is encrypted. Please supply a valid password");    
+            }
+            pdf_document.openProtection(new StandardDecryptionMaterial(password));
+        }
         this.pdf_document = pdf_document;
         this.pdf_document_pages = this.pdf_document.getDocumentCatalog().getAllPages();
+        
     }
 
     protected Page extractPage(Integer page_number) throws IOException {

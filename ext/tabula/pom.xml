@@ -56,7 +56,7 @@
 				<configuration>
 					<archive>
 						<manifest>
-							<mainClass>fully.qualified.MainClass</mainClass>
+							<mainClass>org.nerdpower.tabula.CommandLineApp</mainClass>
 						</manifest>
 					</archive>
 					<descriptorRefs>
