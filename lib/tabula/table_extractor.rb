@@ -1,21 +1,5 @@
+java_import org.nerdpower.tabula.Rectangle
 module Tabula
-
-  def Tabula.merge_words(text_elements, options={})
-    warn 'Tabula.merge_words is DEPRECATED. Use Tabula::TextElement.merge_words instead'
-    TextElement.merge_words(text_elements, options)
-  end
-
-  def Tabula.group_by_lines(text_chunks)
-    warn 'Tabula.group_by_lines is DEPRECATED. Use Tabula::TextChunk.group_by_lines instead.'
-    TextChunk.group_by_lines(text_chunks)
-  end
-
-  # Returns an array of Tabula::Line
-  def Tabula.make_table(page, area, options={})
-    warn 'Tabula.make_table is DEPRECATED. Use Tabula::Page#make_table instead.'
-    page.get_area(area).make_table(options)
-  end
-
   # extract a table from file +pdf_path+, +pages+ and +area+
   #
   # +pages+ can be a single integer (1-based) or an array of integers
@@ -34,8 +18,8 @@ module Tabula
 
     if area.instance_of?(Array)
       top, left, bottom, right = area
-      area = Tabula::ZoneEntity.new(top, left,
-                                    right - left, bottom - top)
+      area = Rectangle.new(top.to_java(:double), left.to_java(:double),
+                           (right - left).to_java(:double), (bottom - top).to_java(:double))
     end
 
     if page.is_a?(Integer)
@@ -61,8 +45,10 @@ module Tabula
 
     use_detected_lines = false
     if options[:detect_ruling_lines] && options[:vertical_rulings].empty?
+
       detected_vertical_rulings = Ruling.crop_rulings_to_area(pdf_page.vertical_ruling_lines,
                                                               area)
+
 
       # only use lines if at least 80% of them cover at least 90%
       # of the height of area of interest
@@ -81,7 +67,7 @@ module Tabula
 
     pdf_page
       .get_area(area)
-      .get_table(:vertical_rulings => use_detected_lines ? detected_vertical_rulings : options[:vertical_rulings])
+      .get_table(:vertical_rulings => use_detected_lines ? detected_vertical_rulings.subList(1, detected_vertical_rulings.size) : options[:vertical_rulings])
 
   end
 end
