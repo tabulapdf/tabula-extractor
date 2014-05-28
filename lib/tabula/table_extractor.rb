@@ -49,6 +49,7 @@ module Tabula
       detected_vertical_rulings = Ruling.crop_rulings_to_area(pdf_page.vertical_ruling_lines,
                                                               area)
 
+
       # only use lines if at least 80% of them cover at least 90%
       # of the height of area of interest
 
@@ -66,7 +67,7 @@ module Tabula
 
     pdf_page
       .get_area(area)
-      .get_table(:vertical_rulings => use_detected_lines ? detected_vertical_rulings : options[:vertical_rulings])
+      .get_table(:vertical_rulings => use_detected_lines ? detected_vertical_rulings.subList(1, detected_vertical_rulings.size) : options[:vertical_rulings])
 
   end
 end

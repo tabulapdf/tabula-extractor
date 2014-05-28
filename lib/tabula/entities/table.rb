@@ -29,15 +29,14 @@ class Table
 
 
   #used for testing, ignores separator locations (they'll sometimes be nil/empty)
-  def ==(other)
-    self.instance_variable_set(:@lines, self.lstrip_lines)
-    other.instance_variable_set(:@lines, other.lstrip_lines)
-    self.instance_variable_set(:@lines, self.lines.rpad(Line.new, other.lines.size))
-    other.instance_variable_set(:@lines, other.lines.rpad(Line.new, self.lines.size))
+  # def ==(other)
+  #   self.instance_variable_set(:@lines, self.lstrip_lines)
+  #   other.instance_variable_set(:@lines, other.lstrip_lines)
+  #   self.instance_variable_set(:@lines, self.lines.rpad(Line.new, other.lines.size))
+  #   other.instance_variable_set(:@lines, other.lines.rpad(Line.new, self.lines.size))
 
-    self.rows.zip(other.rows).all? { |my, yours| my == yours }
-
-  end
+  #   self.rows.zip(other.rows).all? { |my, yours| my == yours }
+  # end
 
   def to_json(*a)
     {

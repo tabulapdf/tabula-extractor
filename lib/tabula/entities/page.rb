@@ -81,42 +81,17 @@ class Page
     get_ruling_lines!
   end
 
-   def horizontal_ruling_lines
- #    get_ruling_lines!
-     self.getHorizontalRulings
-   end
+  def horizontal_ruling_lines
+    self.getHorizontalRulings
+  end
 
-   def vertical_ruling_lines
-     #get_ruling_lines!
-     self.getVerticalRulings
-   end
+  def vertical_ruling_lines
+    self.getVerticalRulings
+  end
 
   #returns ruling lines, memoizes them in
   def get_ruling_lines!
     self.get_rulings
-    # unless @ruling_lines.nil?
-    #   return @ruling_lines
-    # end
-
-    # if self.getRulings.nil? || self.getRulings.empty?
-    #   return []
-    # end
-
-    # @ruling_lines = self.getRulings
-
-    # self.snap_points
-
-    # @vertical_ruling_lines = ::Tabula::Ruling.collapse_oriented_rulings(@ruling_lines.select(&:vertical?))
-
-    # @horizontal_ruling_lines = ::Tabula::Ruling.collapse_oriented_rulings(@ruling_lines.select(&:horizontal?))
-
-    # rv = []
-    # # yes, I know, this is awful
-    # # it should be return vertical_ruling_lines + horizontal_ruling_lines
-    # # but it seems that the `+` method is modifying its first argument in place
-    # @vertical_ruling_lines.each { |v| rv << v }
-    # @horizontal_ruling_lines.each { |h| rv << h }
-    # rv
   end
 
   def get_cell_text(area=nil)

@@ -26,7 +26,8 @@ end
 module Tabula
   class Table
     def inspect
-      "[" + lines.map(&:inspect).join(",") + "]"
+      getRows.map { |row| row.map(&:getText).join(",") }
+      #"[" + lines.map(&:inspect).join(",") + "]"
     end
   end
 end
@@ -197,10 +198,10 @@ class TestExtractor < Minitest::Test
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
 
     table = Tabula.extract_table(pdf_file_path,
-                                                1,
-                                                [106.01, 48.09, 227.31, 551.89],
-                                                :detect_ruling_lines => true,
-                                                :extraction_method => "original")
+                                 1,
+                                 [106.01, 48.09, 227.31, 551.89],
+                                 :detect_ruling_lines => true,
+                                 :extraction_method => "original")
 
 
     #puts table.rows.to_a.inspect
@@ -209,12 +210,9 @@ class TestExtractor < Minitest::Test
 
     expected.each_with_index do |row, i|
       row.each_with_index do |cell, j|
-        #puts table.rows[i][j].text.inspect
-        #assert_equal cell, table.rows[i][j].text
+        assert_equal cell, table.rows[i][j].text
       end
     end
-
-    assert_equal expected, table
   end
 
   def test_missing_spaces_around_an_ampersand
@@ -463,7 +461,7 @@ class TestExtractor < Minitest::Test
     pdf_page = extractor.extract.first
 
     area = pdf_page.get_area(top, left, bottom, right)
-    table = area.spreadsheets.first.to_a
+    table = area.spreadsheets.first.getRows.map { |r| r.map { |c| c.getText } }
 
     assert_equal 15, table.length
     assert_equal ["", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM"], table.first
