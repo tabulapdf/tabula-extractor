@@ -73,7 +73,7 @@ public class Page extends Rectangle {
     }
     
     public Page getArea(float top, float left, float bottom, float right) {
-        Rectangle area = new Rectangle(top, left, width, height);
+        Rectangle area = new Rectangle(top, left, right - left, bottom - top);
         return this.getArea(area);
     }
     

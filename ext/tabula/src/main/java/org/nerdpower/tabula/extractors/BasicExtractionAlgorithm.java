@@ -98,7 +98,7 @@ public class BasicExtractionAlgorithm implements ExtractionAlgorithm {
      * @param lines must be an array of lines sorted by their +top+ attribute
      * @return a list of column boundaries (x axis)
      */
-    private static List<java.lang.Float> columnPositions(List<Line> lines) {
+    public static List<java.lang.Float> columnPositions(List<Line> lines) {
 
         List<Rectangle> regions = new ArrayList<Rectangle>();
         for (TextChunk tc: lines.get(0).getTextElements()) {

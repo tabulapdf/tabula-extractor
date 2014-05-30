@@ -29,10 +29,10 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
         double otherBottom = other.getBottom();
         double yDifference = Math.abs(thisBottom - otherBottom);
         int rv;
-        if ((yDifference < VERTICAL_COMPARISON_THRESHOLD) ||
-                (otherBottom > this.getY() && otherBottom < thisBottom) ||
-                (thisBottom > other.getY() && thisBottom < otherBottom)) {
-            
+//        if ((yDifference < VERTICAL_COMPARISON_THRESHOLD) ||
+//                (otherBottom > this.getTop() && otherBottom < thisBottom) ||
+//                (thisBottom > other.getTop() && thisBottom < otherBottom)) {
+        if (this.verticalOverlap(other) > VERTICAL_COMPARISON_THRESHOLD) { 
             rv = java.lang.Double.compare(this.getX(), other.getX());
         }
         else {
@@ -43,6 +43,10 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
     
     public float getArea() {
         return this.width * this.height;
+    }
+    
+    public float verticalOverlap(Rectangle other) {
+        return (float) Math.max(0, Math.min(this.getBottom(), other.getBottom()) - Math.max(this.getTop(), other.getTop()));
     }
     
     public boolean verticallyOverlaps(Rectangle other) {

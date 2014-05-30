@@ -4,14 +4,16 @@ import static org.junit.Assert.*;
 
 import java.io.IOException;
 import java.util.ArrayList;
+import java.util.Arrays;
+import java.util.Collections;
 import java.util.List;
 
 import org.junit.Test;
 import org.nerdpower.tabula.Page;
 import org.nerdpower.tabula.Ruling;
 import org.nerdpower.tabula.Table;
-import org.nerdpower.tabula.TextChunk;
 import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm;
+import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm;
 import org.nerdpower.tabula.writers.CSVWriter;
 
 
@@ -59,6 +61,55 @@ public class TestBasicExtractor {
 
         assertTrue(sixthRow.get(0).getText().equals("VALSANGIACOMO BLANC"));
         assertTrue(sixthRow.get(1).getText().equals("OFERNANDO JORGE "));
-    }    
+    }
+    
+    @Test
+    public void testDontRaiseSortException() throws IOException {
+        Page page = UtilsForTesting.getAreaFromPage(
+                "src/test/resources/org/nerdpower/tabula/us-017.pdf",
+                2,
+                446.0f, 97.0f, 685.0f, 520.0f);
+        page.getText();
+        //BasicExtractionAlgorithm bea = new BasicExtractionAlgorithm();
+        SpreadsheetExtractionAlgorithm bea = new SpreadsheetExtractionAlgorithm();
+        Table table = bea.extract(page).get(0);
+        (new CSVWriter()).write(System.out, table);
+    }
+    
+    @Test
+    public void testNaturalOrderOfRectangles() throws IOException {
+        Page page = UtilsForTesting.getPage("src/test/resources/org/nerdpower/tabula/us-017.pdf", 2).getArea(446.0f,97.0f,685.0f,520.0f);
+        BasicExtractionAlgorithm bea = new BasicExtractionAlgorithm(page.getVerticalRulings());
+        Table table = bea.extract(page).get(0);
+        (new CSVWriter()).write(System.out, table);
+
+        // List<TextChunk> chunks = TextElement.mergeWords(page.getText(), page.getVerticalRulings());
+        
+//        List<Rectangle> toSort = Arrays.asList(RECTANGLES_TEST_NATURAL_ORDER);
+//        Collections.sort(toSort);
+//        Rectangle x, y;
+//        List<Rectangle[]> greaterThan = new ArrayList<Rectangle[]>();
+//        for (int i = 0; i < RECTANGLES_TEST_NATURAL_ORDER.length - 2; i++) {
+//            x = RECTANGLES_TEST_NATURAL_ORDER[i];
+//            for (int j = i + 1; j < RECTANGLES_TEST_NATURAL_ORDER.length -1; j++) {
+//                y = RECTANGLES_TEST_NATURAL_ORDER[j];
+//                if (x.compareTo(y) > 0) {
+//                    greaterThan.add(new Rectangle[] { x, y });
+//                }
+//            }
+//        }
+//
+//        for (Rectangle[] gt: greaterThan) {
+//            x = gt[0]; y = gt[1];
+//            
+//            for (Rectangle z: RECTANGLES_TEST_NATURAL_ORDER) {
+//                if (y.compareTo(z) > 0 && !(x.compareTo(z) > 0)) {
+//                    //System.out.println(x); System.out.println(y); System.out.println(z); System.out.println();
+//                    System.out.println(x.verticalOverlap(y));
+//                }
+//            }
+//        }
+        
+    }
 
 }

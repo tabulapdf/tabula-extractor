@@ -10,12 +10,11 @@ import java.awt.image.BufferedImage;
 import java.io.File;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collection;
 import java.util.List;
-import java.util.Map;
 
 import org.nerdpower.tabula.CommandLineApp;
+import org.nerdpower.tabula.Line;
 import org.nerdpower.tabula.ObjectExtractor;
 import org.nerdpower.tabula.Page;
 import org.nerdpower.tabula.Rectangle;
@@ -23,7 +22,7 @@ import org.nerdpower.tabula.Ruling;
 import org.nerdpower.tabula.Table;
 import org.nerdpower.tabula.TextChunk;
 import org.nerdpower.tabula.TextElement;
-import org.nerdpower.tabula.Utils;
+import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm;
 import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm;
 import org.apache.commons.cli.CommandLine;
 import org.apache.commons.cli.CommandLineParser;
@@ -59,6 +58,22 @@ public class Debug {
         drawShapes(g, rulings);
     }
     
+    private static void debugColumns(Graphics2D g, Page page) {
+        List<TextChunk> textChunks = TextElement.mergeWords(page.getText());
+        List<Line> lines = TextChunk.groupByLines(textChunks);
+        List<Float> columns = BasicExtractionAlgorithm.columnPositions(lines);
+        int i = 0;
+        for(float p: columns) {
+            Ruling r = new Ruling(new Point2D.Float(p, 0), new Point2D.Float(p, (float) page.getHeight()));
+            g.setColor(COLORS[(i++) % 5]);
+            drawShape(g, r);
+        }
+    }
+    
+    private static void debugCharacters(Graphics2D g, Page page) {
+        drawShapes(g, page.getText());
+    }
+    
     private static void debugTextChunks(Graphics2D g, Page page) {
         List<TextChunk> chunks = TextElement.mergeWords(page.getText(), page.getVerticalRulings());
         drawShapes(g, chunks);
@@ -84,14 +99,19 @@ public class Debug {
         g.draw(shape);
     }
 
-    public static void renderPage(String pdfPath, String outPath, int pageNumber, 
-            boolean drawTextChunks, boolean drawSpreadsheets, boolean drawRulings, boolean drawIntersections) throws IOException {
+    public static void renderPage(String pdfPath, String outPath, int pageNumber, Rectangle area,
+            boolean drawTextChunks, boolean drawSpreadsheets, boolean drawRulings, boolean drawIntersections,
+            boolean drawColumns, boolean drawCharacters, boolean drawArea) throws IOException {
         PDDocument document = PDDocument.load(pdfPath);
-        PDFRenderer renderer = new PDFRenderer(document);
-        BufferedImage image = renderer.renderImage(pageNumber);
-        
         ObjectExtractor oe = new ObjectExtractor(document);
         Page page = oe.extract(pageNumber + 1);
+        
+        if (area != null) {
+            page = page.getArea(area);
+        }
+        
+        PDFRenderer renderer = new PDFRenderer(document);
+        BufferedImage image = renderer.renderImage(pageNumber);
         
         Graphics2D g = (Graphics2D) image.getGraphics();
         
@@ -107,6 +127,15 @@ public class Debug {
         if (drawIntersections) {
             debugIntersections(g, page);
         }
+        if (drawColumns) {
+            debugColumns(g, page);
+        }
+        if (drawCharacters) {
+            debugCharacters(g, page);
+        }
+        if (drawArea) {
+            drawShape(g, area);
+        }
 
         document.close();
         
@@ -121,6 +150,14 @@ public class Debug {
         o.addOption("i", "intersections", false, "Show intersections between rulings.");
         o.addOption("s", "spreadsheets", false, "Show detected spreadsheets.");
         o.addOption("t", "textchunks", false, "Show detected text chunks (merged characters)");
+        o.addOption("c", "columns", false, "Show columns as detected by BasicExtractionAlgorithm");
+        o.addOption("e", "characters", false, "Show detected characters");
+        o.addOption("g", "region", false, "Show provided region (-a parameter)");
+        o.addOption(OptionBuilder.withLongOpt("area")
+                .withDescription("Portion of the page to analyze (top,left,bottom,right). Example: --area 269.875,12.75,790.5,561. Default is entire page")
+                .hasArg()
+                .withArgName("AREA")
+                .create("a"));
         o.addOption(OptionBuilder.withLongOpt("pages")
                 .withDescription("Comma separated list of ranges, or all. Examples: --pages 1-3,5-7, --pages 3 or --pages all. Default is --pages 1")
                 .hasArg()
@@ -157,14 +194,31 @@ public class Debug {
                 throw new ParseException("File does not exist");
             }
             
+            if (line.hasOption('g') && !line.hasOption('a')) {
+                throw new ParseException("-g argument needs an area (-a)");
+            }
+            
+            Rectangle area = null;
+            if (line.hasOption('a')) {
+                List<Float> f = CommandLineApp.parseFloatList(line.getOptionValue('a'));
+                if (f.size() != 4) {
+                    throw new ParseException("area parameters must be top,left,bottom,right");
+                }
+                area = new Rectangle(f.get(0), f.get(1), f.get(3) - f.get(1), f.get(2) - f.get(0));
+            }
+            
             for (int i: pages) {
                 renderPage(pdfFile.getAbsolutePath(),
                            new File(pdfFile.getParent(), removeExtension(pdfFile.getName()) + "-" + (i) + ".jpg").getAbsolutePath(),
                            i-1,
+                           area,
                            line.hasOption('t'),
                            line.hasOption('s'),
                            line.hasOption('r'), 
-                           line.hasOption('i'));
+                           line.hasOption('i'),
+                           line.hasOption('c'),
+                           line.hasOption('e'),
+                           line.hasOption('g'));
             }
         }
         catch (ParseException e) {
