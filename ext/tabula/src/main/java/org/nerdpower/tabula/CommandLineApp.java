@@ -5,7 +5,6 @@ import java.io.File;
 import java.io.FileWriter;
 import java.io.IOException;
 import java.util.ArrayList;
-import java.util.Arrays;
 import java.util.Collections;
 import java.util.Iterator;
 import java.util.List;
@@ -18,7 +17,6 @@ import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.commons.cli.GnuParser;
 import org.apache.pdfbox.pdmodel.PDDocument;
-
 import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm;
 import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm;
 import org.nerdpower.tabula.writers.CSVWriter;
@@ -50,7 +48,6 @@ public class CommandLineApp {
                         
             extractTables(line);
             
-            // System.out.println(Utils.join("\n", line.getArgs()));
         }
         catch( ParseException exp ) {
             System.err.println("Error: " + exp.getMessage());
@@ -127,7 +124,7 @@ public class CommandLineApp {
                 page = pageIterator.next();
                 
                 if (area != null) {
-                    page.getArea(area);
+                    page = page.getArea(area);
                 }
 
                 if (method == ExtractionMethod.DECIDE) {
@@ -239,6 +236,7 @@ public class CommandLineApp {
         formatter.printHelp("tabula", BANNER, buildOptions(), "", true);
     }
     
+    @SuppressWarnings("static-access")
     static Options buildOptions() {
         Options o = new Options();
         

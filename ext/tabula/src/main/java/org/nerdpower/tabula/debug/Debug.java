@@ -13,6 +13,7 @@ import java.util.ArrayList;
 import java.util.Collection;
 import java.util.List;
 
+import org.nerdpower.tabula.Cell;
 import org.nerdpower.tabula.CommandLineApp;
 import org.nerdpower.tabula.Line;
 import org.nerdpower.tabula.ObjectExtractor;
@@ -64,7 +65,7 @@ public class Debug {
         List<Float> columns = BasicExtractionAlgorithm.columnPositions(lines);
         int i = 0;
         for(float p: columns) {
-            Ruling r = new Ruling(new Point2D.Float(p, 0), new Point2D.Float(p, (float) page.getHeight()));
+            Ruling r = new Ruling(new Point2D.Float(p, (float) page.getTop()), new Point2D.Float(p, (float) page.getBottom()));
             g.setColor(COLORS[(i++) % 5]);
             drawShape(g, r);
         }
@@ -85,6 +86,18 @@ public class Debug {
         drawShapes(g, tables);
     }
     
+    private static void debugCells(Graphics2D g, Rectangle area, Page page) {
+        List<Ruling> h = page.getHorizontalRulings();
+        List<Ruling> v = page.getVerticalRulings();
+        if (area != null) {
+            h = Ruling.cropRulingsToArea(h, area);
+            v = Ruling.cropRulingsToArea(v, area);
+        }
+        SpreadsheetExtractionAlgorithm ea = new SpreadsheetExtractionAlgorithm();
+        List<Cell> cells = ea.findCells(h, v);
+        drawShapes(g, cells);
+    }
+    
     private static void drawShapes(Graphics2D g, Collection<? extends Shape> shapes) {
         int i = 0;
         g.setStroke(new BasicStroke(2f));
@@ -101,7 +114,7 @@ public class Debug {
 
     public static void renderPage(String pdfPath, String outPath, int pageNumber, Rectangle area,
             boolean drawTextChunks, boolean drawSpreadsheets, boolean drawRulings, boolean drawIntersections,
-            boolean drawColumns, boolean drawCharacters, boolean drawArea) throws IOException {
+            boolean drawColumns, boolean drawCharacters, boolean drawArea, boolean drawCells) throws IOException {
         PDDocument document = PDDocument.load(pdfPath);
         ObjectExtractor oe = new ObjectExtractor(document);
         Page page = oe.extract(pageNumber + 1);
@@ -136,12 +149,16 @@ public class Debug {
         if (drawArea) {
             drawShape(g, area);
         }
+        if (drawCells) {
+            debugCells(g, area, page);
+        }
 
         document.close();
         
         ImageIOUtil.writeImage(image, outPath, 72);
     }
     
+    @SuppressWarnings("static-access")
     private static Options buildOptions() {
         Options o = new Options();
         
@@ -153,6 +170,7 @@ public class Debug {
         o.addOption("c", "columns", false, "Show columns as detected by BasicExtractionAlgorithm");
         o.addOption("e", "characters", false, "Show detected characters");
         o.addOption("g", "region", false, "Show provided region (-a parameter)");
+        o.addOption("l", "cells", false, "Show detected cells");
         o.addOption(OptionBuilder.withLongOpt("area")
                 .withDescription("Portion of the page to analyze (top,left,bottom,right). Example: --area 269.875,12.75,790.5,561. Default is entire page")
                 .hasArg()
@@ -218,7 +236,8 @@ public class Debug {
                            line.hasOption('i'),
                            line.hasOption('c'),
                            line.hasOption('e'),
-                           line.hasOption('g'));
+                           line.hasOption('g'),
+                           line.hasOption('l'));
             }
         }
         catch (ParseException e) {

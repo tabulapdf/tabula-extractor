@@ -2,13 +2,6 @@ java_import org.nerdpower.tabula.Table
 
 
 class Table
-  # include Tabula::Tabular
-  # attr_reader :extraction_method
-
-  # def cols
-  #   rows.transpose
-  # end
-
   # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
   # probably only used for testing
   def self.new_from_array(array_of_rows)
@@ -27,18 +20,8 @@ class Table
     t
   end
 
-
-  #used for testing, ignores separator locations (they'll sometimes be nil/empty)
-  # def ==(other)
-  #   self.instance_variable_set(:@lines, self.lstrip_lines)
-  #   other.instance_variable_set(:@lines, other.lstrip_lines)
-  #   self.instance_variable_set(:@lines, self.lines.rpad(Line.new, other.lines.size))
-  #   other.instance_variable_set(:@lines, other.lines.rpad(Line.new, self.lines.size))
-
-  #   self.rows.zip(other.rows).all? { |my, yours| my == yours }
-  # end
-
   def to_json(*a)
+
     {
       'json_class'   => self.class.name,
       'extraction_method' => @extraction_method,

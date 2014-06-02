@@ -146,6 +146,8 @@ public class BasicExtractionAlgorithm implements ExtractionAlgorithm {
             rv.add((float) r.getRight());
         }
         
+        Collections.sort(rv);
+        
         return rv;
         
     }

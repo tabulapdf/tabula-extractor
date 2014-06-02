@@ -7,15 +7,10 @@ import java.util.List;
 @SuppressWarnings("serial")
 public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle> {
     
-    private static final float VERTICAL_COMPARISON_THRESHOLD = 0.1f;
+    private static final float VERTICAL_COMPARISON_THRESHOLD = 0.4f;
         
     public Rectangle() {
         super();
-    }
-    
-    public Rectangle(float top, float left, float width, float height) {
-        super();
-        this.setRect(left, top, width, height);
     }
     
     public Rectangle(double top, double left, double width, double height) {
@@ -32,7 +27,7 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
 //        if ((yDifference < VERTICAL_COMPARISON_THRESHOLD) ||
 //                (otherBottom > this.getTop() && otherBottom < thisBottom) ||
 //                (thisBottom > other.getTop() && thisBottom < otherBottom)) {
-        if (this.verticalOverlap(other) > VERTICAL_COMPARISON_THRESHOLD) { 
+        if (this.verticalOverlap(other) > VERTICAL_COMPARISON_THRESHOLD) {
             rv = java.lang.Double.compare(this.getX(), other.getX());
         }
         else {
@@ -50,7 +45,15 @@ public class Rectangle extends Rectangle2D.Float implements Comparable<Rectangle
     }
     
     public boolean verticallyOverlaps(Rectangle other) {
-        return Math.max(0, Math.min(this.getBottom(), other.getBottom()) - Math.max(this.getTop(), other.getTop())) > 0;
+        return verticalOverlap(other) > 0;
+    }
+    
+    public float verticalOverlapRatio(Rectangle other) {
+        float o = verticalOverlap(other), rv = 0;
+        if (o > 0) {
+            rv = (float) (o / (Math.max(this.getBottom(), other.getBottom()) - Math.min(this.getTop(), other.getTop())));
+        }
+        return rv;
     }
     
     public boolean horizontallyOverlaps(Rectangle other) {

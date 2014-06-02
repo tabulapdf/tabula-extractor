@@ -25,7 +25,6 @@ import org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState;
 import org.apache.pdfbox.pdmodel.graphics.state.PDTextState;
 import org.apache.pdfbox.rendering.PageDrawer;
 import org.apache.pdfbox.text.TextPosition;
-import org.apache.pdfbox.pdmodel.encryption.InvalidPasswordException;
 
 
 public class ObjectExtractor extends PageDrawer {
@@ -65,9 +64,9 @@ public class ObjectExtractor extends PageDrawer {
     public ObjectExtractor(PDDocument pdf_document, String password) throws IOException {
         super(null);
         if (pdf_document.isEncrypted()) {
-            if (password == null) {
-                throw new IOException("Document is encrypted. Please supply a valid password");    
-            }
+//            if (password == null) {
+//                throw new IOException("Document is encrypted. Please supply a valid password");    
+//            }
             pdf_document.openProtection(new StandardDecryptionMaterial(password));
         }
         this.pdf_document = pdf_document;
@@ -93,7 +92,10 @@ public class ObjectExtractor extends PageDrawer {
         
         Collections.sort(this.characters);
         
-        return new Page(p.findCropBox().getWidth(),
+        return new Page(
+                0,
+                0,
+                p.findCropBox().getWidth(),
                 p.findCropBox().getHeight(),
                 p.findRotation(),
                 page_number,

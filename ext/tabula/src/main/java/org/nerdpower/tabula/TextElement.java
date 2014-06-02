@@ -121,7 +121,10 @@ public class TextElement extends Rectangle {
             // is there any vertical ruling that goes across chr and prevChar?
             acrossVerticalRuling = false;
             for (Ruling r: verticalRulings) {
-                if ((prevChar.x < r.getPosition() && chr.x > r.getPosition()) || (prevChar.x > r.getPosition() && chr.x < r.getPosition())) {
+                if (    
+                        (verticallyOverlapsRuling(prevChar, r) && verticallyOverlapsRuling(chr, r)) &&
+                        (prevChar.x < r.getPosition() && chr.x > r.getPosition()) || (prevChar.x > r.getPosition() && chr.x < r.getPosition())
+                    ) {
                     acrossVerticalRuling = true;
                     break;
                 }
@@ -216,4 +219,10 @@ public class TextElement extends Rectangle {
         }
         return textChunks;
     }
+    
+    private static boolean verticallyOverlapsRuling(TextElement te, Ruling r) {
+        // Utils.overlap(prevChar.getTop(), prevChar.getHeight(), r.getY1(), r.getY2() - r.getY1())
+        return Math.max(0, Math.min(te.getBottom(), r.getY2()) - Math.max(te.getTop(), r.getY1())) > 0;
+    }
+    
 }

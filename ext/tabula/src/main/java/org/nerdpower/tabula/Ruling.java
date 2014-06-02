@@ -185,6 +185,10 @@ public class Ruling extends Line2D.Float {
         return new Point2D.Float(vertical.getLeft(), horizontal.getTop());        
     }
     
+    public boolean equals(Ruling other) {
+        return this.getP1().equals(other.getP1()) && this.getP2().equals(other.getP2());
+    }
+    
     public float getTop() {
         return (float) this.y1;
     }

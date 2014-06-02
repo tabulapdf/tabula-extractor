@@ -1,8 +1,12 @@
 package org.nerdpower.tabula;
 
 import java.io.IOException;
+import java.util.List;
 
 import org.apache.pdfbox.pdmodel.PDDocument;
+
+import static org.junit.Assert.*;
+
 
 public class UtilsForTesting {
     
@@ -24,6 +28,18 @@ public class UtilsForTesting {
             return page;
         } finally {
             oe.close();
+        }
+    }
+    
+    public static void assertTableEquals(Table table, String[][] arrayOfRows) {
+        List<List<RectangularTextContainer>> tableRows = table.getRows();
+        assertEquals(arrayOfRows.length, tableRows.size());
+        for (int i = 0; i < arrayOfRows.length; i++) {
+            String[] row = arrayOfRows[i];
+            assertEquals(row.length, tableRows.get(i).size());
+            for (int j = 0; j < row.length; j++) {
+                assertEquals(row[j].trim(), table.getCell(i, j).getText().trim());
+            }
         }
     }
     

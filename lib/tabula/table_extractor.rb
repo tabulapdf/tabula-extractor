@@ -23,14 +23,13 @@ module Tabula
     end
 
     if page.is_a?(Integer)
-      page = [page]
+      page = [page.to_java(:int)]
     end
 
     extractor = Extraction::ObjectExtractor.new(pdf_path,
-                                                page,
                                                 options[:password])
 
-    pdf_page = extractor.extract.next
+    pdf_page = extractor.extract(page).next
     extractor.close!
 
     if ["spreadsheet", "original"].include? options[:extraction_method]

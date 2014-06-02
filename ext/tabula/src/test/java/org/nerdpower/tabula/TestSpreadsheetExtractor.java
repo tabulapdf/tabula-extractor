@@ -214,7 +214,7 @@ public class TestSpreadsheetExtractor {
         List<? extends Table> tables = se.extract(page);
         assertEquals(2, tables.size());
         StringBuilder sb = new StringBuilder();
-        (new CSVWriter()).write(sb, tables.get(0));
+        (new CSVWriter()).write(sb, tables.get(1));
         System.out.println(sb.toString());
     }
     
@@ -243,5 +243,18 @@ public class TestSpreadsheetExtractor {
         
         assertEquals(expected, result);
     }
-
+    
+    // TODO add assertions
+    @Test
+    public void testDontRaiseSortException() throws IOException {
+        Page page = UtilsForTesting.getAreaFromPage(
+                "src/test/resources/org/nerdpower/tabula/us-017.pdf",
+                2,
+                446.0f, 97.0f, 685.0f, 520.0f);
+        page.getText();
+        //BasicExtractionAlgorithm bea = new BasicExtractionAlgorithm();
+        SpreadsheetExtractionAlgorithm bea = new SpreadsheetExtractionAlgorithm();
+        Table table = bea.extract(page).get(0);
+        (new CSVWriter()).write(System.out, table);
+    }
 }
