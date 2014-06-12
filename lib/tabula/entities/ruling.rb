@@ -194,7 +194,8 @@ module Tabula
     # log(n) implementation of find_intersections
     # based on http://people.csail.mit.edu/indyk/6.838-old/handouts/lec2.pdf
     def self.find_intersections(horizontals, verticals)
-      tree = java.util.TreeMap.new(HSegmentComparator.new)
+      construct_treemap_t_comparator = java.util.TreeMap.java_class.constructor(java.util.Comparator)
+      tree = construct_treemap_t_comparator.new_instance(HSegmentComparator.new).to_java
       sort_obj = Struct.new(:type, :pos, :obj)
 
       (horizontals + verticals)
