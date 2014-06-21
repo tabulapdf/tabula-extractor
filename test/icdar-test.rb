@@ -96,11 +96,12 @@ def run_test(id)
               reg_reg.x1,
               page.getHeight - reg_reg.y1,
               reg_reg.x2]
-      puts "area: #{area.join(',')}"
-      puts Tabula.extract_table(reg.filename,
-                                reg_reg.page,
-                                area).to_csv
-      puts '----------------------------------------'
+      #puts "java -Djava.awt.headless=true -cp /Users/manuel/Work/tabula/tabula-extractor/ext/tabula/target/tabula-extractor-0.7.4-SNAPSHOT-jar-with-dependencies.jar org.nerdpower.tabula.debug.Debug -a #{area.join(',')} -g -f -p #{reg_reg.page} #{reg.filename}"
+      puts
+      # puts Tabula.extract_table(reg.filename,
+      #                           reg_reg.page,
+      #                           area).to_csv
+      # puts '----------------------------------------'
     end
   end
 end

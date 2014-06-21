@@ -5,6 +5,7 @@ import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Shape;
 import java.awt.geom.Ellipse2D;
+import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
 import java.awt.image.BufferedImage;
 import java.io.File;
@@ -18,6 +19,7 @@ import org.nerdpower.tabula.CommandLineApp;
 import org.nerdpower.tabula.Line;
 import org.nerdpower.tabula.ObjectExtractor;
 import org.nerdpower.tabula.Page;
+import org.nerdpower.tabula.ProjectionProfile;
 import org.nerdpower.tabula.Rectangle;
 import org.nerdpower.tabula.Ruling;
 import org.nerdpower.tabula.Table;
@@ -50,6 +52,10 @@ public class Debug {
             g.setColor(COLORS[(i++) % 5]);
             g.fill(new Ellipse2D.Float((float) p.getX() - CIRCLE_RADIUS/2f, (float) p.getY() - CIRCLE_RADIUS/2f, 5f, 5f));
         }
+    }
+    
+    private static void debugNonCleanRulings(Graphics2D g, Page page) {
+        drawShapes(g, page.getUnprocessedRulings());
     }
     
     private static void debugRulings(Graphics2D g, Page page) {
@@ -107,14 +113,96 @@ public class Debug {
         }
     }
     
+    private static void debugProjectionProfile(Graphics2D g, Page page) {
+        float horizSmoothKernel = 0, vertSmoothKernel = 0;
+        //for (Rectangle r: page.getText()) {
+        for (Rectangle r: page.getText()) {
+            horizSmoothKernel += r.getWidth();
+            vertSmoothKernel += r.getHeight();
+        }
+        horizSmoothKernel /= page.getText().size();
+        vertSmoothKernel /= page.getText().size();
+        System.out.println("hsk: " + horizSmoothKernel + " vsk: " + vertSmoothKernel);
+        //ProjectionProfile profile = new ProjectionProfile(page, page.getText(), horizSmoothKernel, vertSmoothKernel);
+        ProjectionProfile profile = new ProjectionProfile(page, TextElement.mergeWords(page.getText(), page.getVerticalRulings()), horizSmoothKernel * 1.5f, vertSmoothKernel);
+        float prec = (float) Math.pow(10, ProjectionProfile.DECIMAL_PLACES);
+
+        
+        float[] hproj = profile.getHorizontalProjection();
+        float[] vproj = profile.getVerticalProjection();
+        
+        g.setStroke(new BasicStroke(1f));
+        g.setColor(Color.RED);
+
+        // hproj
+        //Point2D last = new Point2D.Double(page.getLeft(), page.getBottom() - hproj[0] / prec), cur;
+        Point2D last = new Point2D.Double(page.getLeft(), page.getBottom()), cur;
+        for (int i = 0; i < hproj.length; i++) {
+            cur = new Point2D.Double(page.getLeft() + i / prec, page.getBottom() - hproj[i]);
+            g.draw(new Line2D.Double(last, cur));
+            last = cur;
+        }
+        
+        // hproj first derivative
+        g.setColor(Color.BLUE);
+        float[] deriv = ProjectionProfile.filter(ProjectionProfile
+                .getFirstDeriv(profile.getHorizontalProjection()), 
+                0.01f);
+        last = new Point2D.Double(page.getLeft(), page.getBottom());
+        for (int i = 0; i < deriv.length; i++) {
+            cur = new Point2D.Double(page.getLeft() + i / prec, page.getBottom() - deriv[i]);
+            g.draw(new Line2D.Double(last, cur));
+            last = cur;
+        }
+        
+        // columns
+        g.setColor(Color.MAGENTA);
+        g.setStroke(new BasicStroke(1f));
+        float[] seps = profile.findVerticalSeparators(horizSmoothKernel * 2.5f);
+        for (int i = 0; i < seps.length; i++) {
+            float x = (float) (page.getLeft() + seps[i]);
+            g.draw(new Line2D.Double(x, page.getTop(), x, page.getBottom()));
+        }
+        
+        // vproj
+        g.setStroke(new BasicStroke(1f));
+        g.setColor(Color.GREEN);
+        last = new Point2D.Double(page.getLeft(), page.getTop());
+        for (int i = 0; i < vproj.length; i++) {
+            cur = new Point2D.Double(page.getLeft() + vproj[i] / prec, page.getTop() + i / prec);
+            g.draw(new Line2D.Double(last, cur));
+            last = cur;
+        }
+        
+        // vproj first derivative
+        g.setColor(new Color(0, 0, 1, 0.5f));
+        deriv = ProjectionProfile.filter(ProjectionProfile.getFirstDeriv(vproj), 0.1f);
+        last = new Point2D.Double(page.getRight(), page.getTop());
+        for (int i = 0; i < deriv.length; i++) {
+            cur = new Point2D.Double(page.getRight() - deriv[i] * 10, page.getTop() + i / prec);
+            g.draw(new Line2D.Double(last, cur));
+            last = cur;
+        }
+        
+        // rows
+        g.setStroke(new BasicStroke(1.5f));
+        seps = profile.findHorizontalSeparators(vertSmoothKernel);
+        for (int i = 0; i < seps.length; i++) {
+            float y = (float) (page.getTop() + seps[i]);
+            g.draw(new Line2D.Double(page.getLeft(), y, page.getRight(), y));
+        }
+        
+    }
+    
     private static void drawShape(Graphics2D g, Shape shape) {
-        g.setStroke(new BasicStroke(2f));
+        g.setStroke(new BasicStroke(1));
         g.draw(shape);
     }
 
     public static void renderPage(String pdfPath, String outPath, int pageNumber, Rectangle area,
             boolean drawTextChunks, boolean drawSpreadsheets, boolean drawRulings, boolean drawIntersections,
-            boolean drawColumns, boolean drawCharacters, boolean drawArea, boolean drawCells) throws IOException {
+            boolean drawColumns, boolean drawCharacters, boolean drawArea, boolean drawCells, 
+            boolean drawUnprocessedRulings, boolean drawProjectionProfile) throws IOException {
         PDDocument document = PDDocument.load(pdfPath);
         ObjectExtractor oe = new ObjectExtractor(document);
         Page page = oe.extract(pageNumber + 1);
@@ -147,10 +235,17 @@ public class Debug {
             debugCharacters(g, page);
         }
         if (drawArea) {
+            g.setColor(Color.ORANGE);
             drawShape(g, area);
         }
         if (drawCells) {
             debugCells(g, area, page);
+        }
+        if (drawUnprocessedRulings) {
+            debugNonCleanRulings(g, page);
+        }
+        if (drawProjectionProfile) {
+            debugProjectionProfile(g, page);
         }
 
         document.close();
@@ -171,6 +266,8 @@ public class Debug {
         o.addOption("e", "characters", false, "Show detected characters");
         o.addOption("g", "region", false, "Show provided region (-a parameter)");
         o.addOption("l", "cells", false, "Show detected cells");
+        o.addOption("u", "unprocessed-rulings", false, "Show non-cleaned rulings");
+        o.addOption("f", "profile", false, "Show projection profile");
         o.addOption(OptionBuilder.withLongOpt("area")
                 .withDescription("Portion of the page to analyze (top,left,bottom,right). Example: --area 269.875,12.75,790.5,561. Default is entire page")
                 .hasArg()
@@ -237,7 +334,9 @@ public class Debug {
                            line.hasOption('c'),
                            line.hasOption('e'),
                            line.hasOption('g'),
-                           line.hasOption('l'));
+                           line.hasOption('l'),
+                           line.hasOption('u'),
+                           line.hasOption('f'));
             }
         }
         catch (ParseException e) {

@@ -455,13 +455,13 @@ class TestExtractor < Minitest::Test
 
   def test_extract_spreadsheet_within_an_area
     pdf_file_path = File.expand_path('data/puertos1.pdf', File.dirname(__FILE__))
-    top, left, bottom, right = 273.9035714285714, 30.32142857142857, 554.8821428571429, 546.7964285714286
+    top, left, bottom, right = 273.9035714285714,30.32142857142857,554.8821428571429,546.7964285714286
 
     extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
     pdf_page = extractor.extract.first
 
     area = pdf_page.get_area(top, left, bottom, right)
-    table = area.spreadsheets.first.getRows.map { |r| r.map { |c| c.getText } }
+    table = area.spreadsheets.first.getRows.map { |r| r.map(&:getText) }
 
     assert_equal 15, table.length
     assert_equal ["", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM", "M.U$S", "TM"], table.first
@@ -487,7 +487,7 @@ class TestExtractor < Minitest::Test
 
   def test_remove_overlapping_text
     # one of those PDFs that put characters on top of another to make text "bold"
-    top,left,bottom,right = 399.98571428571427, 36.06428571428571, 425.1214285714285, 544.2428571428571
+    top,left,bottom,right = 399.98571428571427,36.06428571428571,425.1214285714285,544.2428571428571
     table = Tabula.extract_table(File.expand_path('data/wc2012.pdf', File.dirname(__FILE__)),
                                  1,
                                  [top,left,bottom,right],
@@ -517,7 +517,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_remove_repeated_spaces
-    top,left,bottom,right = 304.9375, 78.625, 334.6875, 501.5
+    top,left,bottom,right = 304.9375,78.625,334.6875,501.5
     table = Tabula.extract_table(File.expand_path('data/repeated_spaces.pdf', File.dirname(__FILE__)),
                                  1,
                                  [top,left,bottom,right],
@@ -552,7 +552,7 @@ class TestExtractor < Minitest::Test
 
 
   def test_bad_column_detection
-    top,left,bottom,right = 535.5, 70.125, 549.3125, 532.3125
+    top,left,bottom,right = 535.5,70.125,549.3125,532.3125
     table = Tabula.extract_table(File.expand_path('data/indecago10.pdf', File.dirname(__FILE__)),
                                  1,
                                  [top,left,bottom,right],
