@@ -6,10 +6,7 @@ end
 
 require File.join(File.dirname(__FILE__), '../ext/tabula/target', 'tabula-extractor-0.7.4-SNAPSHOT-jar-with-dependencies.jar')
 
-import 'java.util.logging.Level'
-import 'java.util.logging.Logger'
-
-Logger.getLogger('org.apache.pdfbox').setLevel(Level::OFF)
+java.util.logging.Logger.getLogger('org.apache.pdfbox').setLevel(java.util.logging.Level::OFF)
 
 require_relative './tabula/version'
 require_relative './tabula/core_ext'
