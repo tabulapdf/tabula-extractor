@@ -15,13 +15,13 @@ public class TestMainApp {
     public void testParsePagesOption() throws ParseException {
         
         List<Integer> rv = CommandLineApp.parsePagesOption("1");
-        assertArrayEquals(new Integer[] { 1 }, rv.toArray());
+        assertEquals(new Integer[] { 1 }, rv.toArray());
         
         rv = CommandLineApp.parsePagesOption("1-4");
-        assertArrayEquals(new Integer[] { 1,2,3,4 }, rv.toArray());
+        assertEquals(new Integer[] { 1,2,3,4 }, rv.toArray());
         
         rv = CommandLineApp.parsePagesOption("1-4,20-24");
-        assertArrayEquals(new Integer[] { 1,2,3,4,20,21,22,23,24 }, rv.toArray());
+        assertEquals(new Integer[] { 1,2,3,4,20,21,22,23,24 }, rv.toArray());
         
         rv = CommandLineApp.parsePagesOption("all");
         assertNull(rv);
