@@ -9,19 +9,11 @@ require File.join(File.dirname(__FILE__), '../target/', 'slf4j-api-1.6.3.jar')
 require File.join(File.dirname(__FILE__), '../target/', 'trove4j-3.0.3.jar')
 require File.join(File.dirname(__FILE__), '../target/', 'jsi-1.1.0-SNAPSHOT.jar')
 
-java_import 'java.util.logging.LogManager'
-java_import 'java.util.logging.Level'
+import 'java.util.logging.Level'
+import 'java.util.logging.Logger'
 
-lm = LogManager.log_manager
-lm.logger_names.each do |name|
-  if name == "" #rootlogger is apparently the logger PDFBox is talking to.
-    l = lm.get_logger(name)
-    l.level = Level::OFF
-    l.handlers.each do |h|
-      h.level = Level::OFF
-    end
-  end
-end
+Logger.getLogger('org.apache.pdfbox').setLevel(Level::OFF)
+
 require_relative './tabula/version'
 require_relative './tabula/core_ext'
 
