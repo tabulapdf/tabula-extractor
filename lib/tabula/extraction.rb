@@ -29,7 +29,9 @@ module Tabula
             @all_pages.each_with_index do |page, i|
               contents = page.getContents
 
-              y.yield Tabula::Page.new(page.findCropBox.width,
+              y.yield Tabula::Page.new(0,
+                                       0,
+                                       page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
                                        i+1) # remember, these are one-indexed

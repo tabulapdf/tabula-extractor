@@ -4,6 +4,7 @@ import java.awt.BasicStroke;
 import java.awt.Color;
 import java.awt.Graphics2D;
 import java.awt.Shape;
+import java.awt.Stroke;
 import java.awt.geom.Ellipse2D;
 import java.awt.geom.Line2D;
 import java.awt.geom.Point2D;
@@ -35,7 +36,7 @@ import org.apache.commons.cli.OptionBuilder;
 import org.apache.commons.cli.Options;
 import org.apache.commons.cli.ParseException;
 import org.apache.pdfbox.pdmodel.PDDocument;
-import org.apache.pdfbox.rendering.PDFRenderer;
+import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.util.ImageIOUtil;
 
 public class Debug {
@@ -104,13 +105,17 @@ public class Debug {
         drawShapes(g, cells);
     }
     
-    private static void drawShapes(Graphics2D g, Collection<? extends Shape> shapes) {
+    private static void drawShapes(Graphics2D g, Collection<? extends Shape> shapes, Stroke stroke) {
         int i = 0;
-        g.setStroke(new BasicStroke(2f));
+        g.setStroke(stroke);
         for (Shape s: shapes) {
             g.setColor(COLORS[(i++) % 5]);
             drawShape(g, s);
         }
+    }
+    
+    private static void drawShapes(Graphics2D g, Collection<? extends Shape> shapes) {
+        drawShapes(g, shapes, new BasicStroke(2f));
     }
     
     private static void debugProjectionProfile(Graphics2D g, Page page) {
@@ -195,24 +200,31 @@ public class Debug {
     }
     
     private static void drawShape(Graphics2D g, Shape shape) {
-        g.setStroke(new BasicStroke(1));
+        //g.setStroke(new BasicStroke(1));
         g.draw(shape);
     }
 
     public static void renderPage(String pdfPath, String outPath, int pageNumber, Rectangle area,
             boolean drawTextChunks, boolean drawSpreadsheets, boolean drawRulings, boolean drawIntersections,
             boolean drawColumns, boolean drawCharacters, boolean drawArea, boolean drawCells, 
-            boolean drawUnprocessedRulings, boolean drawProjectionProfile) throws IOException {
+            boolean drawUnprocessedRulings, boolean drawProjectionProfile, boolean drawClippingPaths) throws IOException {
         PDDocument document = PDDocument.load(pdfPath);
+        
         ObjectExtractor oe = new ObjectExtractor(document);
+        oe.setDebugClippingPaths(drawClippingPaths);
+        
         Page page = oe.extract(pageNumber + 1);
         
         if (area != null) {
             page = page.getArea(area);
         }
         
-        PDFRenderer renderer = new PDFRenderer(document);
-        BufferedImage image = renderer.renderImage(pageNumber);
+        PDPage p = (PDPage) document.getDocumentCatalog().getAllPages().get(pageNumber);
+        
+//        PDFRenderer renderer = new PDFRenderer(document);
+//        BufferedImage image = renderer.renderImage(pageNumber);
+        
+        BufferedImage image = p.convertToImage(BufferedImage.TYPE_INT_RGB, 72);
         
         Graphics2D g = (Graphics2D) image.getGraphics();
         
@@ -247,6 +259,9 @@ public class Debug {
         if (drawProjectionProfile) {
             debugProjectionProfile(g, page);
         }
+        if (drawClippingPaths) {
+            drawShapes(g, oe.clippingPaths, new BasicStroke(2f, BasicStroke.CAP_BUTT, BasicStroke.JOIN_MITER, 10f, new float[] { 3f }, 0f));
+        }
 
         document.close();
         
@@ -268,6 +283,8 @@ public class Debug {
         o.addOption("l", "cells", false, "Show detected cells");
         o.addOption("u", "unprocessed-rulings", false, "Show non-cleaned rulings");
         o.addOption("f", "profile", false, "Show projection profile");
+        o.addOption("n", "clipping-paths", false, "Show clipping paths");
+
         o.addOption(OptionBuilder.withLongOpt("area")
                 .withDescription("Portion of the page to analyze (top,left,bottom,right). Example: --area 269.875,12.75,790.5,561. Default is entire page")
                 .hasArg()
@@ -282,7 +299,7 @@ public class Debug {
     }
    
     
-    public static void main(String[] args) {
+    public static void main(String[] args) throws IOException {
         CommandLineParser parser = new GnuParser();
         try {
             // parse the command line arguments
@@ -336,16 +353,17 @@ public class Debug {
                            line.hasOption('g'),
                            line.hasOption('l'),
                            line.hasOption('u'),
-                           line.hasOption('f'));
+                           line.hasOption('f'),
+                           line.hasOption('n'));
             }
         }
         catch (ParseException e) {
             System.err.println("Error: " + e.getMessage());
             System.exit(1);
-        } catch (IOException e) {
+        } /*catch (IOException e) {
             e.printStackTrace();
             System.exit(1);
-        }
+        }*/
     }
     
     

@@ -47,6 +47,7 @@ public class JSONWriter implements Writer {
         public JsonElement serialize(TextChunk textChunk, Type arg1,
                 JsonSerializationContext context) {
             JsonObject object = new JsonObject();
+           
             
             object.addProperty("top", textChunk.getTop());
             object.addProperty("left", textChunk.getLeft());
@@ -64,6 +65,8 @@ public class JSONWriter implements Writer {
     public JSONWriter() {
         gsonBuilder.registerTypeAdapter(Table.class, new TableSerializer());
         gsonBuilder.registerTypeAdapter(TextChunk.class, new TextChunkSerializer());
+        // TODO this is temporary
+        gsonBuilder.serializeSpecialFloatingPointValues();
         gson = gsonBuilder.create();
     }
     

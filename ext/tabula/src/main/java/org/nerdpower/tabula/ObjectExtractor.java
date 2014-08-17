@@ -1,7 +1,5 @@
 package org.nerdpower.tabula;
 
-import java.awt.Color;
-import java.awt.Dimension;
 import java.awt.Image;
 import java.awt.Shape;
 import java.awt.event.KeyEvent;
@@ -17,20 +15,20 @@ import java.util.Collections;
 import java.util.Comparator;
 import java.util.List;
 
+import org.apache.pdfbox.exceptions.CryptographyException;
 import org.apache.pdfbox.pdmodel.PDDocument;
 import org.apache.pdfbox.pdmodel.PDPage;
 import org.apache.pdfbox.pdmodel.common.PDRectangle;
 import org.apache.pdfbox.pdmodel.common.PDStream;
+import org.apache.pdfbox.pdmodel.encryption.BadSecurityHandlerException;
 import org.apache.pdfbox.pdmodel.encryption.StandardDecryptionMaterial;
 import org.apache.pdfbox.pdmodel.font.PDFont;
 import org.apache.pdfbox.pdmodel.font.PDType3Font;
-import org.apache.pdfbox.pdmodel.graphics.color.PDColor;
-import org.apache.pdfbox.pdmodel.graphics.state.PDGraphicsState;
-import org.apache.pdfbox.pdmodel.graphics.state.PDTextState;
-import org.apache.pdfbox.rendering.PageDrawer;
-import org.apache.pdfbox.text.TextPosition;
+import org.apache.pdfbox.pdmodel.graphics.PDGraphicsState;
+import org.apache.pdfbox.pdmodel.text.PDTextState;
+import org.apache.pdfbox.util.TextPosition;
 
-public class ObjectExtractor extends PageDrawer {
+public class ObjectExtractor extends org.apache.pdfbox.pdfviewer.PageDrawer {
 
     class PointComparator implements Comparator<Point2D> {
         @Override
@@ -57,13 +55,15 @@ public class ObjectExtractor extends PageDrawer {
     private RectangleSpatialIndex<TextElement> spatialIndex;
     private AffineTransform pageTransform;
     private Shape clippingPath;
+    public List<Shape> clippingPaths = new ArrayList<Shape>();
+    private boolean debugClippingPaths = false;
     private Rectangle2D transformedClippingPathBounds;
     private Shape transformedClippingPath;
     private boolean extractRulingLines = true;
     private final PDDocument pdf_document;
     protected List pdf_document_pages;
     private PDPage page;
-    private Dimension pageSize;
+    
 
     public ObjectExtractor(PDDocument pdf_document) throws IOException {
         this(pdf_document, null);
@@ -71,14 +71,18 @@ public class ObjectExtractor extends PageDrawer {
 
     public ObjectExtractor(PDDocument pdf_document, String password)
             throws IOException {
-        super(null);
+        //super(null);
         if (pdf_document.isEncrypted()) {
-            // if (password == null) {
-            // throw new
-            // IOException("Document is encrypted. Please supply a valid password");
-            // }
-            pdf_document
-                    .openProtection(new StandardDecryptionMaterial(password));
+            try {
+                pdf_document
+                        .openProtection(new StandardDecryptionMaterial(password));
+            } catch (BadSecurityHandlerException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            } catch (CryptographyException e) {
+                // TODO Auto-generated catch block
+                e.printStackTrace();
+            }
         }
         this.pdf_document = pdf_document;
         this.pdf_document_pages = this.pdf_document.getDocumentCatalog()
@@ -141,8 +145,8 @@ public class ObjectExtractor extends PageDrawer {
         PDStream contents = p.getContents();
         if (contents != null) {
             ensurePageSize();
-            this.processStream(p.findResources(), contents.getStream(),
-                    p.findCropBox(), p.findRotation());
+            this.processStream(p, p.findResources(), contents.getStream());/*,
+                    p.findCropBox(), p.findRotation());*/
         }
     }
 
@@ -264,19 +268,13 @@ public class ObjectExtractor extends PageDrawer {
     public void strokePath() throws IOException {
         this.strokeOrFillPath(false);
     }
-    
-    private static String colorDebug(PDColor color) {
-        float[] c = color.getComponents();
-        return Integer.toHexString(new Color(c[0], c[1], c[2]).getRGB());
-    }
 
     @Override
     public void fillPath(int windingRule) throws IOException {
         //
         // float[] color_comps =
         // this.getGraphicsState().getNonStrokingColor().getJavaColor().getRGBColorComponents(null);
-        float[] color = this.getGraphicsState().getNonStrokingColor()
-                .getComponents();
+        float[] color = this.getGraphicsState().getNonStrokingColor().getJavaColor().getComponents(null);
         // TODO use color_comps as filter_by_color
         this.strokeOrFillPath(true);
     }
@@ -335,7 +333,8 @@ public class ObjectExtractor extends PageDrawer {
                 (Float.isNaN(wos) || wos == 0) ? this.currentSpaceWidth() : wos,
                 textPosition.getDir());
 
-        if (this.currentClippingPath().intersects(te)) {
+       if (this.currentClippingPath().intersects(te)) {
+       //if (this.clippingPath.intersects(te)) {
             if (this.minCharWidth > te.getWidth()) {
                 this.minCharWidth = (float) te.getWidth();
             }
@@ -346,6 +345,11 @@ public class ObjectExtractor extends PageDrawer {
             this.spatialIndex.add(te);
             this.characters.add(te);
         }
+        
+        if (this.isDebugClippingPaths() && !this.clippingPaths.contains(this.currentClippingPath())) {
+            this.clippingPaths.add(this.clippingPath);
+        }
+        
     }
 
     public float getMinCharWidth() {
@@ -376,6 +380,7 @@ public class ObjectExtractor extends PageDrawer {
         return this.pageTransform;
     }
 
+    //public Rectangle2D currentClippingPath() {
     public Rectangle2D currentClippingPath() {
         // Shape cp = this.getGraphicsState().getCurrentClippingPath();
         // if (cp == this.clippingPath) {
@@ -383,10 +388,11 @@ public class ObjectExtractor extends PageDrawer {
         // }
 
         this.clippingPath = this.getGraphicsState().getCurrentClippingPath();
-        this.transformedClippingPath = this.getPageTransform()
-                .createTransformedShape(this.clippingPath);
-        this.transformedClippingPathBounds = this.transformedClippingPath
-                .getBounds2D();
+//        this.transformedClippingPath = this.getPageTransform()
+//                .createTransformedShape(this.clippingPath);
+//        this.transformedClippingPathBounds = this.transformedClippingPath
+//                .getBounds2D();
+        this.transformedClippingPathBounds = this.clippingPath.getBounds2D();
 
         return this.transformedClippingPathBounds;
     }
@@ -412,5 +418,13 @@ public class ObjectExtractor extends PageDrawer {
         Character.UnicodeBlock block = Character.UnicodeBlock.of(c);
         return (!Character.isISOControl(c)) && c != KeyEvent.CHAR_UNDEFINED
                 && block != null && block != Character.UnicodeBlock.SPECIALS;
+    }
+
+    public boolean isDebugClippingPaths() {
+        return debugClippingPaths;
+    }
+
+    public void setDebugClippingPaths(boolean debugClippingPaths) {
+        this.debugClippingPaths = debugClippingPaths;
     }
 }

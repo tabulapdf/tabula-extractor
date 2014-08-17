@@ -12,7 +12,6 @@ import org.nerdpower.tabula.Cell;
 import org.nerdpower.tabula.Page;
 import org.nerdpower.tabula.Rectangle;
 import org.nerdpower.tabula.Ruling;
-import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm;
 import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm;
 import org.nerdpower.tabula.writers.CSVWriter;
 import org.nerdpower.tabula.UtilsForTesting;
@@ -265,10 +264,7 @@ public class TestSpreadsheetExtractor {
     @Test
     // TODO add assertions
     public void testMergeLinesCloseToEachOther() throws IOException {
-//        Page page = UtilsForTesting.getAreaFromPage("src/test/resources/org/nerdpower/tabula/20.pdf", 1,
-//                459f,100.9375f,506.8125f,494.0625f);
         Page page = UtilsForTesting.getPage("src/test/resources/org/nerdpower/tabula/20.pdf", 1);
-
         List<Ruling> rulings = page.getUnprocessedRulings();
     }
     
