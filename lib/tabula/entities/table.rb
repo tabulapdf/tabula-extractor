@@ -22,12 +22,17 @@ class Table
 
   def to_json(*a)
 
-    {
-      'json_class'   => self.class.name,
-      'extraction_method' => @extraction_method,
-      'vertical_separators' => @separators,
-      'data' => rows,
-    }.to_json(*a)
+    sb = java.lang.StringBuilder.new
+    org.nerdpower.tabula.writers.JSONWriter.new.write(sb, self)
+
+    sb.toString
+
+    # {
+    #   'json_class'   => self.class.name,
+    #   'extraction_method' => @extraction_method,
+    #   'vertical_separators' => @separators,
+    #   'data' => rows,
+    # }.to_json(*a)
   end
 
   def to_csv
