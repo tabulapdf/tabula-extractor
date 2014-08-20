@@ -21,30 +21,21 @@ class Table
   end
 
   def to_json(*a)
-
     sb = java.lang.StringBuilder.new
     org.nerdpower.tabula.writers.JSONWriter.new.write(sb, self)
-
     sb.toString
-
-    # {
-    #   'json_class'   => self.class.name,
-    #   'extraction_method' => @extraction_method,
-    #   'vertical_separators' => @separators,
-    #   'data' => rows,
-    # }.to_json(*a)
   end
 
   def to_csv
-    out = StringIO.new
-    Tabula::Writers.CSV(rows, out)
-    out.string
+    sb = java.lang.StringBuilder.new
+    org.nerdpower.tabula.writers.CSVWriter.new.write(sb, self)
+    sb.toString
   end
 
   def to_tsv
-    out = StringIO.new
-    Tabula::Writers.TSV(rows, out)
-    out.string
+    sb = java.lang.StringBuilder.new
+    org.nerdpower.tabula.writers.TSVWriter.new.write(sb, self)
+    sb.toString
   end
 
   protected
