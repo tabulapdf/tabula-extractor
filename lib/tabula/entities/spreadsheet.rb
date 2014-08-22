@@ -38,11 +38,7 @@ module Tabula
         fill_in_cells!
       end
 
-      rows_hash = cells.group_by{|cell| cell.top.round(5) }
-      array_of_rows = rows_hash.keys.sort.map do |key|
-        rows_hash[key].sort_by(&:left)
-      end
-
+      array_of_rows = cells.group_by{|cell| cell.top.round(5) }.sort_by(&:first).map{|x| x.last.sort_by(&:left) }
 
       #here, insert another kind of placeholder for empty corners
       # like in 01001523B_China.pdf
@@ -70,10 +66,7 @@ module Tabula
         fill_in_cells!
       end
 
-      cols_hash = cells.group_by{|cell| cell.left.round(5) }
-      cols_hash.keys.sort.map do |key|
-        cols_hash[key].sort_by(&:top)
-      end
+      cells.group_by{|cell| cell.left.round(5) }.sort_by(&:first).map{|x| x.last.sort_by(&:top) }
     end
 
     #######################################################
