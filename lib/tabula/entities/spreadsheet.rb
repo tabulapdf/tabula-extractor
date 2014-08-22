@@ -37,10 +37,13 @@ module Tabula
       if evaluate_cells
         fill_in_cells!
       end
-      tops = cells.map(&:top).uniq.sort
-      array_of_rows = tops.map do |top|
-        cells.select{|c| c.top == top }.sort_by(&:left)
+
+      rows_hash = cells.group_by{|cell| cell.top.round(5) }
+      array_of_rows = rows_hash.keys.sort.map do |key|
+        rows_hash[key].sort_by(&:left)
       end
+
+
       #here, insert another kind of placeholder for empty corners
       # like in 01001523B_China.pdf
       #TODO: support placeholders for "empty" cells in rows other than row 1, and in #cols
@@ -66,9 +69,10 @@ module Tabula
       if evaluate_cells
         fill_in_cells!
       end
-      lefts = cells.map(&:left).uniq.sort
-      lefts.map do |left|
-        cells.select{|c| c.left == left }.sort_by(&:top)
+
+      cols_hash = cells.group_by{|cell| cell.left.round(5) }
+      cols_hash.keys.sort.map do |key|
+        cols_hash[key].sort_by(&:top)
       end
     end
 
