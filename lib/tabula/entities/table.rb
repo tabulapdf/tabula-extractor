@@ -79,12 +79,14 @@ module Tabula
 
     def to_csv
       out = StringIO.new
+      out.set_encoding("utf-8")
       Tabula::Writers.CSV(rows, out)
       out.string
     end
 
     def to_tsv
       out = StringIO.new
+      out.set_encoding("utf-8")      
       Tabula::Writers.TSV(rows, out)
       out.string
     end
