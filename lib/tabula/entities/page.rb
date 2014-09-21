@@ -31,11 +31,11 @@ module Tabula
 
     end
 
-    def min_char_width
+    def get_min_char_width
       @min_char_width ||= texts.map(&:width).min
     end
 
-    def min_char_height
+    def get_min_char_height
       @min_char_height ||= texts.map(&:height).min
     end
 
@@ -107,16 +107,8 @@ module Tabula
       unless @spreadsheets.nil?
         return @spreadsheets
       end
-      get_ruling_lines!(options)
-      self.find_cells!(self.horizontal_ruling_lines, self.vertical_ruling_lines, options)
 
-      spreadsheet_areas = find_spreadsheets_from_cells #literally, java.awt.geom.Area objects. lol sorry. polygons.
-
-      #transform each spreadsheet area into a rectangle
-      # and get the cells contained within it.
-      spreadsheet_rectangle_areas = spreadsheet_areas.map{|a| a.getBounds } #getBounds2D is theoretically better, but returns a Rectangle2D.Double, which doesn't have our Ruby sugar on it.
-
-      @spreadsheets = spreadsheet_rectangle_areas.map do |rect|
+      @spreadsheets = spreadsheet_areas(options).map do |rect|
         spr = Spreadsheet.new(rect.y, rect.x,
                         rect.width, rect.height,
                         self,
@@ -133,6 +125,18 @@ module Tabula
         fill_in_cells!
       end
       spreadsheets
+    end
+
+    def spreadsheet_areas (options={})
+      get_ruling_lines!(options)
+      self.find_cells!(self.horizontal_ruling_lines, self.vertical_ruling_lines, options)
+
+      spreadsheet_java_areas = find_spreadsheets_from_cells #literally, java.awt.geom.Area objects. lol sorry. polygons.
+
+      #transform each spreadsheet area into a rectangle
+      # and get the cells contained within it.
+      # getBounds2D is theoretically better than getBounds, but it returns a Rectangle2D.Double, which doesn't have our Ruby sugar on it.
+      spreadsheet_java_areas.map{|a| a.getBounds } 
     end
 
     def fill_in_cells!(options={})
@@ -244,7 +248,7 @@ module Tabula
       # ah, but perhaps I can stick the points in a hash AND in an array
       # and then modify the lines by means of the points in the hash.
 
-      [[:x, :x=, self.min_char_width], [:y, :y=, self.min_char_height]].each do |getter, setter, cell_size|
+      [[:x, :x=, self.get_min_char_width], [:y, :y=, self.get_min_char_height]].each do |getter, setter, cell_size|
         sorted_points = points.sort_by(&getter)
         first_point = sorted_points.shift
         grouped_points = sorted_points.inject([[first_point]] ) do |memo, next_point|
