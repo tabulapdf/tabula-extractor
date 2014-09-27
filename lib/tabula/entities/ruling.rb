@@ -238,6 +238,10 @@ module Tabula
         }
     end
 
+    def finite?
+      top != ::Float::INFINITY && left != ::Float::INFINITY && bottom != ::Float::INFINITY && right != ::Float::INFINITY
+    end
+
     ##
     # crop an enumerable of +Ruling+ to an +area+
     def self.crop_rulings_to_area(rulings, area)

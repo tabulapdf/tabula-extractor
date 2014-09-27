@@ -22,6 +22,8 @@ module Tabula
 
       self.texts = texts
 
+      @ruling_lines += minimal_bounding_box_of_ruling_lines.to_lines.map{|l| Ruling.new(l.getY1, l.getX1, l.getX2 - l.getX1, l.getY2 - l.getY1)}.select &:finite?
+
       if spatial_index.nil?
         @spatial_index = TextElementIndex.new
         self.texts.each { |te| @spatial_index << te }
@@ -29,6 +31,39 @@ module Tabula
         @spatial_index = spatial_index
       end
 
+    end
+
+    def minimal_bounding_box_of_ruling_lines
+      max_x = 0
+      max_y = 0
+      min_x = ::Float::INFINITY
+      min_y = ::Float::INFINITY
+      horizontal_ruling_lines.each do |t|
+        min_x = t.left if t.left < min_x
+        max_x = t.right if t.right > max_x
+      end
+      vertical_ruling_lines.each do |t|
+        min_y = t.top if t.top < min_y
+        max_y = t.bottom if t.bottom > max_y
+      end
+      java.awt.geom.Rectangle2D::Float.new(min_x, min_y, max_x - min_x, max_y - min_y)
+    end
+
+    # is there a scenario under which we'd prefer to use this over `minimal_bounding_box_of_ruling_lines`?
+    # if so, what is it? If there are no ruling lines on the page _at all_, then adding this bounding box is
+    # useless.
+    def minimal_bounding_box_of_text_elements
+      max_x = 0
+      max_y = 0
+      min_x = ::Float::INFINITY
+      min_y = ::Float::INFINITY
+      @texts.each do |t|
+        min_x = t.x if t.x < min_x
+        min_y = t.y if t.y < min_y
+        max_x = t.x if t.x > max_x
+        max_y = t.y if t.y > max_y       
+      end
+      java.awt.geom.Rectangle2D::Float.new(min_x, min_y, max_x - min_x, max_y - min_y)
     end
 
     def get_min_char_width

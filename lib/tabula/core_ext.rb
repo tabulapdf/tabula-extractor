@@ -189,6 +189,16 @@ class Rectangle2D
     (other.bottom - self.bottom).abs
   end
 
+  # decomposes a rectangle into its 4 constitutent lines
+  def to_lines
+    #      top left width height
+    top = Line2D::Float.new self.left, self.top, self.right, self.top
+    bottom = Line2D::Float.new self.left, self.bottom, self.right, self.bottom
+    left = Line2D::Float.new self.left, self.top, self.left, self.bottom
+    right = Line2D::Float.new self.right, self.top, self.right, self.bottom
+    [top, bottom, left, right]
+  end
+
 
   # Various ways that rectangles can overlap one another
   #------------------------------

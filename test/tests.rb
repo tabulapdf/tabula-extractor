@@ -6,14 +6,15 @@ require 'csv'
 
 require_relative '../lib/tabula'
 
-def table_to_array(table)
-  lines_to_array(table.rows)
-end
 
 def lines_to_array(lines)
   lines.map do |l|
     l.map { |te| te.text.strip }
   end
+end
+
+def table_to_array(table)
+  lines_to_array(table.rows)
 end
 
 def lines_to_table(lines)
@@ -655,14 +656,30 @@ class TestExtractor < Minitest::Test
   def test_issue78_some_ruling_lines_not_detected
     pdf_file_path = File.expand_path('data/mineria.pdf', File.dirname(__FILE__))
     area = [104.46890818740722, 13, 580.548646927163, 820.8271357581996]
-    table = Tabula.extract_table(File.expand_path('data/mineria.pdf',
-                                                  File.dirname(__FILE__)),
+    table = Tabula.extract_table(pdf_file_path,
                                  1,
                                  area,
                                  :extraction_method => 'spreadsheet')
     expected = [["1", "010000091", "086", "03/12/2012", "ACHAYAP MANTU ALDO", "ACHAYAP MANTU ALDO", "1", "OTROS", ".", ".", "AMAZONAS", "CONDORCANQ\rUI", "NIEVA", "", "", ""], ["2", "010000023", "022", "18/06/2012", "ACOSTA ROSALES YOSELIN BRICET", "ACOSTA ROSALES YOSELIN \rBRICET", "2", "TITULAR", "NANCY 11   ( REGISTRO \rCANCELADO )", "510001910", "AMAZONAS", "BONGARA", "FLORIDA", "18", "9,357,000", "174,000"]]
 
-    assert expected, table_to_array(table)[0..2]
+    assert_equal expected, table_to_array(table)[0..2]
+  end
+
+  # addresses https://github.com/tabulapdf/tabula-extractor/issues/69
+  # where some spreadsheet-style tables don't have borders on exterior cells
+  # so the Spreadsheet algorithm ignores all the cells on the edge of the table
+  # the solution is to pretend that the user-specified box's edges are also edges of the table.
+  # this table is a bad fit for the Spreadsheet algo in the first place, but it shows this problem well.
+  def test_treat_bounding_box_as_ruling_lines
+    pdf_file_path = File.expand_path('data/brazil_crop_area.pdf', File.dirname(__FILE__))
+    area = [258.1875,42.5,667.25,549.3125]
+    table = Tabula.extract_table(pdf_file_path,
+                                 1,
+                                 area,
+                                 :extraction_method => 'spreadsheet')
+    expected_column_0_row_0 = "REGION / STATE"
+    table_array = table_to_array(table).transpose
+    assert_equal expected_column_0_row_0, table_array[0][0] #ensures we captured the first column
   end
 
 
