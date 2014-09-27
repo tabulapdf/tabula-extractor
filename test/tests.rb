@@ -662,7 +662,7 @@ class TestExtractor < Minitest::Test
                                  :extraction_method => 'spreadsheet')
     expected = [["1", "010000091", "086", "03/12/2012", "ACHAYAP MANTU ALDO", "ACHAYAP MANTU ALDO", "1", "OTROS", ".", ".", "AMAZONAS", "CONDORCANQ\rUI", "NIEVA", "", "", ""], ["2", "010000023", "022", "18/06/2012", "ACOSTA ROSALES YOSELIN BRICET", "ACOSTA ROSALES YOSELIN \rBRICET", "2", "TITULAR", "NANCY 11   ( REGISTRO \rCANCELADO )", "510001910", "AMAZONAS", "BONGARA", "FLORIDA", "18", "9,357,000", "174,000"]]
 
-    assert_equal expected, table_to_array(table)[0..2]
+    assert_equal expected, table_to_array(table)[0...2]
   end
 
   # addresses https://github.com/tabulapdf/tabula-extractor/issues/69
