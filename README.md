@@ -53,7 +53,7 @@ Tabula helps you extract tables from PDFs
 
 ## Command Line Examples
 
-These examples use documents contained with `tabula-extractor`'s [`test`](https://github.com/tabulapdf/tabula-extractor/tree/master/test) folder. If you want to follow along, download the document and give it a shot.
+These examples use documents contained with `tabula-extractor`'s [`test`](https://github.com/tabulapdf/tabula-extractor/tree/master/test) folder. If you want to follow along, download the document and give it a shot. There's more extensive explanation [here](https://github.com/tabulapdf/tabula-extractor/wiki/Using-the-command-line-tabula-extractor-tool).
 
 Extract all the tables from a document into a spreadsheet called `output.csv`:
 ````bash
