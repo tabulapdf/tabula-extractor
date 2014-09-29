@@ -1,7 +1,7 @@
 tabula-extractor
 ================
 
-[![Build Status](https://travis-ci.org/jazzido/tabula-extractor.png)](https://travis-ci.org/jazzido/tabula-extractor)
+[![Build Status](https://travis-ci.org/tabulapdf/tabula-extractor.png)](https://travis-ci.org/tabulapdf/tabula-extractor)
 
 Extract tables from PDF files. `tabula-extractor` is the table extraction engine that powers [Tabula](http://tabula.technology), now available as a library and command line program.
 
