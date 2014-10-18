@@ -9,7 +9,7 @@ require File.join(File.dirname(__FILE__), '../target/', 'slf4j-api-1.6.3.jar')
 require File.join(File.dirname(__FILE__), '../target/', 'trove4j-3.0.3.jar')
 require File.join(File.dirname(__FILE__), '../target/', 'jsi-1.1.0-SNAPSHOT.jar')
 
-# java.util.logging.Logger.getLogger('org.apache.pdfbox').setLevel(java.util.logging.Level::OFF)
+java.util.logging.Logger.getLogger('org.apache.pdfbox').setLevel(java.util.logging.Level::ALL)
 
 require_relative './tabula/version'
 require_relative './tabula/core_ext'
