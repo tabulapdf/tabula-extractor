@@ -371,26 +371,37 @@ module Tabula
 
 
     class PagesInfoExtractor
-      def initialize(pdf_filename, password='')
-        @pdf_filename = pdf_filename
-        @pdf_file = Extraction.openPDF(pdf_filename, password)
+      def initialize(pdf_file_path, password='')
+        @pdf_filename = pdf_file_path
+        @pdf_file = Extraction.openPDF(pdf_file_path, password)
         @all_pages = @pdf_file.getDocumentCatalog.getAllPages
+
+        @extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all )
       end
 
       def pages
+        found_page_with_texts = false
         Enumerator.new do |y|
           begin
             @all_pages.each_with_index do |page, i|
               contents = page.getContents
 
-              y.yield Tabula::Page.new(@pdf_filename,
+              if found_page_with_texts
+                page = Tabula::Page.new(@pdf_filename,
                                        page.findCropBox.width,
                                        page.findCropBox.height,
                                        page.getRotation.to_i,
                                        i+1) #remember, these are one-indexed
+              else 
+                page = @extractor.extract_page(i+1)
+                found_page_with_texts = page.has_text?
+              end
+
+              y.yield page
             end
           ensure
             @pdf_file.close
+            @extractor.close!
           end
         end
       end
