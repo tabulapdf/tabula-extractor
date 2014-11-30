@@ -239,7 +239,8 @@ module Tabula
     end
 
     def finite?
-      top != ::Float::INFINITY && left != ::Float::INFINITY && bottom != ::Float::INFINITY && right != ::Float::INFINITY
+      top != ::Float::INFINITY && left != ::Float::INFINITY && bottom != ::Float::INFINITY && right != ::Float::INFINITY &&
+      !top.nan? && !left.nan? && !bottom.nan? && !right.nan?
     end
 
     ##
