@@ -20,12 +20,6 @@ module Tabula
       @options = ({:use_line_returns => true, :cell_debug => NORMAL}).merge options
     end
 
-    def self.new_from_points(topleft, bottomright, options={})
-      width = bottomright.x - topleft.x
-      height = bottomright.y - topleft.y
-      Cell.new(topleft.y, topleft.x, width, height, options)
-    end
-
     def text
       return "placeholder" if @placeholder && @options[:cell_debug] >= DEBUG
       output = ""

@@ -29,8 +29,7 @@ class Page
     unless @spreadsheets.nil?
       return @spreadsheets
     end
-
-    tables = SpreadsheetExtractionAlgorithm.new.extract(self).sort
+    SpreadsheetExtractionAlgorithm.new.extract(self).sort
   end
 
   def fill_in_cells!(options={})
