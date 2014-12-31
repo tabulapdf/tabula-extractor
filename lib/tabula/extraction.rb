@@ -29,12 +29,12 @@ module Tabula
             @all_pages.each_with_index do |page, i|
               contents = page.getContents
 
-              y.yield Tabula::Page.new(0,
-                                       0,
-                                       page.findCropBox.width,
-                                       page.findCropBox.height,
-                                       page.getRotation.to_i,
-                                       i+1) # remember, these are one-indexed
+              y.yield Tabula::Page.new(0.to_java(:float),
+                                       0.to_java(:float),
+                                       page.findCropBox.width.to_java(:float),
+                                       page.findCropBox.height.to_java(:float),
+                                       page.getRotation.to_i.to_java(:int),
+                                       (i+1).to_java(:int)) # remember, these are one-indexed
             end
           ensure
             @pdf_file.close

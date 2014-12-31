@@ -18,8 +18,8 @@ module Tabula
 
     if area.instance_of?(Array)
       top, left, bottom, right = area
-      area = Rectangle.new(top.to_java(:double), left.to_java(:double),
-                           (right - left).to_java(:double), (bottom - top).to_java(:double))
+      area = Rectangle.new(top, left,
+                           (right - left), (bottom - top))
     end
 
     if page.is_a?(Integer)
