@@ -16,7 +16,6 @@ class Table
       tlines << l
     end
     t.instance_variable_set(:@lines, tlines)
-#    t.send(:rpad!)
     t
   end
 
@@ -39,15 +38,6 @@ class Table
   end
 
   protected
-  # def rpad!
-  #   max = lines.map{|l| l.text_elements.size}.max
-  #   lines.each do |line|
-  #     needed = max - line.text_elements.size
-  #     needed.times do
-  #       line.text_elements << TextElement::EMPTY # TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
-  #     end
-  #   end
-  # end
 
   #for equality testing, return @lines stripped of leading columns of empty strings
   #TODO: write a method to strip all totally-empty columns (or not?)
