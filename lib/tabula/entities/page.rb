@@ -191,6 +191,10 @@ module Tabula
       end
     end
 
+    def has_text?
+      !self.texts.empty?
+    end
+
     # TODO no need for this, let's choose one name
     def ruling_lines
       get_ruling_lines!
@@ -258,7 +262,7 @@ module Tabula
         :height => self.height,
         :number => self.number,
         :rotation => self.rotation,
-        :texts => self.texts
+        :hasText => self.has_text?
       }.to_json(options)
     end
 
