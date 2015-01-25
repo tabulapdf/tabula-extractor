@@ -567,6 +567,22 @@ class TestExtractor < Minitest::Test
   end
 
 
+  def test_checks_for_text_on_page
+    pdf_file_path = File.expand_path('data/gretna-owh-request.pdf', File.dirname(__FILE__))
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
+    extractor.extract.each do |pdf_page|
+      assert !pdf_page.has_text?
+    end
+    extractor.close!
+
+    pdf_file_path = File.expand_path('data/brazil_crop_area.pdf', File.dirname(__FILE__))
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
+    extractor.extract.each do |pdf_page|
+      assert pdf_page.has_text?
+    end
+    extractor.close!
+  end
+
 end
 
 class TestIsTabularHeuristic < Minitest::Test
