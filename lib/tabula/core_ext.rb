@@ -28,18 +28,6 @@ class Array
 end
 
 
-module Enumerable
-
-  def sum
-    self.inject(0){|accum, i| accum + i }
-  end
-
-  def mean
-    self.sum/self.length.to_f
-  end
-
-end
-
 class Point2D::Float
   def inspect
     toString

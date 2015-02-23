@@ -10,8 +10,6 @@ module Tabula
     ARBITRARY_MAGIC_HEURISTIC_NUMBER = 0.65
 
     def is_tabular?
-      #ratio = heuristic_ratio
-      #return ratio > ARBITRARY_MAGIC_HEURISTIC_NUMBER && ratio < (1 / ARBITRARY_MAGIC_HEURISTIC_NUMBER)
       SpreadsheetExtractionAlgorithm.new.isTabular(self)
     end
 
