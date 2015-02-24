@@ -1,19 +1,8 @@
-java_import org.nerdpower.tabula.TableWithRulingLines
+#java_import org.nerdpower.tabula.TableWithRulingLines
 
-class Spreadsheet #< java.awt.geom.Rectangle2D::Float
-  include Tabula::Tabular
+class Tabula::Spreadsheet < org.nerdpower.tabula.TableWithRulingLines
   attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines, :cells_resolved
   attr_reader :extraction_method, :page
-
-  # def initialize(top, left, width, height, page, cells, vertical_ruling_lines, horizontal_ruling_lines)
-  #   super()
-  #   self.java_send :setRect, [Java::float, Java::float, Java::float, Java::float], left, top, width, height
-  #   @cells = cells
-  #   @page = page
-  #   @vertical_ruling_lines = vertical_ruling_lines
-  #   @horizontal_ruling_lines = horizontal_ruling_lines
-  #   @extraction_method = "spreadsheet"
-  # end
 
   def self.empty(page)
     Spreadsheet.new(0, 0, 0, 0, page, [], nil, nil)
@@ -128,18 +117,4 @@ class Spreadsheet #< java.awt.geom.Rectangle2D::Float
     raise ArgumentError, "Data can only be added if it's from the same PDF page" unless other.page == @page
     Spreadsheet.new(nil, nil, nil, nil, @page, @cells + other.cells, nil, nil )
   end
-
-  protected
-  # def fill_in_cells!
-  #   unless @cells_resolved
-  #     @cells_resolved = true
-  #     cells.each do |cell|
-  #       cell.text_elements = @page.get_cell_text(cell)
-  #     end
-  #   end
-  # end
-end
-
-module Tabula
-  Spreadsheet = org.nerdpower.tabula.TableWithRulingLines
 end

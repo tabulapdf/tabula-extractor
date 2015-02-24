@@ -1,17 +1,28 @@
-java_import org.nerdpower.tabula.Table
+class Java::OrgNerdpowerTabula::Table
+  def to_csv
+    sb = java.lang.StringBuilder.new
+    org.nerdpower.tabula.writers.CSVWriter.new.write(sb, self)
+    sb.toString
+  end
 
+  def to_tsv
+    sb = java.lang.StringBuilder.new
+    org.nerdpower.tabula.writers.TSVWriter.new.write(sb, self)
+    sb.toString
+  end
+end
 
-class Table
+class Tabula::Table < org.nerdpower.tabula.Table
   # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
   # probably only used for testing
   def self.new_from_array(array_of_rows)
-    t = Table.new
+    t = self.new
     @extraction_method = "testing"
     tlines = []
     array_of_rows.each_with_index do |row, i|
-      l = Line.new
+      l = Tabula::Line.new
       l.text_elements = row.each_with_index.map { |cell, j|
-        TextElement.new(i.to_java(:float), j.to_java(:float), 1, 1, nil, 0, cell, 0)
+        Tabula::TextElement.new(i.to_java(:float), j.to_java(:float), 1, 1, nil, 0, cell, 0)
       }
       tlines << l
     end
@@ -22,18 +33,6 @@ class Table
   def to_json(*a)
     sb = java.lang.StringBuilder.new
     org.nerdpower.tabula.writers.JSONWriter.new.write(sb, self)
-    sb.toString
-  end
-
-  def to_csv
-    sb = java.lang.StringBuilder.new
-    org.nerdpower.tabula.writers.CSVWriter.new.write(sb, self)
-    sb.toString
-  end
-
-  def to_tsv
-    sb = java.lang.StringBuilder.new
-    org.nerdpower.tabula.writers.TSVWriter.new.write(sb, self)
     sb.toString
   end
 
@@ -63,10 +62,4 @@ class Table
   end
 
   attr_accessor :lines
-
-end
-
-
-module Tabula
-  Table = ::Table
 end

@@ -1,9 +1,8 @@
-java_import org.nerdpower.tabula.Rectangle
 module Tabula
 
   #cells are components of spreadsheets
 
-  class Cell < Rectangle
+  class Cell < org.nerdpower.tabula.Rectangle
 
     NORMAL = 0
     DEBUG = 1

@@ -1,4 +1,3 @@
-require_relative './entities/tabular'
 require_relative './entities/cell'
 require_relative './entities/has_cells'
 require_relative './entities/line'
