@@ -1,3 +1,3 @@
 module Tabula
-  VERSION = '0.7.4'
+  VERSION = '1.0.0-alpha'
 end
