@@ -1,4 +1,5 @@
 require File.join(File.dirname(__FILE__),
+                  '..',
                   'target',
                   'tabula-extractor-0.7.4-SNAPSHOT-jar-with-dependencies.jar')
 
