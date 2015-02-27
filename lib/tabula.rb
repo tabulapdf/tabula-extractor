@@ -1,8 +1,3 @@
-module Tabula
-  ONLY_SPACES_RE = Regexp.new('^\s+$')
-  SAME_CHAR_RE = Regexp.new('^(.)\1+$')
-end
-
 require File.join(File.dirname(__FILE__), '../java/target', 'tabula-extractor-0.7.4-SNAPSHOT-jar-with-dependencies.jar')
 
 java.util.logging.Logger.getLogger('org.apache.pdfbox').setLevel(java.util.logging.Level::OFF)
