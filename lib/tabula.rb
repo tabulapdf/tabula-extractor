@@ -11,6 +11,5 @@ require_relative './tabula/core_ext'
 require_relative './tabula/entities'
 require_relative './tabula/extraction'
 require_relative './tabula/table_extractor'
-require_relative './tabula/writers'
 
 require_relative './tabula/table_extractor'
