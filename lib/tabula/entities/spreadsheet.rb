@@ -1,6 +1,6 @@
 #java_import org.nerdpower.tabula.TableWithRulingLines
 
-class Tabula::Spreadsheet < org.nerdpower.tabula.TableWithRulingLines
+class Java::OrgNerdpowerTabula::TableWithRulingLines
   attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines, :cells_resolved
   attr_reader :extraction_method, :page
 
@@ -12,12 +12,6 @@ class Tabula::Spreadsheet < org.nerdpower.tabula.TableWithRulingLines
   #   @vertical_ruling_lines = lines.select{|vl| vl.vertical? && spr.intersectsLine(vl) }
   #   @horizontal_ruling_lines = lines.select{|hl| hl.horizontal? && spr.intersectsLine(hl) }
   # end
-
-  # call `rows` with `evaluate_cells` as `false` to defer filling in the text in
-  # each cell, which can be computationally intensive.
-  def rows(evaluate_cells=true)
-    self.getRows
-  end
 
   # call `cols` with `evaluate_cells` as `false` to defer filling in the text in
   # each cell, which can be computationally intensive.
@@ -93,28 +87,16 @@ class Tabula::Spreadsheet < org.nerdpower.tabula.TableWithRulingLines
     rows.map{ |row_cells| row_cells.map(&:text) }
   end
 
-  def to_csv
-    out = StringIO.new
-    Tabula::Writers.CSV(rows, out)
-    out.string
-  end
-
-  def to_tsv
-    out = StringIO.new
-    Tabula::Writers.TSV(rows, out)
-    out.string
-  end
-
-  def to_json(*a)
-    {
-      'json_class'   => self.class.name,
-      'extraction_method' => @extraction_method,
-      'data' => rows,
-    }.to_json(*a)
-  end
-
   def +(other)
     raise ArgumentError, "Data can only be added if it's from the same PDF page" unless other.page == @page
-    Spreadsheet.new(nil, nil, nil, nil, @page, @cells + other.cells, nil, nil )
+    t = self.class.new(Java::OrgNerdpowerTabula::Utils.bounds(java.util.ArrayList.new([self, other])),
+                       @page,
+                       java.util.ArrayList.new(self.getCells + other.getCells), nil, nil)
+    t.setExtractionAlgorithm(Java::OrgNerdpowerTabulaExtractors::SpreadsheetExtractionAlgorithm.new)
+    t
   end
+end
+
+module Tabula
+  Spreadsheet = Java::OrgNerdpowerTabulaTableWithRulingLines
 end

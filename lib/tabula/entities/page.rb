@@ -1,5 +1,6 @@
 java_import org.nerdpower.tabula.Page
 java_import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm
+java_import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm
 
 class Page
   include Tabula::HasCells
@@ -16,7 +17,6 @@ class Page
              end
 
     tables.first
-
   end
 
   #for API backwards-compatibility reasons, this returns an array of arrays.
@@ -42,11 +42,12 @@ class Page
   end
 
   def number(indexing_base=:one_indexed)
-    if indexing_base == :zero_indexed
-      return @number_one_indexed - 1
-    else
-      return @number_one_indexed
-    end
+    # if indexing_base == :zero_indexed
+    #   return @number_one_indexed - 1
+    # else
+    #   return @number_one_indexed
+    # end
+    self.page_number
   end
 
   # TODO no need for this, let's choose one name
@@ -69,15 +70,6 @@ class Page
 
   def get_cell_text(area=nil)
     TextElement.merge_words(self.get_text(area))
-  end
-
-  def to_json(options={})
-    { :width => self.width,
-      :height => self.height,
-      :number => self.number,
-      :rotation => self.rotation,
-      :texts => self.text
-    }.to_json(options)
   end
 end
 

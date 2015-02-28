@@ -10,6 +10,12 @@ class Java::OrgNerdpowerTabula::Table
     org.nerdpower.tabula.writers.TSVWriter.new.write(sb, self)
     sb.toString
   end
+
+  def to_json(*a)
+    sb = java.lang.StringBuilder.new
+    org.nerdpower.tabula.writers.JSONWriter.new.write(sb, self)
+    sb.toString
+  end
 end
 
 class Tabula::Table < org.nerdpower.tabula.Table
@@ -28,12 +34,6 @@ class Tabula::Table < org.nerdpower.tabula.Table
     end
     t.instance_variable_set(:@lines, tlines)
     t
-  end
-
-  def to_json(*a)
-    sb = java.lang.StringBuilder.new
-    org.nerdpower.tabula.writers.JSONWriter.new.write(sb, self)
-    sb.toString
   end
 
   protected

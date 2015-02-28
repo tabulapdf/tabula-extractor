@@ -125,7 +125,7 @@ def main
       if opts[:guess]
         page_areas = pdf_page.spreadsheets.map{|rect| pdf_page.get_area(rect.dims(:top, :left, :bottom, :right))}
       elsif area_input
-        page_areas = [pdf_page.get_area(area_input)]
+        page_areas = [pdf_page.get_area(*area_input)]
       else
         page_areas = [pdf_page]
       end
