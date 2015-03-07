@@ -67,11 +67,11 @@ module Tabula
     end
 
     def get_min_char_width
-      @min_char_width ||= texts.map(&:width).min
+      @min_char_width ||= texts.map(&:width).min || ::Float::INFINITY
     end
 
     def get_min_char_height
-      @min_char_height ||= texts.map(&:height).min
+      @min_char_height ||= texts.map(&:height).min || ::Float::INFINITY
     end
 
     def get_area(area)
