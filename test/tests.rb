@@ -250,36 +250,6 @@ class TestExtractor < Minitest::Test
     character_extractor.close!
   end
 
-  def test_forest_disclosure_report
-    skip "Skipping until we support multiline cells"
-    pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    character_extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
-    lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
-    vertical_rulings = lines.select(&:vertical?) #.uniq{|line| (line.left / 10).round }
-
-    page_obj = character_extractor.extract.next
-    characters = page_obj.get_text(110, 28, 218, 833)
-                                                           #top left bottom right
-        expected = Tabula::Table.new_from_array([
-          ['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '', '$85.00'],
-          ['TOTAL', '', '', '','$85.00'],
-          ['AARON, CAREN, T', '', 'RICHMOND, VA', 'EDUCATIONAL ITEMS', '', '$78.80'],
-          ['AARON, CAREN, T', '', 'RICHMOND, VA', 'MEALS', '', '$392.45'],
-          ['TOTAL', '', '', '', '$471.25'],
-          ['AARON, JOHN', '', 'CLARKSVILLE, TN', 'MEALS', '', '$20.39'],
-          ['TOTAL', '', '', '','$20.39'],
-          ['AARON, JOSHUA, N', '', 'WEST GROVE, PA', 'MEALS', '', '$310.33'],
-          ['AARON, JOSHUA, N', 'REGIONAL PULMONARY & SLEEP MEDICINE', 'WEST GROVE, PA', 'SPEAKING FEES', '', '$4,700.00'],
-          ['TOTAL', '', '', '', '$5,010.33'],
-          ['AARON, MAUREEN, M', '', 'MARTINSVILLE, VA', 'MEALS', '', '$193.67'],
-          ['TOTAL', '', '', '', '$193.67'],
-          ['AARON, MICHAEL, L', '', 'WEST ISLIP, NY', 'MEALS', '', '$19.50']
-        ])
-
-    character_extractor.close!
-    assert_equal expected, lines_to_table(Tabula.make_table(characters, :vertical_rulings => vertical_rulings))
-  end
-
   # TODO Spaces inserted in words - fails
   def test_bo_page24
     table = table_to_array Tabula.extract_table(File.expand_path('data/bo_page24.pdf', File.dirname(__FILE__)),
@@ -363,18 +333,6 @@ class TestExtractor < Minitest::Test
     def initialize(cells)
       @cells = cells
     end
-  end
-
-  def test_cells_to_spreadsheets
-    skip "Replaced with org.nerdpower.tabula.TestSpreadsheetExtractor.testFindSpreadsheetsFromCells"
-  end
-
-  def test_add_spanning_cells
-    skip "until I write it"
-  end
-
-  def test_add_placeholder_cells_to_funny_shaped_tables
-    skip "until I write it, cf 01005787B_Pakistan.pdf"
   end
 
   class CellsHasCellsTester
