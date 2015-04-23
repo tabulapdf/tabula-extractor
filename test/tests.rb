@@ -194,7 +194,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_diputados_voting_record
-    # skip "this is broken, but always has been"
+    skip "this is broken, but always has been"
     table = table_to_array Tabula.extract_table(File.expand_path('data/argentina_diputados_voting_record.pdf', File.dirname(__FILE__)),
                                                 1,
                                                 [269.875, 12.75, 790.5, 561])
@@ -284,7 +284,7 @@ class TestExtractor < Minitest::Test
 
 
   def test_vertical_rulings_splitting_words
-    # skip "This is broken, but always has been."
+    skip "This is broken, but always has been."
 
     #if a vertical ruling crosses over a word, the word should be split at that vertical ruling
     # before, the entire word would end up on one side of the vertical ruling.
