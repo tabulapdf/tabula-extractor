@@ -254,7 +254,9 @@ module Tabula
     end
 
     def get_cell_text(area=nil)
-      TextElement.merge_words(self.get_text(area))
+      s = self.get_text(area)
+      # puts s.map(&:inspect)
+      TextElement.merge_words(s)
     end
 
     def to_json(options={})
