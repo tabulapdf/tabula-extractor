@@ -43,23 +43,25 @@ module Tabula
       text_chunks = [TextChunk.create_from_text_element(text_elements.shift)]
 
 
-      previousAveCharWidth = text_chunks.first.width
       endOfLastTextX = text_chunks.first.right
       maxYForLine = text_chunks.first.bottom
       maxHeightForLine = text_chunks.first.height
       minYTopForLine = text_chunks.first.top
-      lastWordSpacing = -1
       sp = nil
+
+      char_widths_so_far = []
+      word_spacings_so_far = []
 
       text_elements.inject(text_chunks) do |chunks, char|
 
         current_chunk = chunks.last
         prev_char = current_chunk.text_elements.last
 
-        # Resets the average character width when we see a change in font
+        # Resets the character/spacing widths (used for averages) when we see a change in font
         # or a change in the font size
         if (char.font != prev_char.font) || (char.font_size != prev_char.font_size)
-          previousAveCharWidth = -1;
+          char_widths_so_far = []
+          word_spacings_so_far = []
         end
 
         # if same char AND overlapped, skip
@@ -78,27 +80,25 @@ module Tabula
         }
 
         # Estimate the expected width of the space based on the
-        # space character with some margin.
+        # average width of the space character with some margin
         wordSpacing = char.width_of_space
         deltaSpace  = 0
         deltaSpace = if (wordSpacing.nan? || wordSpacing == 0)
                        ::Float::MAX
-                     elsif lastWordSpacing < 0
+                     elsif word_spacings_so_far.empty?
                        wordSpacing * 0.5 # 0.5 == spacingTolerance
                      else
-                       ((wordSpacing + lastWordSpacing) / 2.0) * 0.5
+                       (word_spacings_so_far.reduce(&:+).to_f / word_spacings_so_far.size) * 0.5
                      end
 
+        word_spacings_so_far << wordSpacing
+        char_widths_so_far << (char.width / char.text.size)
+
         # Estimate the expected width of the space based on the
-        # average character width with some margin. This calculation does not
-        # make a true average (average of averages) but we found that it gave the
-        # best results after numerous experiments. Based on experiments we also found that
+        # average character width with some margin. Based on experiments we also found that
         # .3 worked well.
-        averageCharWidth = if previousAveCharWidth < 0
-                             char.width / char.text.size
-                           else
-                             (previousAveCharWidth + (char.width / char.text.size)) / 2.0
-                           end
+        averageCharWidth = char_widths_so_far.reduce(&:+).to_f / char_widths_so_far.size
+
         deltaCharWidth = averageCharWidth * 0.3 # 0.3 == averageCharTolerance
 
         # Compares the values obtained by the average method and the wordSpacing method and picks
@@ -119,7 +119,19 @@ module Tabula
           sameLine = false
         end
 
-        endOfLastTextX = char.right
+        # characters tend to be ordered by their left location
+        # in determining whether to add a space, we need to know the distance
+        # between the current character's left and the nearest character's 
+        # right. The nearest character may not be the previous character, so we
+        # need to keep track of the character with the greatest right x-axis
+        # location -- that's endOfLastTextX
+        # (in some fonts, one character may be completely "on top of"
+        # another character, with the wider character starting to the left and 
+        # ending to the right of the narrower character,  e.g. ANSI 
+        # representations of some South Asian languages, see 
+        # https://github.com/tabulapdf/tabula/issues/303)
+        endOfLastTextX = [char.right, endOfLastTextX].max
+
         # should we add a space?
         if !across_vertical_ruling \
           && sameLine \
@@ -161,11 +173,8 @@ module Tabula
           chunks << TextChunk.create_from_text_element(char)
         end
 
-        lastWordSpacing = wordSpacing
-        previousAveCharWidth = sp ? (averageCharWidth + sp.width) / 2.0 : averageCharWidth
-
         chunks
-      end
+      end.each{|chunk| chunk.text_elements.sort_by!{|char| char.left + char.right } }
     end
 
     ##
