@@ -194,6 +194,7 @@ class TestExtractor < Minitest::Test
   end
 
   def test_diputados_voting_record
+    # skip "this is broken, but always has been"
     table = table_to_array Tabula.extract_table(File.expand_path('data/argentina_diputados_voting_record.pdf', File.dirname(__FILE__)),
                                                 1,
                                                 [269.875, 12.75, 790.5, 561])
@@ -283,6 +284,8 @@ class TestExtractor < Minitest::Test
 
 
   def test_vertical_rulings_splitting_words
+    # skip "This is broken, but always has been."
+
     #if a vertical ruling crosses over a word, the word should be split at that vertical ruling
     # before, the entire word would end up on one side of the vertical ruling.
     pdf_file_path = File.expand_path('data/vertical_rulings_bug.pdf', File.dirname(__FILE__))
@@ -664,6 +667,32 @@ class TestExtractor < Minitest::Test
 
     assert_equal expected, table_to_array(table)[0...2]
   end
+
+  def test_overlapping_characters_are_ordered_by_their_centers
+    # related to https://github.com/tabulapdf/tabula/issues/303
+    # prior to this fix, characters were "scrambled" because they were ordered by their left value, not their center
+    pdf_file_path = File.expand_path('data/pune-budget-1.pdf', File.dirname(__FILE__))
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
+    expected = "N^nLl"
+    extractor.extract.each do |pdf_page|
+      spreadsheet = pdf_page.spreadsheets.first
+      assert_equal expected, spreadsheet.rows[0].reject(&:empty?).first.text.gsub(" ", '')
+    end
+  end
+
+  def test_spaces_arent_inserted_after_very_narrow_characters
+    # related to https://github.com/tabulapdf/tabula/issues/303
+    # to fix this bug, we had to use a real average, as opposed to (memo + current) / 2
+    pdf_file_path = File.expand_path('data/pune-budget-1.pdf', File.dirname(__FILE__))
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
+    expected = "N^nLl"
+    extractor.extract.each do |pdf_page|
+      spreadsheet = pdf_page.spreadsheets.first
+      assert_equal expected, spreadsheet.rows[0].reject(&:empty?).first.text
+    end
+  end
+
+
 
   # addresses https://github.com/tabulapdf/tabula-extractor/issues/69
   # where some spreadsheet-style tables don't have borders on exterior cells
