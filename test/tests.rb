@@ -676,7 +676,8 @@ class TestExtractor < Minitest::Test
     expected = "N^nLl"
     extractor.extract.each do |pdf_page|
       spreadsheet = pdf_page.spreadsheets.first
-      assert_equal expected, spreadsheet.rows[0].reject(&:empty?).first.text.gsub(" ", '')
+      puts 
+      assert_equal expected, spreadsheet.rows[0].map(&:text).reject(&:empty?).first.gsub(" ", '')
     end
   end
 
@@ -688,7 +689,7 @@ class TestExtractor < Minitest::Test
     expected = "N^nLl"
     extractor.extract.each do |pdf_page|
       spreadsheet = pdf_page.spreadsheets.first
-      assert_equal expected, spreadsheet.rows[0].reject(&:empty?).first.text
+      assert_equal expected, spreadsheet.rows[0].map(&:text).reject(&:empty?).first
     end
   end
 
