@@ -51,7 +51,7 @@ require_relative '../target/tabula-extractor-0.7.4-SNAPSHOT-jar-with-dependencie
 # java.util.logging.Logger.getLogger('org.apache.pdfbox').setLevel(java.util.logging.Level::OFF)
 
 # require_relative './tabula/version'
-# require_relative './tabula/core_ext'
+require_relative './tabula/core_ext'
 
 # require_relative './tabula/entities'
 # require_relative './tabula/extraction'
@@ -69,7 +69,7 @@ module Tabula
   include_package Java::TechnologyTabula
 end
 
-class Tabula::Table
+class Java::TechnologyTabula::Table
   def to_csv
     sb = java.lang.StringBuilder.new
     Java::TechnologyTabulaWriters.CSVWriter.new.write(sb, self)
@@ -173,24 +173,79 @@ module Tabula
   end
 end
 
-module Java
-  module TechnologyTabula
-    class TextElement 
-    end
-    class Ruling
-    end
-    class Page
-      def spreadsheets
-        spreadsheetExtractor = ::Java::TechnologyTabulaExtractors.SpreadsheetExtractionAlgorithm.new
-        spreadsheetExtractor.extract(self)
-      end
+module Tabula
+  include_package Java::TechnologyTabula
+  import 'technology.tabula.Page'
+  import 'technology.tabula.TextElement'
+  import 'technology.tabula.TextChunk'
+  import 'technology.tabula.Ruling'
+  import 'technology.tabula.Table'
+  import 'technology.tabula.TableWithRulingLines'
+  import 'technology.tabula.Cell'
+  import 'technology.tabula.Line'
+  import 'technology.tabula.Rectangle'
 
-      alias_method :get_cell_text, :get_text
-    end
-    class Table
-    end
-    class Cell
-      alias_method :get_text_elements, :text
+end
+
+module Tabula
+  class TextElement
+    EMPTY = TextElement.new(0,0,0,0,nil,0,'',0)
+    # def initialize(text_or_top, left=nil, bottom=nil,right=nil,font=nil,font_size=nil,text=nil,space_width=nil)
+    #   if left.nil?
+    #     TextElement.new(0,0,0,0,nil,0,text_or_top,0)
+    #   else
+    #     super
+    #   end
+    # end
+    def ==(other)
+      self.text.strip == other.text.strip
     end
   end
+  class Page
+    alias_method :get_cell_text, :get_text
+    alias_method :get_ruling_lines!, :getRulings
+    alias_method :ruling_lines, :getRulings
+    def spreadsheets
+      spreadsheetExtractor = ::Java::TechnologyTabulaExtractors.SpreadsheetExtractionAlgorithm.new
+      spreadsheetExtractor.extract(self)
+    end
+    def get_area(array)
+      java_send :getArea, [::Java::float,::Java::float,::Java::float,::Java::float], *array
+    end
+    def get_text(array)
+      java_send :getText, [::Java::float,::Java::float,::Java::float,::Java::float], *array
+    end
+    def is_tabular?
+      spreadsheetExtractor = ::Java::TechnologyTabulaExtractors.SpreadsheetExtractionAlgorithm.new
+      spreadsheetExtractor.isTabular(self)
+    end
+    def get_table(options={})
+      extractor = ::Java::TechnologyTabulaExtractors.BasicExtractionAlgorithm.new
+      extractor.extract(self, options[:vertical_rulings].nil? ? [] : options[:vertical_rulings].map{|r| r.x1.to_java(Java::float) } ).first
+    end
+    def make_table(options={})
+      get_table(options).rows
+    end
+  end
+  class Table
+    def to_a
+      rows.map{|row| row.map(&:getText) }
+    end
+
+    def Table.new_from_array(ary_of_arys) # this is only for tests, I think.
+      t = Table.new
+      ary_of_arys.each_with_index do |row, i|
+        row.each_with_index do |cell, j|
+          t.add(Tabula::TextChunk.new(TextElement.new(0,0,0,0,nil,0,cell,0)), i, j)
+        end
+      end
+    end
+  end
+  Spreadsheet = TableWithRulingLines
+
+  class Cell
+    alias_method :get_text_elements, :text
+  end
 end
+
+
