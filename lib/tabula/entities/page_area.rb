@@ -1,8 +1,4 @@
 module Tabula
-  class PageArea < Page
-
-    
-
+  class PageArea < Java::TechnologyTabula::Page
   end
-
 end

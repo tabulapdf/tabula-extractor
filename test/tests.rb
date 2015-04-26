@@ -129,21 +129,6 @@ class TestPagesInfoExtractor < Minitest::Test
   end
 end
 
-class TestTableGuesser < Minitest::Test
-  def test_find_rects_from_lines_with_lsd
-    skip "Skipping until we actually use LSD"
-    filename = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    page_index = 0
-    lines = Tabula::Extraction::LineExtractor.lines_in_pdf_page(filename, page_index, :render_pdf => true)
-
-    page_areas = Tabula::TableGuesser::find_rects_from_lines(lines)
-    page_areas.map!{|rect| rect.dims(:top, :left, :bottom, :right)}
-    expected_page_areas = [[54.087890625, 50.203125, 734.220703125, 550.44140625]]
-    assert_equal expected_page_areas, page_areas
-  end
-
-end
-
 class TestDumper < Minitest::Test
 
   def test_extractor
@@ -182,11 +167,12 @@ end
 class TestExtractor < Minitest::Test
 
   def test_table_extraction_1
-    table = table_to_array Tabula.extract_table(File.expand_path('data/gre.pdf', File.dirname(__FILE__)),
-                                                1,
-                                                [107.1, 57.9214, 394.5214, 290.7],
+    top,left,bottom,right = 107.1, 57.9214, 394.5214, 290.7
+    table = table_to_array Tabula.extract_tables(File.expand_path('data/gre.pdf', File.dirname(__FILE__)),
+                                                [{'page' => 1,
+                                                'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
                                                 :detect_ruling_lines => false,
-                                                :extraction_method => 'original')
+                                                :extraction_method => 'original').first
 
     expected = [["Prior Scale","New Scale","% Rank*"], ["800","170","99"], ["790","170","99"], ["780","170","99"], ["770","170","99"], ["760","170","99"], ["750","169","99"], ["740","169","99"], ["730","168","98"], ["720","168","98"], ["710","167","97"], ["700","166","96"], ["690","165","95"], ["680","165","95"], ["670","164","93"], ["660","164","93"], ["650","163","91"]]
 
@@ -195,9 +181,10 @@ class TestExtractor < Minitest::Test
 
   def test_diputados_voting_record
     skip "this is broken, but always has been"
-    table = table_to_array Tabula.extract_table(File.expand_path('data/argentina_diputados_voting_record.pdf', File.dirname(__FILE__)),
-                                                1,
-                                                [269.875, 12.75, 790.5, 561])
+    top,left,bottom,right = 269.875, 12.75, 790.5, 561
+    table = table_to_array Tabula.extract_tables(File.expand_path('data/argentina_diputados_voting_record.pdf', File.dirname(__FILE__)),
+                                                [{'page' => 1,
+                                                'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}]).first
 
     expected = [["ABDALA de MATARAZZO, Norma Amanda", "Frente Cívico por Santiago", "Santiago del Estero", "AFIRMATIVO"], ["ALBRIEU, Oscar Edmundo Nicolas", "Frente para la Victoria - PJ", "Rio Negro", "AFIRMATIVO"], ["ALONSO, María Luz", "Frente para la Victoria - PJ", "La Pampa", "AFIRMATIVO"], ["ARENA, Celia Isabel", "Frente para la Victoria - PJ", "Santa Fe", "AFIRMATIVO"], ["ARREGUI, Andrés Roberto", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["AVOSCAN, Herman Horacio", "Frente para la Victoria - PJ", "Rio Negro", "AFIRMATIVO"], ["BALCEDO, María Ester", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["BARRANDEGUY, Raúl Enrique", "Frente para la Victoria - PJ", "Entre Ríos", "AFIRMATIVO"], ["BASTERRA, Luis Eugenio", "Frente para la Victoria - PJ", "Formosa", "AFIRMATIVO"], ["BEDANO, Nora Esther", "Frente para la Victoria - PJ", "Córdoba", "AFIRMATIVO"], ["BERNAL, María Eugenia", "Frente para la Victoria - PJ", "Jujuy", "AFIRMATIVO"], ["BERTONE, Rosana Andrea", "Frente para la Victoria - PJ", "Tierra del Fuego", "AFIRMATIVO"], ["BIANCHI, María del Carmen", "Frente para la Victoria - PJ", "Cdad. Aut. Bs. As.", "AFIRMATIVO"], ["BIDEGAIN, Gloria Mercedes", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["BRAWER, Mara", "Frente para la Victoria - PJ", "Cdad. Aut. Bs. As.", "AFIRMATIVO"], ["BRILLO, José Ricardo", "Movimiento Popular Neuquino", "Neuquén", "AFIRMATIVO"], ["BROMBERG, Isaac Benjamín", "Frente para la Victoria - PJ", "Tucumán", "AFIRMATIVO"], ["BRUE, Daniel Agustín", "Frente Cívico por Santiago", "Santiago del Estero", "AFIRMATIVO"], ["CALCAGNO, Eric", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CARLOTTO, Remo Gerardo", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CARMONA, Guillermo Ramón", "Frente para la Victoria - PJ", "Mendoza", "AFIRMATIVO"], ["CATALAN MAGNI, Julio César", "Frente para la Victoria - PJ", "Tierra del Fuego", "AFIRMATIVO"], ["CEJAS, Jorge Alberto", "Frente para la Victoria - PJ", "Rio Negro", "AFIRMATIVO"], ["CHIENO, María Elena", "Frente para la Victoria - PJ", "Corrientes", "AFIRMATIVO"], ["CIAMPINI, José Alberto", "Frente para la Victoria - PJ", "Neuquén", "AFIRMATIVO"], ["CIGOGNA, Luis Francisco Jorge", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CLERI, Marcos", "Frente para la Victoria - PJ", "Santa Fe", "AFIRMATIVO"], ["COMELLI, Alicia Marcela", "Movimiento Popular Neuquino", "Neuquén", "AFIRMATIVO"], ["CONTI, Diana Beatriz", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CORDOBA, Stella Maris", "Frente para la Victoria - PJ", "Tucumán", "AFIRMATIVO"], ["CURRILEN, Oscar Rubén", "Frente para la Victoria - PJ", "Chubut", "AFIRMATIVO"]]
 
@@ -209,12 +196,12 @@ class TestExtractor < Minitest::Test
     # test_forest_disclosure_report, with spaces around the & in Regional Pulmonary & Sleep
     # and a solution for half-x-height-offset lines.
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-
-    table = Tabula.extract_table(pdf_file_path,
-                                                1,
-                                                [106.01, 48.09, 227.31, 551.89],
+    top,left,bottom,right = 106.01, 48.09, 227.31, 551.89
+    table = Tabula.extract_tables(pdf_file_path,
+                                                [{'page' => 1,
+                                                'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
                                                 :detect_ruling_lines => true,
-                                                :extraction_method => "original")
+                                                :extraction_method => "original").first
 
     expected = Tabula::Table.new_from_array([["AANONSEN, DEBORAH, A", "", "STATEN ISLAND, NY", "MEALS", "$85.00"], ["TOTAL", "", "", "", "$85.00"], ["AARON, CAREN, T", "", "RICHMOND, VA", "EDUCATIONAL ITEMS", "$78.80"], ["AARON, CAREN, T", "", "RICHMOND, VA", "MEALS", "$392.45"], ["TOTAL", "", "", "", "$471.25"], ["AARON, JOHN", "", "CLARKSVILLE, TN", "MEALS", "$20.39"], ["TOTAL", "", "", "", "$20.39"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "MEALS", "$310.33"], ["", "REGIONAL PULMONARY & SLEEP"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE"], ["TOTAL", "", "", "", "$5,010.33"], ["AARON, MAUREEN, M", "", "MARTINSVILLE, VA", "MEALS", "$193.67"], ["TOTAL", "", "", "", "$193.67"], ["AARON, MICHAEL, L", "", "WEST ISLIP, NY", "MEALS", "$19.50"], ["TOTAL", "", "", "", "$19.50"], ["AARON, MICHAEL, R", "", "BROOKLYN, NY", "MEALS", "$65.92"]])
 
@@ -240,42 +227,12 @@ class TestExtractor < Minitest::Test
     character_extractor.close!
   end
 
-  def test_forest_disclosure_report
-    skip "Skipping until we support multiline cells"
-    pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    character_extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
-    lines = Tabula::TableGuesser.find_lines_on_page(pdf_file_path, 0)
-    vertical_rulings = lines.select(&:vertical?) #.uniq{|line| (line.left / 10).round }
-
-    page_obj = character_extractor.extract.next
-    characters = page_obj.get_text([110, 28, 218, 833])
-                                                           #top left bottom right
-        expected = Tabula::Table.new_from_array([
-          ['AANONSEN, DEBORAH, A', '', 'STATEN ISLAND, NY', 'MEALS', '', '$85.00'],
-          ['TOTAL', '', '', '','$85.00'],
-          ['AARON, CAREN, T', '', 'RICHMOND, VA', 'EDUCATIONAL ITEMS', '', '$78.80'],
-          ['AARON, CAREN, T', '', 'RICHMOND, VA', 'MEALS', '', '$392.45'],
-          ['TOTAL', '', '', '', '$471.25'],
-          ['AARON, JOHN', '', 'CLARKSVILLE, TN', 'MEALS', '', '$20.39'],
-          ['TOTAL', '', '', '','$20.39'],
-          ['AARON, JOSHUA, N', '', 'WEST GROVE, PA', 'MEALS', '', '$310.33'],
-          ['AARON, JOSHUA, N', 'REGIONAL PULMONARY & SLEEP MEDICINE', 'WEST GROVE, PA', 'SPEAKING FEES', '', '$4,700.00'],
-          ['TOTAL', '', '', '', '$5,010.33'],
-          ['AARON, MAUREEN, M', '', 'MARTINSVILLE, VA', 'MEALS', '', '$193.67'],
-          ['TOTAL', '', '', '', '$193.67'],
-          ['AARON, MICHAEL, L', '', 'WEST ISLIP, NY', 'MEALS', '', '$19.50']
-        ])
-
-    character_extractor.close!
-    assert_equal expected, lines_to_table(Tabula.make_table(characters, :vertical_rulings => vertical_rulings))
-  end
-
   # TODO Spaces inserted in words - fails
   def test_bo_page24
-    table = table_to_array Tabula.extract_table(File.expand_path('data/bo_page24.pdf', File.dirname(__FILE__)),
-                                                1,
-                                                [425.625, 53.125, 575.714, 810.535],
-                                                :detect_ruling_lines => false)
+    table = table_to_array Tabula.extract_tables(File.expand_path('data/bo_page24.pdf', File.dirname(__FILE__)),
+                                                [{'page' => 1,
+                                                 'y1' => 425.625, 'x1' => 53.125, 'y2' => 575.714, 'x2' => 810.535}],
+                                                :detect_ruling_lines => false).first
 
     expected = [["1", "UNICA", "CECILIA KANDUS", "16/12/2008", "PEDRO ALBERTO GALINDEZ", "60279/09"], ["1", "UNICA", "CECILIA KANDUS", "10/06/2009", "PASTORA FILOMENA NAVARRO", "60280/09"], ["13", "UNICA", "MIRTA S. BOTTALLO DE VILLA", "02/07/2009", "MARIO LUIS ANGELERI, DNI 4.313.138", "60198/09"], ["16", "UNICA", "LUIS PEDRO FASANELLI", "22/05/2009", "PETTER o PEDRO KAHRS", "60244/09"], ["18", "UNICA", "ALEJANDRA SALLES", "26/06/2009", "RAUL FERNANDO FORTINI", "60236/09"], ["31", "UNICA", "MARÍA CRISTINA GARCÍA", "17/06/2009", "DOMINGO TRIPODI Y PAULA LUPPINO", "60302/09"], ["34", "UNICA", "SUSANA B. MARZIONI", "11/06/2009", "JESUSA CARMEN VAZQUEZ", "60177/09"], ["51", "UNICA", "MARIA LUCRECIA SERRAT", "19/05/2009", "DANIEL DECUADRO", "60227/09"], ["51", "UNICA", "MARIA LUCRECIA SERRAT", "12/02/2009", "ELIZABETH LILIANA MANSILLA ROMERO", "60150/09"], ["75", "UNICA", "IGNACIO M. REBAUDI BASAVILBASO", "01/07/2009", "ABALSAMO ALFREDO DANIEL", "60277/09"], ["94", "UNICA", "GABRIELA PALÓPOLI", "02/07/2009", "ALVAREZ ALICIA ESTHER", "60360/09"], ["96", "UNICA", "DANIEL PAZ EYNARD", "16/06/2009", "NELIDA ALBORADA ALCARAZ SERRANO", "60176/09"]]
 
@@ -328,19 +285,19 @@ class TestExtractor < Minitest::Test
 
     vertical_rulings = [47,147,256,310,375,431,504].map{|n| Tabula::Ruling.new(0, n, 0, 1000)}
 
-    table = table_to_array Tabula.extract_table(File.expand_path('data/campaign_donors.pdf', File.dirname(__FILE__)),
-                                                1,
-                                                [255.57,40.43,398.76,557.35],
-                                                :vertical_rulings => vertical_rulings)
+    table = table_to_array Tabula.extract_tables(File.expand_path('data/campaign_donors.pdf', File.dirname(__FILE__)),
+                                                [{'page' => 1,
+                                                 'y1' => 255.57, 'x1' => 40.43, 'y2' => 398.76, 'x2' => 557.35}],
+                                                :vertical_rulings => vertical_rulings).first
 
     assert_equal expected, table
   end
 
   def test_get_spacing_and_merging_right
-    table = table_to_array Tabula.extract_table(File.expand_path('data/strongschools.pdf', File.dirname(__FILE__)),
-                                                1,
-                                                [52.32857142857143,15.557142857142859,128.70000000000002,767.9571428571429],
-                                                :detect_ruling_lines => true)
+    table = table_to_array Tabula.extract_tables(File.expand_path('data/strongschools.pdf', File.dirname(__FILE__)),
+                                                [{'page' => 1,
+                                                 'y1' => 52.32857142857143, 'x1' => 15.557142857142859, 'y2' => 128.70000000000002, 'x2' => 767.9571428571429}],
+                                                :detect_ruling_lines => true).first
 
     expected = [["Last Name", "First Name", "Address", "City", "State", "Zip", "Occupation", "Employer", "Date", "Amount"], ["Lidstad", "Dick & Peg", "62 Mississippi River Blvd N", "Saint Paul", "MN", "55104", "retired", "", "10/12/2012", "60.00"], ["Strom", "Pam", "1229 Hague Ave", "St. Paul", "MN", "55104", "", "", "9/12/2012", "60.00"], ["Seeba", "Louise & Paul", "1399 Sheldon St", "Saint Paul", "MN", "55108", "BOE", "City of Saint Paul", "10/12/2012", "60.00"], ["Schumacher / Bales", "Douglas L. / Patricia", "948 County Rd. D W", "Saint Paul", "MN", "55126", "", "", "10/13/2012", "60.00"], ["Abrams", "Marjorie", "238 8th St east", "St Paul", "MN", "55101", "Retired", "Retired", "8/8/2012", "75.00"], ["Crouse / Schroeder", "Abigail / Jonathan", "1545 Branston St.", "Saint Paul", "MN", "55108", "", "", "10/6/2012", "75.00"]]
 
@@ -348,91 +305,82 @@ class TestExtractor < Minitest::Test
 
   end
 
+  # #just tests the algorithm
+  # def test_cells_to_spreadsheets
 
-  class SpreadsheetsHasCellsTester
-    include Tabula::HasCells
-    attr_accessor :cells
-    def initialize(cells)
-      @cells = cells
-    end
-  end
-
-  #just tests the algorithm
-  def test_cells_to_spreadsheets
-
-    cells = [Tabula::Cell.new(40.0, 18.0, 208.0, 4.0), Tabula::Cell.new(44.0, 18.0, 52.0, 6.0),
-      Tabula::Cell.new(50.0, 18.0, 52.0, 4.0), Tabula::Cell.new(54.0, 18.0, 52.0, 6.0),
-      Tabula::Cell.new(60.0, 18.0, 52.0, 4.0), Tabula::Cell.new(64.0, 18.0, 52.0, 6.0),
-      Tabula::Cell.new(70.0, 18.0, 52.0, 4.0), Tabula::Cell.new(74.0, 18.0, 52.0, 6.0),
-      Tabula::Cell.new(90.0, 18.0, 52.0, 4.0), Tabula::Cell.new(94.0, 18.0, 52.0, 6.0),
-      Tabula::Cell.new(100.0, 18.0, 52.0, 28.0), Tabula::Cell.new(128.0, 18.0, 52.0, 4.0),
-      Tabula::Cell.new(132.0, 18.0, 52.0, 64.0), Tabula::Cell.new(196.0, 18.0, 52.0, 66.0),
-      Tabula::Cell.new(262.0, 18.0, 52.0, 4.0), Tabula::Cell.new(266.0, 18.0, 52.0, 84.0),
-      Tabula::Cell.new(350.0, 18.0, 52.0, 4.0), Tabula::Cell.new(354.0, 18.0, 52.0, 32.0),
-      Tabula::Cell.new(386.0, 18.0, 52.0, 38.0), Tabula::Cell.new(424.0, 18.0, 52.0, 18.0),
-      Tabula::Cell.new(442.0, 18.0, 52.0, 74.0), Tabula::Cell.new(516.0, 18.0, 52.0, 28.0),
-      Tabula::Cell.new(544.0, 18.0, 52.0, 4.0), Tabula::Cell.new(44.0, 70.0, 156.0, 6.0),
-      Tabula::Cell.new(50.0, 70.0, 156.0, 4.0), Tabula::Cell.new(54.0, 70.0, 156.0, 6.0),
-      Tabula::Cell.new(60.0, 70.0, 156.0, 4.0), Tabula::Cell.new(64.0, 70.0, 156.0, 6.0),
-      Tabula::Cell.new(70.0, 70.0, 156.0, 4.0), Tabula::Cell.new(74.0, 70.0, 156.0, 6.0),
-      Tabula::Cell.new(84.0, 70.0, 2.0, 6.0), Tabula::Cell.new(90.0, 70.0, 156.0, 4.0),
-      Tabula::Cell.new(94.0, 70.0, 156.0, 6.0), Tabula::Cell.new(100.0, 70.0, 156.0, 28.0),
-      Tabula::Cell.new(128.0, 70.0, 156.0, 4.0), Tabula::Cell.new(132.0, 70.0, 156.0, 64.0),
-      Tabula::Cell.new(196.0, 70.0, 156.0, 66.0), Tabula::Cell.new(262.0, 70.0, 156.0, 4.0),
-      Tabula::Cell.new(266.0, 70.0, 156.0, 84.0), Tabula::Cell.new(350.0, 70.0, 156.0, 4.0),
-      Tabula::Cell.new(354.0, 70.0, 156.0, 32.0), Tabula::Cell.new(386.0, 70.0, 156.0, 38.0),
-      Tabula::Cell.new(424.0, 70.0, 156.0, 18.0), Tabula::Cell.new(442.0, 70.0, 156.0, 74.0),
-      Tabula::Cell.new(516.0, 70.0, 156.0, 28.0), Tabula::Cell.new(544.0, 70.0, 156.0, 4.0),
-      Tabula::Cell.new(84.0, 72.0, 446.0, 6.0), Tabula::Cell.new(90.0, 226.0, 176.0, 4.0),
-      Tabula::Cell.new(94.0, 226.0, 176.0, 6.0), Tabula::Cell.new(100.0, 226.0, 176.0, 28.0),
-      Tabula::Cell.new(128.0, 226.0, 176.0, 4.0), Tabula::Cell.new(132.0, 226.0, 176.0, 64.0),
-      Tabula::Cell.new(196.0, 226.0, 176.0, 66.0), Tabula::Cell.new(262.0, 226.0, 176.0, 4.0),
-      Tabula::Cell.new(266.0, 226.0, 176.0, 84.0), Tabula::Cell.new(350.0, 226.0, 176.0, 4.0),
-      Tabula::Cell.new(354.0, 226.0, 176.0, 32.0), Tabula::Cell.new(386.0, 226.0, 176.0, 38.0),
-      Tabula::Cell.new(424.0, 226.0, 176.0, 18.0), Tabula::Cell.new(442.0, 226.0, 176.0, 74.0),
-      Tabula::Cell.new(516.0, 226.0, 176.0, 28.0), Tabula::Cell.new(544.0, 226.0, 176.0, 4.0),
-      Tabula::Cell.new(90.0, 402.0, 116.0, 4.0), Tabula::Cell.new(94.0, 402.0, 116.0, 6.0),
-      Tabula::Cell.new(100.0, 402.0, 116.0, 28.0), Tabula::Cell.new(128.0, 402.0, 116.0, 4.0),
-      Tabula::Cell.new(132.0, 402.0, 116.0, 64.0), Tabula::Cell.new(196.0, 402.0, 116.0, 66.0),
-      Tabula::Cell.new(262.0, 402.0, 116.0, 4.0), Tabula::Cell.new(266.0, 402.0, 116.0, 84.0),
-      Tabula::Cell.new(350.0, 402.0, 116.0, 4.0), Tabula::Cell.new(354.0, 402.0, 116.0, 32.0),
-      Tabula::Cell.new(386.0, 402.0, 116.0, 38.0), Tabula::Cell.new(424.0, 402.0, 116.0, 18.0),
-      Tabula::Cell.new(442.0, 402.0, 116.0, 74.0), Tabula::Cell.new(516.0, 402.0, 116.0, 28.0),
-      Tabula::Cell.new(544.0, 402.0, 116.0, 4.0), Tabula::Cell.new(84.0, 518.0, 246.0, 6.0),
-      Tabula::Cell.new(90.0, 518.0, 186.0, 4.0), Tabula::Cell.new(94.0, 518.0, 186.0, 6.0),
-      Tabula::Cell.new(100.0, 518.0, 186.0, 28.0), Tabula::Cell.new(128.0, 518.0, 186.0, 4.0),
-      Tabula::Cell.new(132.0, 518.0, 186.0, 64.0), Tabula::Cell.new(196.0, 518.0, 186.0, 66.0),
-      Tabula::Cell.new(262.0, 518.0, 186.0, 4.0), Tabula::Cell.new(266.0, 518.0, 186.0, 84.0),
-      Tabula::Cell.new(350.0, 518.0, 186.0, 4.0), Tabula::Cell.new(354.0, 518.0, 186.0, 32.0),
-      Tabula::Cell.new(386.0, 518.0, 186.0, 38.0), Tabula::Cell.new(424.0, 518.0, 186.0, 18.0),
-      Tabula::Cell.new(442.0, 518.0, 186.0, 74.0), Tabula::Cell.new(516.0, 518.0, 186.0, 28.0),
-      Tabula::Cell.new(544.0, 518.0, 186.0, 4.0), Tabula::Cell.new(90.0, 704.0, 60.0, 4.0),
-      Tabula::Cell.new(94.0, 704.0, 60.0, 6.0), Tabula::Cell.new(100.0, 704.0, 60.0, 28.0),
-      Tabula::Cell.new(128.0, 704.0, 60.0, 4.0), Tabula::Cell.new(132.0, 704.0, 60.0, 64.0),
-      Tabula::Cell.new(196.0, 704.0, 60.0, 66.0), Tabula::Cell.new(262.0, 704.0, 60.0, 4.0),
-      Tabula::Cell.new(266.0, 704.0, 60.0, 84.0), Tabula::Cell.new(350.0, 704.0, 60.0, 4.0),
-      Tabula::Cell.new(354.0, 704.0, 60.0, 32.0), Tabula::Cell.new(386.0, 704.0, 60.0, 38.0),
-      Tabula::Cell.new(424.0, 704.0, 60.0, 18.0), Tabula::Cell.new(442.0, 704.0, 60.0, 74.0),
-      Tabula::Cell.new(516.0, 704.0, 60.0, 28.0), Tabula::Cell.new(544.0, 704.0, 60.0, 4.0),
-      Tabula::Cell.new(84.0, 764.0, 216.0, 6.0), Tabula::Cell.new(90.0, 764.0, 216.0, 4.0),
-      Tabula::Cell.new(94.0, 764.0, 216.0, 6.0), Tabula::Cell.new(100.0, 764.0, 216.0, 28.0),
-      Tabula::Cell.new(128.0, 764.0, 216.0, 4.0), Tabula::Cell.new(132.0, 764.0, 216.0, 64.0),
-      Tabula::Cell.new(196.0, 764.0, 216.0, 66.0), Tabula::Cell.new(262.0, 764.0, 216.0, 4.0),
-      Tabula::Cell.new(266.0, 764.0, 216.0, 84.0), Tabula::Cell.new(350.0, 764.0, 216.0, 4.0),
-      Tabula::Cell.new(354.0, 764.0, 216.0, 32.0), Tabula::Cell.new(386.0, 764.0, 216.0, 38.0),
-      Tabula::Cell.new(424.0, 764.0, 216.0, 18.0), Tabula::Cell.new(442.0, 764.0, 216.0, 74.0),
-      Tabula::Cell.new(516.0, 764.0, 216.0, 28.0), Tabula::Cell.new(544.0, 764.0, 216.0, 4.0)]
+  #   cells = [Tabula::Cell.new(40.0, 18.0, 208.0, 4.0), Tabula::Cell.new(44.0, 18.0, 52.0, 6.0),
+  #     Tabula::Cell.new(50.0, 18.0, 52.0, 4.0), Tabula::Cell.new(54.0, 18.0, 52.0, 6.0),
+  #     Tabula::Cell.new(60.0, 18.0, 52.0, 4.0), Tabula::Cell.new(64.0, 18.0, 52.0, 6.0),
+  #     Tabula::Cell.new(70.0, 18.0, 52.0, 4.0), Tabula::Cell.new(74.0, 18.0, 52.0, 6.0),
+  #     Tabula::Cell.new(90.0, 18.0, 52.0, 4.0), Tabula::Cell.new(94.0, 18.0, 52.0, 6.0),
+  #     Tabula::Cell.new(100.0, 18.0, 52.0, 28.0), Tabula::Cell.new(128.0, 18.0, 52.0, 4.0),
+  #     Tabula::Cell.new(132.0, 18.0, 52.0, 64.0), Tabula::Cell.new(196.0, 18.0, 52.0, 66.0),
+  #     Tabula::Cell.new(262.0, 18.0, 52.0, 4.0), Tabula::Cell.new(266.0, 18.0, 52.0, 84.0),
+  #     Tabula::Cell.new(350.0, 18.0, 52.0, 4.0), Tabula::Cell.new(354.0, 18.0, 52.0, 32.0),
+  #     Tabula::Cell.new(386.0, 18.0, 52.0, 38.0), Tabula::Cell.new(424.0, 18.0, 52.0, 18.0),
+  #     Tabula::Cell.new(442.0, 18.0, 52.0, 74.0), Tabula::Cell.new(516.0, 18.0, 52.0, 28.0),
+  #     Tabula::Cell.new(544.0, 18.0, 52.0, 4.0), Tabula::Cell.new(44.0, 70.0, 156.0, 6.0),
+  #     Tabula::Cell.new(50.0, 70.0, 156.0, 4.0), Tabula::Cell.new(54.0, 70.0, 156.0, 6.0),
+  #     Tabula::Cell.new(60.0, 70.0, 156.0, 4.0), Tabula::Cell.new(64.0, 70.0, 156.0, 6.0),
+  #     Tabula::Cell.new(70.0, 70.0, 156.0, 4.0), Tabula::Cell.new(74.0, 70.0, 156.0, 6.0),
+  #     Tabula::Cell.new(84.0, 70.0, 2.0, 6.0), Tabula::Cell.new(90.0, 70.0, 156.0, 4.0),
+  #     Tabula::Cell.new(94.0, 70.0, 156.0, 6.0), Tabula::Cell.new(100.0, 70.0, 156.0, 28.0),
+  #     Tabula::Cell.new(128.0, 70.0, 156.0, 4.0), Tabula::Cell.new(132.0, 70.0, 156.0, 64.0),
+  #     Tabula::Cell.new(196.0, 70.0, 156.0, 66.0), Tabula::Cell.new(262.0, 70.0, 156.0, 4.0),
+  #     Tabula::Cell.new(266.0, 70.0, 156.0, 84.0), Tabula::Cell.new(350.0, 70.0, 156.0, 4.0),
+  #     Tabula::Cell.new(354.0, 70.0, 156.0, 32.0), Tabula::Cell.new(386.0, 70.0, 156.0, 38.0),
+  #     Tabula::Cell.new(424.0, 70.0, 156.0, 18.0), Tabula::Cell.new(442.0, 70.0, 156.0, 74.0),
+  #     Tabula::Cell.new(516.0, 70.0, 156.0, 28.0), Tabula::Cell.new(544.0, 70.0, 156.0, 4.0),
+  #     Tabula::Cell.new(84.0, 72.0, 446.0, 6.0), Tabula::Cell.new(90.0, 226.0, 176.0, 4.0),
+  #     Tabula::Cell.new(94.0, 226.0, 176.0, 6.0), Tabula::Cell.new(100.0, 226.0, 176.0, 28.0),
+  #     Tabula::Cell.new(128.0, 226.0, 176.0, 4.0), Tabula::Cell.new(132.0, 226.0, 176.0, 64.0),
+  #     Tabula::Cell.new(196.0, 226.0, 176.0, 66.0), Tabula::Cell.new(262.0, 226.0, 176.0, 4.0),
+  #     Tabula::Cell.new(266.0, 226.0, 176.0, 84.0), Tabula::Cell.new(350.0, 226.0, 176.0, 4.0),
+  #     Tabula::Cell.new(354.0, 226.0, 176.0, 32.0), Tabula::Cell.new(386.0, 226.0, 176.0, 38.0),
+  #     Tabula::Cell.new(424.0, 226.0, 176.0, 18.0), Tabula::Cell.new(442.0, 226.0, 176.0, 74.0),
+  #     Tabula::Cell.new(516.0, 226.0, 176.0, 28.0), Tabula::Cell.new(544.0, 226.0, 176.0, 4.0),
+  #     Tabula::Cell.new(90.0, 402.0, 116.0, 4.0), Tabula::Cell.new(94.0, 402.0, 116.0, 6.0),
+  #     Tabula::Cell.new(100.0, 402.0, 116.0, 28.0), Tabula::Cell.new(128.0, 402.0, 116.0, 4.0),
+  #     Tabula::Cell.new(132.0, 402.0, 116.0, 64.0), Tabula::Cell.new(196.0, 402.0, 116.0, 66.0),
+  #     Tabula::Cell.new(262.0, 402.0, 116.0, 4.0), Tabula::Cell.new(266.0, 402.0, 116.0, 84.0),
+  #     Tabula::Cell.new(350.0, 402.0, 116.0, 4.0), Tabula::Cell.new(354.0, 402.0, 116.0, 32.0),
+  #     Tabula::Cell.new(386.0, 402.0, 116.0, 38.0), Tabula::Cell.new(424.0, 402.0, 116.0, 18.0),
+  #     Tabula::Cell.new(442.0, 402.0, 116.0, 74.0), Tabula::Cell.new(516.0, 402.0, 116.0, 28.0),
+  #     Tabula::Cell.new(544.0, 402.0, 116.0, 4.0), Tabula::Cell.new(84.0, 518.0, 246.0, 6.0),
+  #     Tabula::Cell.new(90.0, 518.0, 186.0, 4.0), Tabula::Cell.new(94.0, 518.0, 186.0, 6.0),
+  #     Tabula::Cell.new(100.0, 518.0, 186.0, 28.0), Tabula::Cell.new(128.0, 518.0, 186.0, 4.0),
+  #     Tabula::Cell.new(132.0, 518.0, 186.0, 64.0), Tabula::Cell.new(196.0, 518.0, 186.0, 66.0),
+  #     Tabula::Cell.new(262.0, 518.0, 186.0, 4.0), Tabula::Cell.new(266.0, 518.0, 186.0, 84.0),
+  #     Tabula::Cell.new(350.0, 518.0, 186.0, 4.0), Tabula::Cell.new(354.0, 518.0, 186.0, 32.0),
+  #     Tabula::Cell.new(386.0, 518.0, 186.0, 38.0), Tabula::Cell.new(424.0, 518.0, 186.0, 18.0),
+  #     Tabula::Cell.new(442.0, 518.0, 186.0, 74.0), Tabula::Cell.new(516.0, 518.0, 186.0, 28.0),
+  #     Tabula::Cell.new(544.0, 518.0, 186.0, 4.0), Tabula::Cell.new(90.0, 704.0, 60.0, 4.0),
+  #     Tabula::Cell.new(94.0, 704.0, 60.0, 6.0), Tabula::Cell.new(100.0, 704.0, 60.0, 28.0),
+  #     Tabula::Cell.new(128.0, 704.0, 60.0, 4.0), Tabula::Cell.new(132.0, 704.0, 60.0, 64.0),
+  #     Tabula::Cell.new(196.0, 704.0, 60.0, 66.0), Tabula::Cell.new(262.0, 704.0, 60.0, 4.0),
+  #     Tabula::Cell.new(266.0, 704.0, 60.0, 84.0), Tabula::Cell.new(350.0, 704.0, 60.0, 4.0),
+  #     Tabula::Cell.new(354.0, 704.0, 60.0, 32.0), Tabula::Cell.new(386.0, 704.0, 60.0, 38.0),
+  #     Tabula::Cell.new(424.0, 704.0, 60.0, 18.0), Tabula::Cell.new(442.0, 704.0, 60.0, 74.0),
+  #     Tabula::Cell.new(516.0, 704.0, 60.0, 28.0), Tabula::Cell.new(544.0, 704.0, 60.0, 4.0),
+  #     Tabula::Cell.new(84.0, 764.0, 216.0, 6.0), Tabula::Cell.new(90.0, 764.0, 216.0, 4.0),
+  #     Tabula::Cell.new(94.0, 764.0, 216.0, 6.0), Tabula::Cell.new(100.0, 764.0, 216.0, 28.0),
+  #     Tabula::Cell.new(128.0, 764.0, 216.0, 4.0), Tabula::Cell.new(132.0, 764.0, 216.0, 64.0),
+  #     Tabula::Cell.new(196.0, 764.0, 216.0, 66.0), Tabula::Cell.new(262.0, 764.0, 216.0, 4.0),
+  #     Tabula::Cell.new(266.0, 764.0, 216.0, 84.0), Tabula::Cell.new(350.0, 764.0, 216.0, 4.0),
+  #     Tabula::Cell.new(354.0, 764.0, 216.0, 32.0), Tabula::Cell.new(386.0, 764.0, 216.0, 38.0),
+  #     Tabula::Cell.new(424.0, 764.0, 216.0, 18.0), Tabula::Cell.new(442.0, 764.0, 216.0, 74.0),
+  #     Tabula::Cell.new(516.0, 764.0, 216.0, 28.0), Tabula::Cell.new(544.0, 764.0, 216.0, 4.0)]
 
 
-    expected_spreadsheets = [Tabula::Spreadsheet.new(40.0, 18.0, 208.0, 40.0, nil, nil, nil, nil),
-                             Tabula::Spreadsheet.new(84.0, 18.0, 962.0, 464.0,nil, nil, nil, nil)]
+  #   expected_spreadsheets = [Tabula::Spreadsheet.new(40.0, 18.0, 208.0, 40.0, nil, nil, nil, nil),
+  #                            Tabula::Spreadsheet.new(84.0, 18.0, 962.0, 464.0,nil, nil, nil, nil)]
 
-    #compares spreadsheets on area only.
-    assert_equal expected_spreadsheets.map{|s| [s.x, s.y, s.width, s.height] },
-      SpreadsheetsHasCellsTester.new(cells).find_spreadsheets_from_cells.map{|a| s = a.getBounds; [s.x, s.y, s.width, s.height] }
+  #   #compares spreadsheets on area only.
+  #   assert_equal expected_spreadsheets.map{|s| [s.x, s.y, s.width, s.height] },
+  #     SpreadsheetsHasCellsTester.new(cells).find_spreadsheets_from_cells.map{|a| s = a.getBounds; [s.x, s.y, s.width, s.height] }
 
 
-  end
+  # end
 
   def test_add_spanning_cells
     skip "until I write it"
@@ -442,45 +390,45 @@ class TestExtractor < Minitest::Test
     skip "until I write it, cf 01005787B_Pakistan.pdf"
   end
 
-  class CellsHasCellsTester
-    include Tabula::HasCells
-    attr_accessor :vertical_ruling_lines, :horizontal_ruling_lines, :cells
-    def initialize(vertical_ruling_lines, horizontal_ruling_lines)
-      @cells = []
-      @vertical_ruling_lines = vertical_ruling_lines
-      @horizontal_ruling_lines = horizontal_ruling_lines
-      find_cells!(horizontal_ruling_lines, vertical_ruling_lines)
-    end
-  end
+  # class CellsHasCellsTester
+  #   include Tabula::HasCells
+  #   attr_accessor :vertical_ruling_lines, :horizontal_ruling_lines, :cells
+  #   def initialize(vertical_ruling_lines, horizontal_ruling_lines)
+  #     @cells = []
+  #     @vertical_ruling_lines = vertical_ruling_lines
+  #     @horizontal_ruling_lines = horizontal_ruling_lines
+  #     find_cells!(horizontal_ruling_lines, vertical_ruling_lines)
+  #   end
+  # end
 
-  #just tests the algorithm
-  def test_lines_to_cells
-    vertical_ruling_lines = [ Tabula::Ruling.new(40.0, 18.0, 0.0, 40.0),
-                              Tabula::Ruling.new(44.0, 70.0, 0.0, 36.0),
-                              Tabula::Ruling.new(40.0, 226.0, 0.0, 40.0)]
+  # #just tests the algorithm
+  # def test_lines_to_cells
+  #   vertical_ruling_lines = [ Tabula::Ruling.new(40.0, 18.0, 0.0, 40.0),
+  #                             Tabula::Ruling.new(44.0, 70.0, 0.0, 36.0),
+  #                             Tabula::Ruling.new(40.0, 226.0, 0.0, 40.0)]
 
-    horizontal_ruling_lines = [ Tabula::Ruling.new(40.0, 18.0, 208.0, 0.0),
-                                Tabula::Ruling.new(44.0, 18.0, 208.0, 0.0),
-                                Tabula::Ruling.new(50.0, 18.0, 208.0, 0.0),
-                                Tabula::Ruling.new(54.0, 18.0, 208.0, 0.0),
-                                Tabula::Ruling.new(60.0, 18.0, 208.0, 0.0),
-                                Tabula::Ruling.new(64.0, 18.0, 208.0, 0.0),
-                                Tabula::Ruling.new(70.0, 18.0, 208.0, 0.0),
-                                Tabula::Ruling.new(74.0, 18.0, 208.0, 0.0),
-                                Tabula::Ruling.new(80.0, 18.0, 208.0, 0.0)]
+  #   horizontal_ruling_lines = [ Tabula::Ruling.new(40.0, 18.0, 208.0, 0.0),
+  #                               Tabula::Ruling.new(44.0, 18.0, 208.0, 0.0),
+  #                               Tabula::Ruling.new(50.0, 18.0, 208.0, 0.0),
+  #                               Tabula::Ruling.new(54.0, 18.0, 208.0, 0.0),
+  #                               Tabula::Ruling.new(60.0, 18.0, 208.0, 0.0),
+  #                               Tabula::Ruling.new(64.0, 18.0, 208.0, 0.0),
+  #                               Tabula::Ruling.new(70.0, 18.0, 208.0, 0.0),
+  #                               Tabula::Ruling.new(74.0, 18.0, 208.0, 0.0),
+  #                               Tabula::Ruling.new(80.0, 18.0, 208.0, 0.0)]
 
-    expected_cells = [Tabula::Cell.new(40.0, 18.0, 208.0, 4.0), Tabula::Cell.new(44.0, 18.0, 52.0, 6.0),
-                      Tabula::Cell.new(50.0, 18.0, 52.0, 4.0), Tabula::Cell.new(54.0, 18.0, 52.0, 6.0),
-                      Tabula::Cell.new(60.0, 18.0, 52.0, 4.0), Tabula::Cell.new(64.0, 18.0, 52.0, 6.0),
-                      Tabula::Cell.new(70.0, 18.0, 52.0, 4.0), Tabula::Cell.new(74.0, 18.0, 52.0, 6.0),
-                      Tabula::Cell.new(44.0, 70.0, 156.0, 6.0), Tabula::Cell.new(50.0, 70.0, 156.0, 4.0),
-                      Tabula::Cell.new(54.0, 70.0, 156.0, 6.0), Tabula::Cell.new(60.0, 70.0, 156.0, 4.0),
-                      Tabula::Cell.new(64.0, 70.0, 156.0, 6.0), Tabula::Cell.new(70.0, 70.0, 156.0, 4.0),
-                      Tabula::Cell.new(74.0, 70.0, 156.0, 6.0), ]
+  #   expected_cells = [Tabula::Cell.new(40.0, 18.0, 208.0, 4.0), Tabula::Cell.new(44.0, 18.0, 52.0, 6.0),
+  #                     Tabula::Cell.new(50.0, 18.0, 52.0, 4.0), Tabula::Cell.new(54.0, 18.0, 52.0, 6.0),
+  #                     Tabula::Cell.new(60.0, 18.0, 52.0, 4.0), Tabula::Cell.new(64.0, 18.0, 52.0, 6.0),
+  #                     Tabula::Cell.new(70.0, 18.0, 52.0, 4.0), Tabula::Cell.new(74.0, 18.0, 52.0, 6.0),
+  #                     Tabula::Cell.new(44.0, 70.0, 156.0, 6.0), Tabula::Cell.new(50.0, 70.0, 156.0, 4.0),
+  #                     Tabula::Cell.new(54.0, 70.0, 156.0, 6.0), Tabula::Cell.new(60.0, 70.0, 156.0, 4.0),
+  #                     Tabula::Cell.new(64.0, 70.0, 156.0, 6.0), Tabula::Cell.new(70.0, 70.0, 156.0, 4.0),
+  #                     Tabula::Cell.new(74.0, 70.0, 156.0, 6.0), ]
 
-    actual_cells = CellsHasCellsTester.new(vertical_ruling_lines, horizontal_ruling_lines).cells
-    assert_equal Set.new(expected_cells), Set.new(actual_cells) #I don't care about order
-  end
+  #   actual_cells = CellsHasCellsTester.new(vertical_ruling_lines, horizontal_ruling_lines).cells
+  #   assert_equal Set.new(expected_cells), Set.new(actual_cells) #I don't care about order
+  # end
 
   #this is the real deal!!
   def test_extract_tabular_data_using_lines_and_spreadsheets
@@ -552,11 +500,11 @@ class TestExtractor < Minitest::Test
   def test_remove_repeated_text
     top, left, bottom, right = 101.82857142857144,48.08571428571429,497.8285714285715,765.1285714285715
 
-    table = Tabula.extract_table(File.expand_path('data/nyc_2013fiscalreporttables.pdf', File.dirname(__FILE__)),
-                                 1,
-                                 [top,left,bottom,right],
+    table = Tabula.extract_tables(File.expand_path('data/nyc_2013fiscalreporttables.pdf', File.dirname(__FILE__)),
+                                 [{'page' => 1,
+                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original')
+                                 :extraction_method => 'original').first
 
     ary = table_to_array(table)
 
@@ -567,11 +515,11 @@ class TestExtractor < Minitest::Test
   def test_remove_overlapping_text
     # one of those PDFs that put characters on top of another to make text "bold"
     top,left,bottom,right = 399.98571428571427, 36.06428571428571, 425.1214285714285, 544.2428571428571
-    table = Tabula.extract_table(File.expand_path('data/wc2012.pdf', File.dirname(__FILE__)),
-                                 1,
-                                 [top,left,bottom,right],
+    table = Tabula.extract_tables(File.expand_path('data/wc2012.pdf', File.dirname(__FILE__)),
+                                 [{'page' => 1,
+                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original')
+                                 :extraction_method => 'original').first
 
     ary = table_to_array(table)
     assert_equal ary.first.first, "Community development"
@@ -584,9 +532,7 @@ class TestExtractor < Minitest::Test
     extractor.extract.each do |pdf_page|
       pdf_page.spreadsheets.each do |spreadsheet|
         spreadsheet.cells.each do |cell|
-          cell.text_elements = pdf_page.get_cell_text(cell)
-          cell.options = ({:use_line_returns => true, :cell_debug => 0})
-          data << cell.text
+          data << cell.text(true)
         end
       end
     end
@@ -596,11 +542,11 @@ class TestExtractor < Minitest::Test
 
   def test_remove_repeated_spaces
     top,left,bottom,right = 304.9375, 78.625, 334.6875, 501.5
-    table = Tabula.extract_table(File.expand_path('data/repeated_spaces.pdf', File.dirname(__FILE__)),
-                                 1,
-                                 [top,left,bottom,right],
+    table = Tabula.extract_tables(File.expand_path('data/repeated_spaces.pdf', File.dirname(__FILE__)),
+                                 [{'page' => 1,
+                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original')
+                                 :extraction_method => 'original').first
 
     table_to_array(table).each { |row|
       assert_equal row.size, 7
@@ -609,11 +555,11 @@ class TestExtractor < Minitest::Test
 
   def test_monospaced_table
     top,left,bottom,right = 149.9142857142857, 89.10000000000001, 243.25714285714287, 721.2857142857143
-    table = Tabula.extract_table(File.expand_path('data/monospaced1.pdf', File.dirname(__FILE__)),
-                                 1,
-                                 [top,left,bottom,right],
+    table = Tabula.extract_tables(File.expand_path('data/monospaced1.pdf', File.dirname(__FILE__)),
+                                 [{'page' => 1,
+                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original')
+                                 :extraction_method => 'original').first
 
     expected = [["ALBERT LEA, MAYO CLINIC HEALTH SYS- ALBE", "0", "0", "0", "7", "7", ".0", ".0", ".0", "23.3", "10.4"], ["ROCHESTER, MAYO CLINIC METHODIST HOSPITA", "6", "7", "14", "11", "25", "27.3", "100.0", "37.8", "36.7", "37.3"], ["ROCHESTER, MAYO CLINIC ST. MARYS", "9", "0", "11", "7", "18", "40.9", ".0", "29.7", "23.3", "26.9"], ["BLUE EARTH, UNITED HOSPITAL DISTRICT", "3", "0", "4", "0", "4", "13.6", ".0", "10.8", ".0", "6.0"], ["FAIRMONT, MAYO CLINIC HEALTH SYSTEM -FAI", "1", "0", "2", "1", "3", "4.5", ".0", "5.4", "3.3", "4.5"], ["MANKATO, MAYO CLINIC HEALTH SYSTEM- MANK", "3", "0", "5", "3", "8", "13.6", ".0", "13.5", "10.0", "11.9"], ["ALL REGION 4 (TC) HOSPITALS", "0", "0", "1", "1", "2", ".0", ".0", "2.7", "3.3", "3.0"], ["", "22", "7", "37", "30", "67", "100.0", "100.0", "100.0", "100.0", "100.0"]]
     assert_equal table_to_array(table), expected
@@ -631,11 +577,11 @@ class TestExtractor < Minitest::Test
 
   def test_bad_column_detection
     top,left,bottom,right = 535.5, 70.125, 549.3125, 532.3125
-    table = Tabula.extract_table(File.expand_path('data/indecago10.pdf', File.dirname(__FILE__)),
-                                 1,
-                                 [top,left,bottom,right],
+    table = Tabula.extract_tables(File.expand_path('data/indecago10.pdf', File.dirname(__FILE__)),
+                                 [{'page' => 1,
+                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original')
+                                 :extraction_method => 'original').first
 
     assert_equal table_to_array(table).first, ["Comunicaciones", "104,29", "– –", "0,1", "0,6", "1,1", "0,3"]
 
@@ -647,22 +593,22 @@ class TestExtractor < Minitest::Test
     expected.map! { |r| r.map(&:strip) }
 
     top,left,bottom,right = 32.87142857142857,41.72142857142857,486.75,694.0928571428572
-    table = Tabula.extract_table(File.expand_path('data/french1.pdf', File.dirname(__FILE__)),
-                                 1,
-                                 [top,left,bottom,right],
+    table = Tabula.extract_tables(File.expand_path('data/french1.pdf', File.dirname(__FILE__)),
+                                 [{'page' => 1,
+                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original')
+                                 :extraction_method => 'original').first
 
     assert_equal expected, table_to_array(table)
   end
 
   def test_issue78_some_ruling_lines_not_detected
     pdf_file_path = File.expand_path('data/mineria.pdf', File.dirname(__FILE__))
-    area = [104.46890818740722, 13, 580.548646927163, 820.8271357581996]
-    table = Tabula.extract_table(pdf_file_path,
-                                 1,
-                                 area,
-                                 :extraction_method => 'spreadsheet')
+    top,left,bottom,right = 104.46890818740722, 13, 580.548646927163, 820.8271357581996
+    table = Tabula.extract_tables(pdf_file_path,
+                                 [{'page' => 1,
+                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
+                                 :extraction_method => 'spreadsheet').first
     expected = [["1", "010000091", "086", "03/12/2012", "ACHAYAP MANTU ALDO", "ACHAYAP MANTU ALDO", "1", "OTROS", ".", ".", "AMAZONAS", "CONDORCANQ\rUI", "NIEVA", "", "", ""], ["2", "010000023", "022", "18/06/2012", "ACOSTA ROSALES YOSELIN BRICET", "ACOSTA ROSALES YOSELIN \rBRICET", "2", "TITULAR", "NANCY 11   ( REGISTRO \rCANCELADO )", "510001910", "AMAZONAS", "BONGARA", "FLORIDA", "18", "9,357,000", "174,000"]]
 
     assert_equal expected, table_to_array(table)[0...2]
@@ -702,11 +648,11 @@ class TestExtractor < Minitest::Test
   # this table is a bad fit for the Spreadsheet algo in the first place, but it shows this problem well.
   def test_treat_bounding_box_as_ruling_lines
     pdf_file_path = File.expand_path('data/brazil_crop_area.pdf', File.dirname(__FILE__))
-    area = [258.1875,42.5,667.25,549.3125]
-    table = Tabula.extract_table(pdf_file_path,
-                                 1,
-                                 area,
-                                 :extraction_method => 'spreadsheet')
+    top,left,bottom,right = [258.1875,42.5,667.25,549.3125]
+    table = Tabula.extract_tables(pdf_file_path,
+                                 [{'page' => 1,
+                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
+                                 :extraction_method => 'spreadsheet').first
     expected_column_0_row_0 = "REGION / STATE"
     table_array = table_to_array(table).transpose
     assert_equal expected_column_0_row_0, table_array[0][0] #ensures we captured the first column
