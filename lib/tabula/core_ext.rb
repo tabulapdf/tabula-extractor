@@ -12,6 +12,15 @@ class Array
     end
   end
 end
+class Java::JavaUtil::ArrayList
+  def rpad(padding, target_size)
+    if self.size < target_size
+      self + [padding] * (target_size - self.size)
+    else
+      self
+    end
+  end
+end
 
 
 module Enumerable

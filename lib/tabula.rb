@@ -1,66 +1,5 @@
 require_relative '../target/tabula-extractor-0.7.4-SNAPSHOT-jar-with-dependencies.jar'
-# java_import org.apache.pdfbox.pdmodel.PDDocument
-# java_import org.apache.pdfbox.pdmodel.encryption.StandardDecryptionMaterial
-
-
-
-# module Tabula
-#   include_package Java::TechnologyTabula
-#   include_package Java::TechnologyTabulaExtractors
-
-#   def Tabula.extract_tables(pdf_path, specs, options={})
-#     options = {
-#       :password => '',
-#       :detect_ruling_lines => true,
-#       :vertical_rulings => [],
-#       :extraction_method => "guess",
-#     }.merge(options)
-
-
-#     specs = specs.group_by { |s| s['page'] }
-#     pages = specs.keys.sort
-
-#     extractor = Extraction::ObjectExtractor.new(pdf_path,
-#                                                 options[:password])
-
-#     sea = Java::TechnologyTabulaExtractors.SpreadsheetExtractionAlgorithm.new
-#     bea = Java::TechnologyTabulaExtractors.BasicExtractionAlgorithm.new
-
-#     Enumerator.new do |y|
-#       extractor.extract(pages.map { |p| p.to_java(:int) }).each do |page|
-#         specs[page.getPageNumber].each do |spec|
-#           if ["spreadsheet", "original"].include?(spec['extraction_method'])
-#             use_spreadsheet_extraction_method = spec['extraction_method'] == "spreadsheet"
-#           else
-#             use_spreadsheet_extraction_method = sea.isTabular(page)
-#           end
-
-#           area = page.getArea(spec['y1'], spec['x1'], spec['y2'], spec['x2'])
-
-#           table_extractor = use_spreadsheet_extraction_method ? sea : bea
-#           table_extractor.extract(area).each { |table| y.yield table }
-#         end
-#       end
-#       extractor.close!
-#     end
-
-#   end
-# end
-
-
-# java.util.logging.Logger.getLogger('org.apache.pdfbox').setLevel(java.util.logging.Level::OFF)
-
-# require_relative './tabula/version'
 require_relative './tabula/core_ext'
-
-# require_relative './tabula/entities'
-# require_relative './tabula/extraction'
-# require_relative './tabula/table_extractor'
-# require_relative './tabula/writers'
-
-# require_relative './tabula/table_extractor'
-
-
 java_import org.apache.pdfbox.pdmodel.PDDocument
 java_import org.apache.pdfbox.pdmodel.encryption.StandardDecryptionMaterial
 java.util.logging.Logger.getLogger('org.apache.pdfbox').setLevel(java.util.logging.Level::OFF)
@@ -88,17 +27,18 @@ class Java::TechnologyTabula::Table
     sb.toString
   end
 end
+module Tabula
+  include_package Java::TechnologyTabula
+end
 
 module Tabula
 
   def Tabula.extract_tables(pdf_path, specs, options={})
     options = {
       :password => '',
-      :detect_ruling_lines => true,
-      :vertical_rulings => [],
-      :extraction_method => "guess",
     }.merge(options)
 
+    specs.each{|spec| spec.merge!( Hash[*options.map{|k,v| [k.to_s, v]}.flatten(1)] ) } #API backwards compatibility!
 
     specs = specs.group_by { |s| s['page'] }
     pages = specs.keys.sort
@@ -129,6 +69,27 @@ module Tabula
 
   end
 
+  # Deprecated. You shouldn't use this.
+  def Tabula.extract_table(pdf_path, page, area, options={})
+    options = {
+      :password => '',
+      :detect_ruling_lines => true,
+      :vertical_rulings => [],
+      :extraction_method => "guess",
+    }.merge(options)
+    # puts "Tabula.extract_table is deprecated. "
+    raise ArgumentError, "page must be an integer for Tabula#extract_table; is a #{page.class}" unless page.is_a?(Fixnum)
+    specs = [
+      {"page"=> page, 
+        'y1' => area.instance_of?(Array) ? area.shift : area.y1,
+        'x1' => area.instance_of?(Array) ? area.shift : area.x1,
+        'y2' => area.instance_of?(Array) ? area.shift : area.y2,
+        'x2' => area.instance_of?(Array) ? area.shift : area.x2
+      }]
+    specs.each{|spec| spec.merge!( Hash[*options.map{|k,v| [k.to_s, v]}.flatten(1)] ) } #API backwards compatibility!
+    Tabula.extract_tables(pdf_path, specs, options).first
+  end
+
 
   module Extraction
 
@@ -145,8 +106,14 @@ module Tabula
 
       # TODO: the +pages+ constructor argument does not make sense
       # now that we have +extract_page+ and +extract_pages+
-      def initialize(pdf_filename, pages=[1], password='', options={})
+      # positional arguments WERE pdf_filename, pages=nil, password='', options={}
+      def initialize(pdf_filename, password='', options={}, deprecated=nil)
         raise Errno::ENOENT unless File.exists?(pdf_filename)
+        if password.respond_to?(:each)
+          puts "pages argument to ObjectExtractor#initialize IS DEPRECATED and HAS BEEN REMOVED."
+          password = options.clone
+          options = deprecated
+        end
         @pdf_filename = pdf_filename
         document = Extraction.openPDF(pdf_filename, password)
 
@@ -190,15 +157,19 @@ end
 module Tabula
   class TextElement
     EMPTY = TextElement.new(0,0,0,0,nil,0,'',0)
-    # def initialize(text_or_top, left=nil, bottom=nil,right=nil,font=nil,font_size=nil,text=nil,space_width=nil)
-    #   if left.nil?
-    #     TextElement.new(0,0,0,0,nil,0,text_or_top,0)
-    #   else
-    #     super
-    #   end
-    # end
     def ==(other)
       self.text.strip == other.text.strip
+    end
+    def inspect
+      "<TextElement '#{self.text.strip}' >"#[#{top}, #{left}, #{top + height}, #{left + width}]>"
+    end
+  end
+  class TextChunk
+    def ==(other)
+      self.text.strip == other.text.strip
+    end
+    def inspect
+      "<TextChunk '#{self.text.strip}' >"#[#{top}, #{left}, #{top + height}, #{left + width}]>"
     end
   end
   class Page
@@ -231,15 +202,21 @@ module Tabula
     def to_a
       rows.map{|row| row.map(&:getText) }
     end
+  end
+  class Cell
+    field_accessor :textElements
+    # def text()
+    #   textChunk.nil? ? '' : textChunk.text
+    # end
 
-    def Table.new_from_array(ary_of_arys) # this is only for tests, I think.
-      t = Table.new
-      ary_of_arys.each_with_index do |row, i|
-        row.each_with_index do |cell, j|
-          t.add(Tabula::TextChunk.new(TextElement.new(0,0,0,0,nil,0,cell,0)), i, j)
-        end
-      end
+    def textChunk
+      return @first unless @first.nil?
+      cellTextChunks = textElements.to_a
+      @first = cellTextChunks.shift
+      cellTextChunks.each{|tc|  @first.merge(tc) }
+      @first.nil? ? TextChunk.new(TextElement::EMPTY) : @first
     end
+
   end
   Spreadsheet = TableWithRulingLines
 
@@ -247,5 +224,3 @@ module Tabula
     alias_method :get_text_elements, :text
   end
 end
-
-

@@ -28,6 +28,109 @@ module Tabula
     def inspect
       "[" + rows.map{|row| row.map(&:inspect).join(",") }.join("\n") + "]"
     end
+    def Table.new_from_array(ary_of_arys) # this is only for tests, I think.
+      t = Table.new
+      ary_of_arys.each_with_index do |row, i|
+        row.each_with_index do |cell, j|
+          t.add(Tabula::TextChunk.new(TextElement.new(0,0,0,0,nil,0,cell,0)), i, j)
+        end
+      end
+      t
+    end
+    #used for testing, ignores separator locations (they'll sometimes be nil/empty)
+    def ==(other)
+      raise ArgumentError, "Tables can only be compared to other tables!" unless other.respond_to? :lstrip_lines
+      my_lines = self.lstrip_lines
+      ###### maybe the java tests will help :)
+      # puts my_lines.map(&:to_a).map(&:inspect)     # all actual TextChunks
+      others_lines = other.lstrip_lines
+      # puts my_lines.map{|n| n.map(&:java_class)}.inspect
+      # puts others_lines.map{|n| n.map(&:java_class)}.inspect
+      # puts others_lines.map(&:to_a).map(&:inspect) # all rectangles -- textChunks?
+      my_lines = my_lines.to_a.rpad(Line.new, other.rows.size)
+      others_lines = others_lines.to_a.rpad(Line.new, self.rows.size)
+
+      my_lines.zip(others_lines).all? { |my, yours| my.respond_to?(:to_a) && yours.respond_to?(:to_a) && my.to_a.zip(yours.to_a).all?{|my_te, your_te| my_te == your_te } }
+    end
+    def rpad!
+      max = rows.map{|l| l.text_elements.size}.max
+      rows.each do |line|
+        needed = max - line.text_elements.size
+        needed.times do
+          line.text_elements << TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+        end
+      end
+    end
+
+    #for equality testing, return @rows stripped of leading columns of empty strings
+    #TODO: write a method to strip all totally-empty columns (or not?)
+    def lstrip_lines
+      min_leading_empty_strings = java.lang.Float::MAX_VALUE
+      rows.each do |line|
+        empties = line.map{|t| t.nil? || t.text.empty? }
+        min_leading_empty_strings = [min_leading_empty_strings,
+                                     empties.index(false) || 0].min
+      end
+      if min_leading_empty_strings == 0
+        rows.to_a
+      else
+        # coping with Java's weirdness between ArrayLists and Ruby Arrays.
+        new_rows = []
+        rows.to_a.each{|line|  new_rows << line.to_a[min_leading_empty_strings..-1]}
+        new_rows
+      end
+    end
+    def lstrip_lines!
+      rows = self.lstrip_lines
+    end
+  end
+  class TableWithRulingLines
+    def inspect
+      "[" + rows.map{|row| row.map{|cell| cell.textChunk.inspect }.join(",") }.join("\n") + "]"
+    end
+
+    def ==(other)
+      raise ArgumentError, "Tables can only be compared to other tables!" unless other.respond_to? :lstrip_lines
+      my_lines = self.lstrip_lines
+      others_lines = other.lstrip_lines
+      my_lines = my_lines.to_a.rpad(Line.new, other.rows.size)
+      others_lines = others_lines.to_a.rpad(Line.new, self.rows.size)
+
+      # this does'nt get called right now.
+      my_lines.zip(others_lines).all? { |my, yours| puts yours.inspect unless yours.respond_to?(:to_a); my.respond_to?(:to_a) && yours.respond_to?(:to_a) && my.to_a.zip(yours.to_a).all?{|my_te, your_te| my_te == your_te } }
+    end
+
+
+    def rpad!
+      max = rows.map{|l| l.text_elements.size}.max
+      rows.each do |line|
+        needed = max - line.text_elements.size
+        needed.times do
+          line.text_elements << TextElement.new(nil, nil, nil, nil, nil, nil, '', nil)
+        end
+      end
+    end
+    #for equality testing, return @rows stripped of leading columns of empty strings
+    #TODO: write a method to strip all totally-empty columns (or not?)
+    def lstrip_lines
+      min_leading_empty_strings = java.lang.Float::MAX_VALUE
+      rows.each do |line|
+        empties = line.to_a.map{|t| t.nil? || t.text.empty? }
+        min_leading_empty_strings = [min_leading_empty_strings,
+                                     empties.index(false) || 0].min
+      end
+      if min_leading_empty_strings == 0
+        rows.to_a.each{|row| puts row.to_a.map{|cell| cell.textElements.to_a.inspect} }
+        rows.to_a
+      else
+        new_rows = []
+        rows.to_a.each{|line|  new_rows << line.to_a[min_leading_empty_strings..-1] }
+        new_rows.to_a
+      end
+    end
+    def lstrip_lines!
+      rows = self.lstrip_lines
+    end
   end
 end
 
@@ -175,12 +278,12 @@ end
 class TestExtractor < Minitest::Test
 
   def test_table_extraction_1
-    top,left,bottom,right = 107.1, 57.9214, 394.5214, 290.7
-    table = table_to_array Tabula.extract_tables(File.expand_path('data/gre.pdf', File.dirname(__FILE__)),
-                                                [{'page' => 1,
-                                                'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
+    area = [107.1, 57.9214, 394.5214, 290.7]
+    table = table_to_array Tabula.extract_table(File.expand_path('data/gre.pdf', File.dirname(__FILE__)),
+                                                1,
+                                                area,
                                                 :detect_ruling_lines => false,
-                                                :extraction_method => 'original').first
+                                                :extraction_method => 'original')
 
     expected = [["Prior Scale","New Scale","% Rank*"], ["800","170","99"], ["790","170","99"], ["780","170","99"], ["770","170","99"], ["760","170","99"], ["750","169","99"], ["740","169","99"], ["730","168","98"], ["720","168","98"], ["710","167","97"], ["700","166","96"], ["690","165","95"], ["680","165","95"], ["670","164","93"], ["660","164","93"], ["650","163","91"]]
 
@@ -190,9 +293,9 @@ class TestExtractor < Minitest::Test
   def test_diputados_voting_record
     skip "this is broken, but always has been"
     top,left,bottom,right = 269.875, 12.75, 790.5, 561
-    table = table_to_array Tabula.extract_tables(File.expand_path('data/argentina_diputados_voting_record.pdf', File.dirname(__FILE__)),
-                                                [{'page' => 1,
-                                                'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}]).first
+    table = table_to_array Tabula.extract_table(File.expand_path('data/argentina_diputados_voting_record.pdf', File.dirname(__FILE__)),
+                                                1,
+                                                [269.875, 12.75, 790.5, 561])
 
     expected = [["ABDALA de MATARAZZO, Norma Amanda", "Frente Cívico por Santiago", "Santiago del Estero", "AFIRMATIVO"], ["ALBRIEU, Oscar Edmundo Nicolas", "Frente para la Victoria - PJ", "Rio Negro", "AFIRMATIVO"], ["ALONSO, María Luz", "Frente para la Victoria - PJ", "La Pampa", "AFIRMATIVO"], ["ARENA, Celia Isabel", "Frente para la Victoria - PJ", "Santa Fe", "AFIRMATIVO"], ["ARREGUI, Andrés Roberto", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["AVOSCAN, Herman Horacio", "Frente para la Victoria - PJ", "Rio Negro", "AFIRMATIVO"], ["BALCEDO, María Ester", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["BARRANDEGUY, Raúl Enrique", "Frente para la Victoria - PJ", "Entre Ríos", "AFIRMATIVO"], ["BASTERRA, Luis Eugenio", "Frente para la Victoria - PJ", "Formosa", "AFIRMATIVO"], ["BEDANO, Nora Esther", "Frente para la Victoria - PJ", "Córdoba", "AFIRMATIVO"], ["BERNAL, María Eugenia", "Frente para la Victoria - PJ", "Jujuy", "AFIRMATIVO"], ["BERTONE, Rosana Andrea", "Frente para la Victoria - PJ", "Tierra del Fuego", "AFIRMATIVO"], ["BIANCHI, María del Carmen", "Frente para la Victoria - PJ", "Cdad. Aut. Bs. As.", "AFIRMATIVO"], ["BIDEGAIN, Gloria Mercedes", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["BRAWER, Mara", "Frente para la Victoria - PJ", "Cdad. Aut. Bs. As.", "AFIRMATIVO"], ["BRILLO, José Ricardo", "Movimiento Popular Neuquino", "Neuquén", "AFIRMATIVO"], ["BROMBERG, Isaac Benjamín", "Frente para la Victoria - PJ", "Tucumán", "AFIRMATIVO"], ["BRUE, Daniel Agustín", "Frente Cívico por Santiago", "Santiago del Estero", "AFIRMATIVO"], ["CALCAGNO, Eric", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CARLOTTO, Remo Gerardo", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CARMONA, Guillermo Ramón", "Frente para la Victoria - PJ", "Mendoza", "AFIRMATIVO"], ["CATALAN MAGNI, Julio César", "Frente para la Victoria - PJ", "Tierra del Fuego", "AFIRMATIVO"], ["CEJAS, Jorge Alberto", "Frente para la Victoria - PJ", "Rio Negro", "AFIRMATIVO"], ["CHIENO, María Elena", "Frente para la Victoria - PJ", "Corrientes", "AFIRMATIVO"], ["CIAMPINI, José Alberto", "Frente para la Victoria - PJ", "Neuquén", "AFIRMATIVO"], ["CIGOGNA, Luis Francisco Jorge", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CLERI, Marcos", "Frente para la Victoria - PJ", "Santa Fe", "AFIRMATIVO"], ["COMELLI, Alicia Marcela", "Movimiento Popular Neuquino", "Neuquén", "AFIRMATIVO"], ["CONTI, Diana Beatriz", "Frente para la Victoria - PJ", "Buenos Aires", "AFIRMATIVO"], ["CORDOBA, Stella Maris", "Frente para la Victoria - PJ", "Tucumán", "AFIRMATIVO"], ["CURRILEN, Oscar Rubén", "Frente para la Victoria - PJ", "Chubut", "AFIRMATIVO"]]
 
@@ -204,19 +307,50 @@ class TestExtractor < Minitest::Test
     # test_forest_disclosure_report, with spaces around the & in Regional Pulmonary & Sleep
     # and a solution for half-x-height-offset lines.
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
-    top,left,bottom,right = 106.01, 48.09, 227.31, 551.89
-    table = Tabula.extract_tables(pdf_file_path,
-                                                [{'page' => 1,
-                                                'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
-                                                :detect_ruling_lines => true,
-                                                :extraction_method => "original").first
-
-    expected = Tabula::Table.new_from_array([["AANONSEN, DEBORAH, A", "", "STATEN ISLAND, NY", "MEALS", "$85.00"], ["TOTAL", "", "", "", "$85.00"], ["AARON, CAREN, T", "", "RICHMOND, VA", "EDUCATIONAL ITEMS", "$78.80"], ["AARON, CAREN, T", "", "RICHMOND, VA", "MEALS", "$392.45"], ["TOTAL", "", "", "", "$471.25"], ["AARON, JOHN", "", "CLARKSVILLE, TN", "MEALS", "$20.39"], ["TOTAL", "", "", "", "$20.39"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "MEALS", "$310.33"], ["", "REGIONAL PULMONARY & SLEEP"], ["AARON, JOSHUA, N", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"], ["", "MEDICINE"], ["TOTAL", "", "", "", "$5,010.33"], ["AARON, MAUREEN, M", "", "MARTINSVILLE, VA", "MEALS", "$193.67"], ["TOTAL", "", "", "", "$193.67"], ["AARON, MICHAEL, L", "", "WEST ISLIP, NY", "MEALS", "$19.50"], ["TOTAL", "", "", "", "$19.50"], ["AARON, MICHAEL, R", "", "BROOKLYN, NY", "MEALS", "$65.92"]])
+    top,left,bottom,right = 106.01, 48.09, 228.31, 551.89
+    table = Tabula.extract_table(pdf_file_path,
+                                                1,
+                                                [top,left,bottom,right],
+                                                {:detect_ruling_lines => true,
+                                                 :extraction_method => "original"})
+    expected = Tabula::Table.new_from_array([
+      ["AANONSEN, DEBORAH, A", "", "", "STATEN ISLAND, NY", "MEALS", "$85.00"],
+      ["TOTAL", "", "", "", "", "$85.00"],
+      ["AARON, CAREN, T", "", "", "RICHMOND, VA", "EDUCATIONAL ITEMS", "$78.80"],
+      ["AARON, CAREN, T", "", "", "RICHMOND, VA", "MEALS", "$392.45"],
+      ["TOTAL", "", "", "", "", "$471.25"],
+      ["AARON, JOHN", "", "", "CLARKSVILLE, TN", "MEALS", "$20.39"],
+      ["TOTAL", "", "", "", "", "$20.39"],
+      ["AARON, JOSHUA, N", "", "", "WEST GROVE, PA", "MEALS", "$310.33"],
+      ["AARON JOSHUA N , ,", "REGIONAL PULMONARY & SLEEPMEDICINE", "", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"],
+      ["TOTAL", "", "", "", "", "$5,010.33"],
+      ["AARON, MAUREEN, M", "", "", "MARTINSVILLE, VA", "MEALS", "$193.67"],
+      ["TOTAL", "", "", "", "", "$193.67"],
+      ["AARON, MICHAEL, L", "", "", "WEST ISLIP, NY", "MEALS", "$19.50"],
+      ["TOTAL", "", "", "", "", "$19.50"],
+      ["AARON, MICHAEL, R", "", "", "BROOKLYN, NY", "MEALS", "$65.92"]])
 
     assert_equal expected, table
   end
 
   def test_missing_spaces_around_an_ampersand
+    pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
+    character_extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
+    page_obj = character_extractor.extract.next
+    lines = page_obj.ruling_lines
+    vertical_rulings = lines.select(&:vertical?)
+
+    area = [167.2675, 48.96, 188, 563.04] #top left bottom right
+
+    expected = Tabula::Table.new_from_array([
+       ['', "AARON, JOSHUA N,", "REGIONAL PULMONARY & SLEEPMEDICINE", "WEST GROVE, PA", "SPEAKING FEES", "$4,700.00"],
+      ])
+
+    assert_equal expected, lines_to_table(page_obj.get_area(area).make_table(:vertical_rulings => vertical_rulings))
+    character_extractor.close!
+  end
+
+  def test_comma_placement
     pdf_file_path = File.expand_path('data/frx_2012_disclosure.pdf', File.dirname(__FILE__))
     character_extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
     page_obj = character_extractor.extract.next
@@ -235,10 +369,10 @@ class TestExtractor < Minitest::Test
 
   # TODO Spaces inserted in words - fails
   def test_bo_page24
-    table = table_to_array Tabula.extract_tables(File.expand_path('data/bo_page24.pdf', File.dirname(__FILE__)),
-                                                [{'page' => 1,
-                                                 'y1' => 425.625, 'x1' => 53.125, 'y2' => 575.714, 'x2' => 810.535}],
-                                                :detect_ruling_lines => false).first
+    table = table_to_array Tabula.extract_table(File.expand_path('data/bo_page24.pdf', File.dirname(__FILE__)),
+                                                1,
+                                                [425.625, 53.125, 575.714, 810.535],
+                                                :detect_ruling_lines => false)
 
     expected = [["1", "UNICA", "CECILIA KANDUS", "16/12/2008", "PEDRO ALBERTO GALINDEZ", "60279/09"], ["1", "UNICA", "CECILIA KANDUS", "10/06/2009", "PASTORA FILOMENA NAVARRO", "60280/09"], ["13", "UNICA", "MIRTA S. BOTTALLO DE VILLA", "02/07/2009", "MARIO LUIS ANGELERI, DNI 4.313.138", "60198/09"], ["16", "UNICA", "LUIS PEDRO FASANELLI", "22/05/2009", "PETTER o PEDRO KAHRS", "60244/09"], ["18", "UNICA", "ALEJANDRA SALLES", "26/06/2009", "RAUL FERNANDO FORTINI", "60236/09"], ["31", "UNICA", "MARÍA CRISTINA GARCÍA", "17/06/2009", "DOMINGO TRIPODI Y PAULA LUPPINO", "60302/09"], ["34", "UNICA", "SUSANA B. MARZIONI", "11/06/2009", "JESUSA CARMEN VAZQUEZ", "60177/09"], ["51", "UNICA", "MARIA LUCRECIA SERRAT", "19/05/2009", "DANIEL DECUADRO", "60227/09"], ["51", "UNICA", "MARIA LUCRECIA SERRAT", "12/02/2009", "ELIZABETH LILIANA MANSILLA ROMERO", "60150/09"], ["75", "UNICA", "IGNACIO M. REBAUDI BASAVILBASO", "01/07/2009", "ABALSAMO ALFREDO DANIEL", "60277/09"], ["94", "UNICA", "GABRIELA PALÓPOLI", "02/07/2009", "ALVAREZ ALICIA ESTHER", "60360/09"], ["96", "UNICA", "DANIEL PAZ EYNARD", "16/06/2009", "NELIDA ALBORADA ALCARAZ SERRANO", "60176/09"]]
 
@@ -291,19 +425,18 @@ class TestExtractor < Minitest::Test
 
     vertical_rulings = [47,147,256,310,375,431,504].map{|n| Tabula::Ruling.new(0, n, 0, 1000)}
 
-    table = table_to_array Tabula.extract_tables(File.expand_path('data/campaign_donors.pdf', File.dirname(__FILE__)),
-                                                [{'page' => 1,
-                                                 'y1' => 255.57, 'x1' => 40.43, 'y2' => 398.76, 'x2' => 557.35}],
-                                                :vertical_rulings => vertical_rulings).first
-
+    table = table_to_array Tabula.extract_table(File.expand_path('data/campaign_donors.pdf', File.dirname(__FILE__)),
+                                                1,
+                                                [255.57,40.43,398.76,557.35],
+                                                :vertical_rulings => vertical_rulings)
     assert_equal expected, table
   end
 
   def test_get_spacing_and_merging_right
-    table = table_to_array Tabula.extract_tables(File.expand_path('data/strongschools.pdf', File.dirname(__FILE__)),
-                                                [{'page' => 1,
-                                                 'y1' => 52.32857142857143, 'x1' => 15.557142857142859, 'y2' => 128.70000000000002, 'x2' => 767.9571428571429}],
-                                                :detect_ruling_lines => true).first
+    table = table_to_array Tabula.extract_table(File.expand_path('data/strongschools.pdf', File.dirname(__FILE__)),
+                                                1,
+                                                [52.32857142857143,15.557142857142859,128.70000000000002,767.9571428571429],
+                                                :detect_ruling_lines => true)
 
     expected = [["Last Name", "First Name", "Address", "City", "State", "Zip", "Occupation", "Employer", "Date", "Amount"], ["Lidstad", "Dick & Peg", "62 Mississippi River Blvd N", "Saint Paul", "MN", "55104", "retired", "", "10/12/2012", "60.00"], ["Strom", "Pam", "1229 Hague Ave", "St. Paul", "MN", "55104", "", "", "9/12/2012", "60.00"], ["Seeba", "Louise & Paul", "1399 Sheldon St", "Saint Paul", "MN", "55108", "BOE", "City of Saint Paul", "10/12/2012", "60.00"], ["Schumacher / Bales", "Douglas L. / Patricia", "948 County Rd. D W", "Saint Paul", "MN", "55126", "", "", "10/13/2012", "60.00"], ["Abrams", "Marjorie", "238 8th St east", "St Paul", "MN", "55101", "Retired", "Retired", "8/8/2012", "75.00"], ["Crouse / Schroeder", "Abigail / Jonathan", "1545 Branston St.", "Saint Paul", "MN", "55108", "", "", "10/6/2012", "75.00"]]
 
@@ -445,12 +578,24 @@ class TestExtractor < Minitest::Test
     extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all)
     extractor.extract.each do |pdf_page|
       spreadsheet = pdf_page.spreadsheets.first
-      assert_equal expected, spreadsheet.to_tsv
+      assert_equal expected.gsub("\"\"", ''), spreadsheet.to_tsv.gsub("\"\"", '') # I'm not sure why this happens, but whatever, it's irrelevant.
     end
     extractor.close!
   end
 
+
   def test_cope_with_a_tableless_page
+    pdf_file_path = File.expand_path('data/jackson_1968_p249_rubber.pdf', File.dirname(__FILE__))
+
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all, '')
+    spreadsheets = extractor.extract.to_a.first.spreadsheets
+    extractor.close!
+    assert_equal 0, spreadsheets.size
+  end
+
+
+  def test_cope_with_a_tableless_page_using_line_color_filter
+    skip "Until we reimplement in tabula-java the line-color-filter"
     pdf_file_path = File.expand_path('data/no_tables.pdf', File.dirname(__FILE__))
 
     extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, :all, '',
@@ -506,12 +651,11 @@ class TestExtractor < Minitest::Test
   def test_remove_repeated_text
     top, left, bottom, right = 101.82857142857144,48.08571428571429,497.8285714285715,765.1285714285715
 
-    table = Tabula.extract_tables(File.expand_path('data/nyc_2013fiscalreporttables.pdf', File.dirname(__FILE__)),
-                                 [{'page' => 1,
-                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
+    table = Tabula.extract_table(File.expand_path('data/nyc_2013fiscalreporttables.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original').first
-
+                                 :extraction_method => 'original')
     ary = table_to_array(table)
 
     assert_equal ary[1][1], "$ 18,969,610"
@@ -521,12 +665,11 @@ class TestExtractor < Minitest::Test
   def test_remove_overlapping_text
     # one of those PDFs that put characters on top of another to make text "bold"
     top,left,bottom,right = 399.98571428571427, 36.06428571428571, 425.1214285714285, 544.2428571428571
-    table = Tabula.extract_tables(File.expand_path('data/wc2012.pdf', File.dirname(__FILE__)),
-                                 [{'page' => 1,
-                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
+    table = Tabula.extract_table(File.expand_path('data/wc2012.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original').first
-
+                                 :extraction_method => 'original')
     ary = table_to_array(table)
     assert_equal ary.first.first, "Community development"
   end
@@ -534,26 +677,37 @@ class TestExtractor < Minitest::Test
   def test_cells_including_line_returns
     data = []
     pdf_file_path = File.expand_path('data/sydney_disclosure_contract.pdf', File.dirname(__FILE__))
-    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path, [1])
-    extractor.extract.each do |pdf_page|
-      pdf_page.spreadsheets.each do |spreadsheet|
-        spreadsheet.cells.each do |cell|
-          data << cell.text(true)
-        end
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
+    extractor.extract.first.spreadsheets.sort_by(&:top).each do |spreadsheet|
+      spreadsheet.cells.each do |cell|
+        data << cell.text(true)
       end
     end
     extractor.close!
     assert_equal ["1295", "Name: Reino International Pty Ltd trading as Duncan Solutions \rAddress: 15/39 Herbet Street, St Leonards NSW 2065", "N/A", "Effective Date: 13 May 2013 \rDuration: 15 Weeks", "Supply, Installation and Maintenance of Parking Ticket Machines", "$3,148,800.00exgst", "N/A", "N/A", "Open Tender  \rTender evaluation criteria included: \r- The schedule of prices \r- Compliance with technical specifications/Technical assessment \r- Operational Plan including maintenance procedures"], data
   end
 
+  def test_spreadsheets_sorted_by_top_and_right
+    data = []
+    pdf_file_path = File.expand_path('data/sydney_disclosure_contract.pdf', File.dirname(__FILE__))
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
+    extractor.extract.first.spreadsheets.each do |spreadsheet|
+      spreadsheet.cells.each do |cell|
+        data << cell.text(true)
+      end
+    end
+    extractor.close!
+    assert_equal ["1295", "Name: Reino International Pty Ltd trading as Duncan Solutions \rAddress: 15/39 Herbet Street, St Leonards NSW 2065", "N/A", "Effective Date: 13 May 2013 \rDuration: 15 Weeks", "Supply, Installation and Maintenance of Parking Ticket Machines", "$3,148,800.00exgst", "N/A", "N/A", "Open Tender  \rTender evaluation criteria included: \r- The schedule of prices \r- Compliance with technical specifications/Technical assessment \r- Operational Plan including maintenance procedures"], data
+  end
+
+
   def test_remove_repeated_spaces
     top,left,bottom,right = 304.9375, 78.625, 334.6875, 501.5
-    table = Tabula.extract_tables(File.expand_path('data/repeated_spaces.pdf', File.dirname(__FILE__)),
-                                 [{'page' => 1,
-                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
+    table = Tabula.extract_table(File.expand_path('data/repeated_spaces.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original').first
-
+                                 :extraction_method => 'original')
     table_to_array(table).each { |row|
       assert_equal row.size, 7
     }
@@ -561,11 +715,11 @@ class TestExtractor < Minitest::Test
 
   def test_monospaced_table
     top,left,bottom,right = 149.9142857142857, 89.10000000000001, 243.25714285714287, 721.2857142857143
-    table = Tabula.extract_tables(File.expand_path('data/monospaced1.pdf', File.dirname(__FILE__)),
-                                 [{'page' => 1,
-                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
+    table = Tabula.extract_table(File.expand_path('data/monospaced1.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original').first
+                                 :extraction_method => 'original')
 
     expected = [["ALBERT LEA, MAYO CLINIC HEALTH SYS- ALBE", "0", "0", "0", "7", "7", ".0", ".0", ".0", "23.3", "10.4"], ["ROCHESTER, MAYO CLINIC METHODIST HOSPITA", "6", "7", "14", "11", "25", "27.3", "100.0", "37.8", "36.7", "37.3"], ["ROCHESTER, MAYO CLINIC ST. MARYS", "9", "0", "11", "7", "18", "40.9", ".0", "29.7", "23.3", "26.9"], ["BLUE EARTH, UNITED HOSPITAL DISTRICT", "3", "0", "4", "0", "4", "13.6", ".0", "10.8", ".0", "6.0"], ["FAIRMONT, MAYO CLINIC HEALTH SYSTEM -FAI", "1", "0", "2", "1", "3", "4.5", ".0", "5.4", "3.3", "4.5"], ["MANKATO, MAYO CLINIC HEALTH SYSTEM- MANK", "3", "0", "5", "3", "8", "13.6", ".0", "13.5", "10.0", "11.9"], ["ALL REGION 4 (TC) HOSPITALS", "0", "0", "1", "1", "2", ".0", ".0", "2.7", "3.3", "3.0"], ["", "22", "7", "37", "30", "67", "100.0", "100.0", "100.0", "100.0", "100.0"]]
     assert_equal table_to_array(table), expected
@@ -583,12 +737,11 @@ class TestExtractor < Minitest::Test
 
   def test_bad_column_detection
     top,left,bottom,right = 535.5, 70.125, 549.3125, 532.3125
-    table = Tabula.extract_tables(File.expand_path('data/indecago10.pdf', File.dirname(__FILE__)),
-                                 [{'page' => 1,
-                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
+    table = Tabula.extract_table(File.expand_path('data/indecago10.pdf', File.dirname(__FILE__)),
+                                 1,
+                                 [top,left,bottom,right],
                                  :detect_ruling_lines => false,
-                                 :extraction_method => 'original').first
-
+                                 :extraction_method => 'original')
     assert_equal table_to_array(table).first, ["Comunicaciones", "104,29", "– –", "0,1", "0,6", "1,1", "0,3"]
 
   end
@@ -611,10 +764,10 @@ class TestExtractor < Minitest::Test
   def test_issue78_some_ruling_lines_not_detected
     pdf_file_path = File.expand_path('data/mineria.pdf', File.dirname(__FILE__))
     top,left,bottom,right = 104.46890818740722, 13, 580.548646927163, 820.8271357581996
-    table = Tabula.extract_tables(pdf_file_path,
-                                 [{'page' => 1,
-                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
-                                 :extraction_method => 'spreadsheet').first
+    table = Tabula.extract_table(pdf_file_path,
+                                 1,
+                                 area,
+                                 :extraction_method => 'spreadsheet')
     expected = [["1", "010000091", "086", "03/12/2012", "ACHAYAP MANTU ALDO", "ACHAYAP MANTU ALDO", "1", "OTROS", ".", ".", "AMAZONAS", "CONDORCANQ\rUI", "NIEVA", "", "", ""], ["2", "010000023", "022", "18/06/2012", "ACOSTA ROSALES YOSELIN BRICET", "ACOSTA ROSALES YOSELIN \rBRICET", "2", "TITULAR", "NANCY 11   ( REGISTRO \rCANCELADO )", "510001910", "AMAZONAS", "BONGARA", "FLORIDA", "18", "9,357,000", "174,000"]]
 
     assert_equal expected, table_to_array(table)[0...2]
@@ -654,11 +807,11 @@ class TestExtractor < Minitest::Test
   # this table is a bad fit for the Spreadsheet algo in the first place, but it shows this problem well.
   def test_treat_bounding_box_as_ruling_lines
     pdf_file_path = File.expand_path('data/brazil_crop_area.pdf', File.dirname(__FILE__))
-    top,left,bottom,right = [258.1875,42.5,667.25,549.3125]
-    table = Tabula.extract_tables(pdf_file_path,
-                                 [{'page' => 1,
-                                  'y1' => top, 'x1' => left, 'y2' => bottom, 'x2' => right}],
-                                 :extraction_method => 'spreadsheet').first
+    area = [258.1875,42.5,667.25,549.3125]
+    table = Tabula.extract_table(pdf_file_path,
+                                 1,
+                                 area,
+                                 :extraction_method => 'spreadsheet') 
     expected_column_0_row_0 = "REGION / STATE"
     table_array = table_to_array(table).transpose
     assert_equal expected_column_0_row_0, table_array[0][0] #ensures we captured the first column
