@@ -1,3 +1,0 @@
-
-module Tabula
-end
