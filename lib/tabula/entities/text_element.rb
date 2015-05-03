@@ -1,8 +1,8 @@
 module Tabula
   ##
   # a Glyph
-  #TextElement = org.nerdpower.tabula.TextElement
-  class TextElement < org.nerdpower.tabula.TextElement
+  #TextElement = Java::TechnologyTabula::TextElement
+  class TextElement < Java::TechnologyTabula::TextElement
 
     EMPTY = TextElement.new(0, 0, 0, 0, nil, 0, '', 0, 0)
 

@@ -1,24 +1,24 @@
-class Java::OrgNerdpowerTabula::Table
+class Java::TechnologyTabula::Table
   def to_csv
     sb = java.lang.StringBuilder.new
-    org.nerdpower.tabula.writers.CSVWriter.new.write(sb, self)
+    Java::TechnologyTabulaWriters::CSVWriter.new.write(sb, self)
     sb.toString
   end
 
   def to_tsv
     sb = java.lang.StringBuilder.new
-    org.nerdpower.tabula.writers.TSVWriter.new.write(sb, self)
+    Java::TechnologyTabulaWriters::TSVWriter.new.write(sb, self)
     sb.toString
   end
 
   def to_json(*a)
     sb = java.lang.StringBuilder.new
-    org.nerdpower.tabula.writers.JSONWriter.new.write(sb, self)
+    Java::TechnologyTabulaWriters::JSONWriter.new.write(sb, self)
     sb.toString
   end
 end
 
-class Tabula::Table < org.nerdpower.tabula.Table
+class Tabula::Table < Java::TechnologyTabula::Table
   # create a new Table object from an array of arrays, representing a list of rows in a spreadsheet
   # probably only used for testing
   def self.new_from_array(array_of_rows)

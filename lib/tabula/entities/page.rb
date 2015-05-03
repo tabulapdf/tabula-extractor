@@ -1,6 +1,6 @@
-java_import org.nerdpower.tabula.Page
-java_import org.nerdpower.tabula.extractors.BasicExtractionAlgorithm
-java_import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm
+java_import Java::TechnologyTabula::Page
+java_import Java::TechnologyTabulaExtractors::BasicExtractionAlgorithm
+java_import Java::TechnologyTabulaExtractors::SpreadsheetExtractionAlgorithm
 
 class Page
   include Tabula::HasCells

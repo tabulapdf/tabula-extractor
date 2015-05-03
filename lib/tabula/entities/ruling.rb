@@ -1,4 +1,4 @@
-class Tabula::Ruling < org.nerdpower.tabula.Ruling
+class Tabula::Ruling < Java::TechnologyTabula::Ruling
 
   # some PDFs (garment factory audits, precise link TK) make tables by drawing lines that
   # very nearly intersect each other, but not quite. E.g. a horizontal line spans the table at a Y val of 100

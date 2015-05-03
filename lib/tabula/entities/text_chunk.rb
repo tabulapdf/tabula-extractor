@@ -1,4 +1,4 @@
-java_import org.nerdpower.tabula.TextChunk
+java_import Java::TechnologyTabula::TextChunk
 
 ##
 # a "collection" of TextElements
@@ -16,5 +16,5 @@ java_import org.nerdpower.tabula.TextChunk
 
 
 module Tabula
-  TextChunk = org.nerdpower.tabula.TextChunk
+  TextChunk = Java::TechnologyTabula::TextChunk
 end

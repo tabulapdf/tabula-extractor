@@ -5,7 +5,7 @@ require 'minitest/autorun'
 require 'csv'
 
 require_relative '../lib/tabula'
-java_import org.nerdpower.tabula.Rectangle
+java_import Java::TechnologyTabula::Rectangle
 
 def table_to_array(table)
   lines_to_array(table.rows)

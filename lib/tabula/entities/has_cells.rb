@@ -1,7 +1,7 @@
 require 'set'
 java_import java.awt.Polygon
 java_import java.awt.geom.Area
-java_import org.nerdpower.tabula.extractors.SpreadsheetExtractionAlgorithm
+java_import Java::TechnologyTabulaExtractors::SpreadsheetExtractionAlgorithm
 
 module Tabula
   # subclasses must define cells, vertical_ruling_lines, horizontal_ruling_lines accessors; ruling_lines reader

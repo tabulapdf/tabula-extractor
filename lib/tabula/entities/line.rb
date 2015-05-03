@@ -1,4 +1,4 @@
-class Tabula::Line < org.nerdpower.tabula.Line
+class Tabula::Line < Java::TechnologyTabula::Line
     attr_reader :index
 
     #used for testing, ignores text element stuff besides stripped text.

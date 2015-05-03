@@ -1,6 +1,6 @@
-#java_import org.nerdpower.tabula.TableWithRulingLines
+#java_import Java::TechnologyTabula::TableWithRulingLines
 
-class Java::OrgNerdpowerTabula::TableWithRulingLines
+class Java::TechnologyTabula::TableWithRulingLines
   attr_accessor :cells, :vertical_ruling_lines, :horizontal_ruling_lines, :cells_resolved
   attr_reader :extraction_method, :page
 
@@ -89,14 +89,14 @@ class Java::OrgNerdpowerTabula::TableWithRulingLines
 
   def +(other)
     raise ArgumentError, "Data can only be added if it's from the same PDF page" unless other.page == @page
-    t = self.class.new(Java::OrgNerdpowerTabula::Utils.bounds(java.util.ArrayList.new([self, other])),
+    t = self.class.new(Java::TechnologyTabula::Utils.bounds(java.util.ArrayList.new([self, other])),
                        @page,
                        java.util.ArrayList.new(self.getCells + other.getCells), nil, nil)
-    t.setExtractionAlgorithm(Java::OrgNerdpowerTabulaExtractors::SpreadsheetExtractionAlgorithm.new)
+    t.setExtractionAlgorithm(Java::TechnologyTabulaExtractors::SpreadsheetExtractionAlgorithm.new)
     t
   end
 end
 
 module Tabula
-  Spreadsheet = Java::OrgNerdpowerTabulaTableWithRulingLines
+  Spreadsheet = Java::TechnologyTabulaTableWithRulingLines
 end

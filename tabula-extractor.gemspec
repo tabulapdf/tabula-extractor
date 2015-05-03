@@ -18,10 +18,9 @@ Gem::Specification.new do |s|
   s.executables   = `git ls-files -- bin/*`.split("\n").map{ |f| File.basename(f) }
   s.require_paths = ["lib"]
 
-  s.add_development_dependency 'ruby-debug', '~> 0'
-  s.add_development_dependency 'nokogiri', '~> 0'
-  s.add_development_dependency 'pry', '~> 0'
-  s.add_development_dependency 'minitest', '~> 0'
+  s.add_development_dependency 'ruby-debug', '~> 0.10.4'
+  s.add_development_dependency 'pry', '~> 0.10.1'
+  s.add_development_dependency 'minitest', '~> 5.4.0'
 
   s.add_runtime_dependency "trollop", ["~> 2.0"]
 end

@@ -43,7 +43,7 @@ module Tabula
       end
     end
 
-    class ObjectExtractor < org.nerdpower.tabula.ObjectExtractor
+    class ObjectExtractor < Java::TechnologyTabula::ObjectExtractor
 
       alias_method :close!, :close
 

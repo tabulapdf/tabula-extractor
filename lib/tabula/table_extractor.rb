@@ -1,4 +1,4 @@
-java_import org.nerdpower.tabula.Rectangle
+java_import Java::TechnologyTabula::Rectangle
 module Tabula
   # extract a table from file +pdf_path+, +pages+ and +area+
   #
