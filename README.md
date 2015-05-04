@@ -161,13 +161,14 @@ extractor.extract.each_with_index do |pdf_page, page_index|
 end
 extractor.close!
 out.close
+```
 
-tabula-extractor has also been used successfully as a part of data extraction pipelines. [This blog post](http://open.blogs.nytimes.com/2015/04/03/purifying-the-sea-of-pdf-data-automatically/) discusses a possible pattern for creating these and includes a few examples:
+`tabula-extractor` has also been used successfully as a part of data extraction pipelines. [This blog post](http://open.blogs.nytimes.com/2015/04/03/purifying-the-sea-of-pdf-data-automatically/) discusses a possible pattern for creating these and includes a few examples:
 
 - Sierra Leone’s Ebola situation reports: [GitHub](https://github.com/jeremybmerrill/ebola_parsers/tree/master/sierra_leone)
 - The NYPD’s CompStat criminal complaints database weekly reports: [GitHub](https://github.com/nytinteractive/compstat_parser)
 - The NYPD’s monthly reports of moving summonses: [GitHub](https://github.com/nytinteractive/moving_summonses_parser)
-````
+
 
 ## How Does This Work? Like, Theoretically?
 
