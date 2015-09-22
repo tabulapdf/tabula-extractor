@@ -24,7 +24,6 @@ Tabula helps you extract tables from PDFs
 Usage:
        tabula [options] <pdf_file>
 where [options] are:
-Tabula helps you extract tables from PDFs
        --pages, -p <s>:   Comma separated list of ranges. Examples: --pages
                           1-3,5-7 or --pages 3. Default is --pages 1 (default:
                           1)
