@@ -29,7 +29,7 @@ class Page
     unless @spreadsheets.nil?
       return @spreadsheets
     end
-    SpreadsheetExtractionAlgorithm.new.extract(self).sort
+    SpreadsheetExtractionAlgorithm.new.extract(self).to_a.sort # to_a converts from java.util.ArrayList to Ruby Array
   end
 
   def fill_in_cells!(options={})
@@ -69,7 +69,7 @@ class Page
   end
 
   def get_cell_text(area=nil)
-    TextElement.merge_words(self.get_text(area))
+    self.get_text(area)
   end
 end
 

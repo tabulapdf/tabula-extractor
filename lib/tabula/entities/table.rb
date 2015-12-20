@@ -27,9 +27,9 @@ class Tabula::Table < Java::TechnologyTabula::Table
     tlines = []
     array_of_rows.each_with_index do |row, i|
       l = Tabula::Line.new
-      l.text_elements = row.each_with_index.map { |cell, j|
+      l.text_elements = row.each_with_index.map do |cell, j|
         Tabula::TextElement.new(i.to_java(:float), j.to_java(:float), 1, 1, nil, 0, cell, 0)
-      }
+      end
       tlines << l
     end
     t.instance_variable_set(:@lines, tlines)

@@ -40,7 +40,7 @@ module Tabula
 
     if use_spreadsheet_extraction_method
       spreadsheets = pdf_page.get_area(area).spreadsheets
-      return spreadsheets.empty? ? Spreadsheet.empty(pdf_page) : spreadsheets#.inject(&:+)
+      return spreadsheets.empty? ? Spreadsheet.empty(pdf_page) : spreadsheets.max_by{|s| s.rows.to_a.map(&:size).inject(&:+) }
     end
 
     use_detected_lines = false

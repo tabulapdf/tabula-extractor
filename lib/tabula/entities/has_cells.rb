@@ -14,7 +14,7 @@ module Tabula
     end
 
     def find_cells!(horizontal_ruling_lines, vertical_ruling_lines, options={})
-      self.cells = SpreadsheetExtractionAlgorithm.new.findCells(horizontal_ruling_lines, vertical_ruling_lines)
+      self.cells = SpreadsheetExtractionAlgorithm.findCells(horizontal_ruling_lines, vertical_ruling_lines)
     end
 
     #TODO:
