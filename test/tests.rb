@@ -729,6 +729,21 @@ class TestExtractor < Minitest::Test
     extractor.close!
   end
 
+  def test_spanning_cells
+    # see
+    # https://github.com/tabulapdf/tabula-java/issues/55
+    # https://github.com/tabulapdf/tabula-extractor/commit/735b82450a40b3743333816b50cad470b1ca7b43#commitcomment-15087511
+    # this PDF is a printout of an Excel spreadsheet that has "spanning cells", that is, 10 or so data columns
+    # with six header cells -- some of the header cells are "merged" to span over several data columns.
+    # we cope with this internally by creating zero-width (or zero-height for cells that span rows) cells
+    # and in array/CSV output, these blank cells are inserted /after/ the text of the real cell.
+    pdf_file_path = File.expand_path("data/47008204D_USA.page4.pdf", File.dirname(__FILE__))
+    extractor = Tabula::Extraction::ObjectExtractor.new(pdf_file_path)
+    pdf_page = extractor.extract.first
+    actual_header_row = table_to_array(pdf_page.spreadsheets.first).first
+    expected_header_row = ["", "", "", "IEM Findings","","","","","", "Remediation","","","", "[Status]"]
+    assert_equal actual_header_row, expected_header_row
+  end
 end
 
 class TestIsTabularHeuristic < Minitest::Test
