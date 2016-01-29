@@ -1,5 +1,6 @@
 #!/usr/bin/env jruby -J-Djava.awt.headless=true
 # encoding: utf-8
+
 require 'trollop'
 require_relative '../lib/tabula'
 
@@ -116,26 +117,24 @@ def main
     if use_spreadsheet_extraction
       if opts[:debug]
         pdf_page.spreadsheets.each do |spreadsheet|
-          STDERR.puts "Page #{pdf_page.number(:one_indexed)}: #{spreadsheet.dims(:top, :left, :bottom, :right)}"
+          STDERR.puts "Page #{pdf_page.number(:one_indexed)}: #{spreadsheet}"
         end
       end
-      tables = pdf_page.spreadsheets(:use_line_returns=> use_line_returns).map(&:rows)
+      tables = pdf_page.spreadsheets(:use_line_returns=> use_line_returns)
     else
       STDERR.puts "Page #{pdf_page.number(:one_indexed)}: #{page_area.to_s}" if opts[:debug]
       if opts[:guess]
-        page_areas = pdf_page.spreadsheets.map{|rect| pdf_page.get_area(rect.dims(:top, :left, :bottom, :right))}
+        page_areas = pdf_page.spreadsheets.map{|rect| pdf_page.get_area(rect)}
       elsif area_input
         page_areas = [pdf_page.get_area(*area_input)]
       else
         page_areas = [pdf_page]
       end
-      tables = page_areas.map{|page_area| page_area.make_table(vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(pdf_page, page_area, vertical_rulings) })}
+      tables = page_areas.map{|page_area| page_area.get_table(vertical_rulings.nil? ? {} : { :vertical_rulings => rulings_from_columns(pdf_page, page_area, vertical_rulings) })}
     end
 
     tables.each do |table|
-      Tabula::Writers.send(opts[:format].to_sym,
-                          table,
-                          out)
+      out << table.send("to_#{opts[:format].downcase}".to_sym)
     end
   end
   out.close
