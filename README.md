@@ -7,7 +7,7 @@ Extract tables from PDF files. `tabula-extractor` is the table extraction engine
 
 If you're beginning a new project, consider using [tabula-java](http://www.github.com/tabulapdf/tabula-java), a pure-Java version of the extraction engine behind Tabula. Since it's Java, not Ruby, it should be more compatible with more languages and stacks.
 
-If you want Ruby bindings and are okay using JRuby (or have already begin a project), you may continue to use this project. This project's JRuby backend has been replaced with the Java backend; all that remains here is a fairly thin wrapper for Ruby compatibility. This wrapper maintains API backwards-compatibility with the old, pure-JRuby implementation we all know and love.
+If you want Ruby bindings and are okay using JRuby (or have already begin a project), you may continue to use this project. This project's JRuby backend has been replaced with the Java backend; all that remains here is a thin wrapper for Ruby compatibility. This wrapper maintains API backwards-compatibility with the old, pure-JRuby implementation that we all know and love.
 
 
 ## Installation
