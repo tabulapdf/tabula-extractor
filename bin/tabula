@@ -28,7 +28,7 @@ end
 
 def parse_command_line
   opts = Trollop::options do
-    version "tabula #{Tabula::VERSION} (c) 2012-2013 Manuel Aristarán"
+    version "tabula #{Tabula::VERSION} (c) 2012-2016 Manuel Aristarán, Jeremy B. Merrill, Mike Tigas and other contributors"
     banner <<-EOS
 Tabula helps you extract tables from PDFs
 
