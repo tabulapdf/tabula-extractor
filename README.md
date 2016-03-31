@@ -1,13 +1,15 @@
-tabula-extractor is DEPRECATED
+tabula-extractor (old version)
 ==============================
 
-[![Build Status](https://travis-ci.org/tabulapdf/tabula-extractor.png)](https://travis-ci.org/tabulapdf/tabula-extractor)
+**Deprecation Note:** *This is the old version of the Tabula extraction engine. New projects wishing to integrate Tabula should use <b>[tabula-java][tabula-java] (the new Java version of this extraction engine)</b> unless you prefer to use JRuby. Users looking for the command-line version of Tabula should also use <b>[tabula-java][tabula-java]</b>.*
 
-Extract tables from PDF files. `tabula-extractor` is the table extraction engine that used to power [Tabula](http://tabula.nerdpower.org), now available as a library and command line program.
+[tabula-java]: http://www.github.com/tabulapdf/tabula-java
 
-If you're beginning a new project, consider using [tabula-java](http://www.github.com/tabulapdf/tabula-java), a pure-Java version of the extraction engine behind Tabula. Since it's Java, not Ruby, it should be more compatible with more languages and stacks.
+---
 
-If you want Ruby bindings and are okay using JRuby (or have already begin a project), you may continue to use this project. This project's JRuby backend has been replaced with the Java backend; all that remains here is a thin wrapper for Ruby compatibility. This wrapper maintains API backwards-compatibility with the old, pure-JRuby implementation that we all know and love.
+Extract tables from PDF files. `tabula-extractor` is the table extraction engine that used to power [Tabula](http://tabula.nerdpower.org).
+
+If you're beginning a new project, consider using [tabula-java](http://www.github.com/tabulapdf/tabula-java), a pure-Java version of the extraction engine behind Tabula. If you want Ruby bindings and are okay using JRuby (or have already begin a project), you may continue to use this project. This project's JRuby backend has been replaced with the Java backend; all that remains here is a thin wrapper for Ruby compatibility. This wrapper maintains API backwards-compatibility with the old, pure-JRuby implementation that we all know and love.
 
 
 ## Installation
