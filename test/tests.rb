@@ -143,6 +143,44 @@ end
 
 class TestExtractor < Minitest::Test
 
+  def test_extraction_of_multiple_pages
+    expected_by_page = [
+      [
+        ["Last Name", "First Name", "Address", "City", "State", "Zip", "Occupation", "Employer", "Date", "Amount"], 
+        ["Lidstad", "Dick & Peg", "62 Mississippi River Blvd N", "Saint Paul", "MN", "55104", "retired", "", "10/12/2012", "60.00"],
+      ],
+      [
+        ["Last Name", "First Name", "Address", "City", "State", "Zip", "Occupation", "Employer", "Date", "Amount"], 
+        ["Filice","Gregory A","15 Crocus Place","Saint Paul","MN","55102","Physician","Veterans Affairs Medical Cent","10/3/2012","100.00"]
+      ],
+        [
+          ["Last Name", "First Name", "Address", "City", "State", "Zip", "Occupation", "Employer", "Date", "Amount"], 
+          ["Skovolt","Glen and Anna","1473 Grantham St.","Saint Paul","MN","55108","retired","","9/12/2012","100.00"]
+        ]
+    ]
+    (1..3).to_a.each do |page_num|
+
+      table = table_to_array Tabula.extract_table(File.expand_path('data/strongschools.pdf', File.dirname(__FILE__)),
+                                                  page_num,
+                                                  [52.32857142857143,15.557142857142859,128.70000000000002,767.9571428571429],
+                                                  :detect_ruling_lines => true)
+      assert_equal expected_by_page[page_num-1], table[0...2]
+    end
+  end
+
+  def test_extraction_of_all_pages
+    extractor = Tabula::Extraction::ObjectExtractor.new(File.expand_path('data/strongschools.pdf', File.dirname(__FILE__)), :all)
+    pages = extractor.extract.to_a
+
+    expected_unique_words_per_page = ["Lidstad", "Filice", "Spencer de Gutierrez", "Mancinis", "D'Aquila"]
+
+    pages.each_with_index do |pdf_page, idx|
+      text_chunks = Tabula::TextElement.merge_words(pdf_page.texts)
+      page_text_joined = text_chunks.map(&:text).join(" ")
+      assert page_text_joined.include?(expected_unique_words_per_page[idx])
+    end
+  end
+
   def test_table_extraction_1
     table = table_to_array Tabula.extract_table(File.expand_path('data/gre.pdf', File.dirname(__FILE__)),
                                                 1,
@@ -533,7 +571,7 @@ class TestExtractor < Minitest::Test
     pdf_page = extractor.extract.first
     actual_header_row = table_to_array(pdf_page.spreadsheets.first).first
     expected_header_row = ["", "", "", "IEM Findings","","","","","", "Remediation","","","", "[Status]"]
-    assert_equal actual_header_row, expected_header_row
+    assert_equal expected_header_row, actual_header_row
   end
 end
 

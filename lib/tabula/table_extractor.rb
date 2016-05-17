@@ -2,8 +2,6 @@ java_import Java::TechnologyTabula::Rectangle
 module Tabula
   # extract a table from file +pdf_path+, +pages+ and +area+
   #
-  # +pages+ can be a single integer (1-based) or an array of integers
-  #
   # ==== Options
   # +:password+ - Password if encrypted PDF (default: empty)
   # +:detect_ruling_lines+ - Try to detect vertical (default: true)
